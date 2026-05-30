@@ -243,6 +243,7 @@ export function attemptCrime(crimeId, character) {
       healthLoss,
       message: successMessage(crime, reward),
       type: 'good',
+      weekCost: 1,
     }
   } else {
     const fine = Array.isArray(crime.caughtFine) ? rand(crime.caughtFine[0], crime.caughtFine[1]) : 0
@@ -259,6 +260,7 @@ export function attemptCrime(crimeId, character) {
       prisonYears,
       message: failMessage(crime, fine, prisonYears),
       type: 'bad',
+      weekCost: 1,
     }
   }
 }

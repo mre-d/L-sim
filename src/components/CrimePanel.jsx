@@ -1,12 +1,11 @@
 import { getAvailableCrimes, getHeatInfo, getCriminalRank, CRIME_ACTIVITIES } from '../game/crime'
 
 export default function CrimePanel({ character, onCrimeActivity }) {
-  const { heatLevel, crimeXP, criminalRecord, inPrison, prisonYearsLeft, activitiesThisTurn, maxActivities } = character
+  const { heatLevel, crimeXP, criminalRecord, inPrison, prisonYearsLeft, busyWeeks } = character
   const heatInfo = getHeatInfo(heatLevel)
   const rank = getCriminalRank(crimeXP)
   const available = getAvailableCrimes(character)
-  const activitiesLeft = maxActivities - activitiesThisTurn
-  const disabled = activitiesLeft <= 0
+  const disabled = busyWeeks > 0
 
   return (
     <div className="card card-crime">
@@ -78,7 +77,7 @@ export default function CrimePanel({ character, onCrimeActivity }) {
           </div>
           {disabled && (
             <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
-              No actions left — Age Up to continue
+              Busy — wait for the week to pass
             </p>
           )}
         </>

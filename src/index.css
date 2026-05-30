@@ -143,6 +143,11 @@ button:disabled {
   color: var(--text-muted);
 }
 
+.btn-activity .act-cost {
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .btn-activity:not(:disabled):hover {
   background: var(--primary);
   border-color: var(--primary);
@@ -407,6 +412,140 @@ select option {
   color: var(--text-muted);
   margin-bottom: 24px;
   font-size: 15px;
+}
+
+/* HUD Header */
+.hud-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hud-name {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.hud-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.hud-age {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.hud-month {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* HUD Stats */
+.hud-stats {
+  background: var(--surface);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.flex1 { flex: 1; }
+
+/* HUD Money + Speed */
+.hud-money-row {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hud-money-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-money-icon { font-size: 22px; }
+
+.hud-money-value {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.speed-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.speed-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.speed-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Busy bar */
+.busy-bar {
+  background: rgba(108, 99, 255, 0.15);
+  border-bottom: 1px solid rgba(108, 99, 255, 0.3);
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Info chip */
+.info-chip {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 /* Tab bar */
