@@ -1,4 +1,6 @@
 import StatBar from './StatBar'
+import { getCareerById } from '../game/careers'
+import { getCriminalRank } from '../game/crime'
 
 const COUNTRY_FLAGS = {
   Netherlands: '🇳🇱', Belgium: '🇧🇪', Germany: '🇩🇪',
@@ -6,10 +8,16 @@ const COUNTRY_FLAGS = {
 }
 
 export default function GameOver({ character, onRestart }) {
-  const { name, age, country, stats, money, job, deathCause } = character
+  const { name, age, country, stats, money, deathCause, careerPathId, careerLevel,
+          criminalRecord, totalCrimeEarnings, crimeXP, annualSalary } = character
   const flag = COUNTRY_FLAGS[country] || '🌍'
   const isLongLife = age >= 75
   const emoji = isLongLife ? '🎉' : '💀'
+
+  const careerPath = getCareerById(careerPathId)
+  const finalTitle = careerPath ? careerPath.levels[careerLevel]?.title : 'Unemployed'
+  const crimRank = getCriminalRank(crimeXP)
+  const wasCriminal = crimeXP > 0
 
   return (
     <div className="gameover-screen screen">
@@ -31,20 +39,38 @@ export default function GameOver({ character, onRestart }) {
 
         <div className="card">
           <div className="info-row">
-            <span className="info-label">💰 Final net worth</span>
+            <span className="info-label">💰 Net worth</span>
             <span className={money >= 0 ? 'text-success fw-bold' : 'text-danger fw-bold'}>
               €{money.toLocaleString()}
             </span>
           </div>
           <div className="info-row">
-            <span className="info-label">💼 Last job</span>
-            <span>{job}</span>
+            <span className="info-label">💼 Final job</span>
+            <span>{finalTitle}</span>
           </div>
           <div className="info-row">
             <span className="info-label">📅 Years lived</span>
             <span className="fw-bold">{age}</span>
           </div>
         </div>
+
+        {wasCriminal && (
+          <div className="card card-crime">
+            <div className="card-title">Criminal Record</div>
+            <div className="info-row">
+              <span className="info-label">🏴‍☠️ Highest rank</span>
+              <span className="gang-badge">{crimRank.title}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">📋 Convictions</span>
+              <span style={{ color: 'var(--danger)' }}>{criminalRecord}x</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">💸 Crime earnings</span>
+              <span className="text-warning fw-bold">€{totalCrimeEarnings.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
 
         <div className="card text-center">
           <p style={{ fontSize: 15, marginBottom: 4 }}>

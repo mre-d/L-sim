@@ -6,6 +6,7 @@ export const ACTIVITIES = [
     label: 'Study',
     emoji: '📚',
     description: 'Hit the books and get smarter',
+    allowedInPrison: true,
     minAge: 5,
     maxAge: 25,
     perform: (character) => {
@@ -22,6 +23,7 @@ export const ACTIVITIES = [
     label: 'Exercise',
     emoji: '🏋️',
     description: 'Work out for health and looks',
+    allowedInPrison: true,
     minAge: 6,
     maxAge: 999,
     perform: (character) => {
@@ -59,8 +61,9 @@ export const ACTIVITIES = [
     maxAge: 70,
     requiresJob: true,
     perform: (character) => {
-      const gain = rand(500, 2000)
-      const happinessLoss = rand(2, 6)
+      const base = character.annualSalary > 0 ? character.annualSalary : 20000
+      const gain = Math.floor(base * rand(3, 10) / 100)
+      const happinessLoss = rand(3, 8)
       return {
         statChanges: { money: gain, happiness: -happinessLoss },
         message: `You worked overtime and earned €${gain.toLocaleString()}. Exhausting but worth it! 💰`,
@@ -119,6 +122,7 @@ export const ACTIVITIES = [
     label: 'Read Books',
     emoji: '📖',
     description: 'Expand your knowledge',
+    allowedInPrison: true,
     minAge: 8,
     maxAge: 999,
     perform: (character) => {
@@ -233,9 +237,10 @@ export const ACTIVITIES = [
 
 export function getAvailableActivities(character) {
   return ACTIVITIES.filter(activity => {
+    if (character.inPrison && !activity.allowedInPrison) return false
     if (character.age < activity.minAge) return false
     if (character.age > activity.maxAge) return false
-    if (activity.requiresJob && character.job === 'Unemployed') return false
+    if (activity.requiresJob && !character.careerPathId) return false
     return true
   })
 }
