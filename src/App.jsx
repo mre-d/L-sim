@@ -51,7 +51,7 @@ const INITIAL_STATE = {
   crimeXP: 0,
   criminalRecord: 0,
   inPrison: false,
-  prisonYearsLeft: 0,
+  prisonWeeksLeft: 0,
   totalCrimeEarnings: 0,
 }
 
@@ -64,13 +64,24 @@ function tickWeek(prev, extraLog = []) {
   let newMoney = prev.money
   let newLog = [...prev.eventLog, ...extraLog]
   let newPrison = prev.inPrison
-  let prisonYears = prev.prisonYearsLeft
+  let prisonWeeks = prev.prisonWeeksLeft
   let newPerformance = prev.jobPerformance
   let newYearsAtJob = prev.yearsAtJob
   let newEducation = prev.education
   let newCareerPathId = prev.careerPathId
   let newCareerLevel = prev.careerLevel
   let newAnnualSalary = prev.annualSalary
+
+  // Prison countdown (every week)
+  if (newPrison) {
+    prisonWeeks -= 1
+    newStats.happiness = clamp(newStats.happiness - 1)
+    if (prisonWeeks <= 0) {
+      newPrison = false
+      prisonWeeks = 0
+      newLog.push({ text: '🔓 Released from prison. Fresh start!', type: 'neutral', age: prev.age })
+    }
+  }
 
   // Month advances every 4 weeks
   if (newWeek % 4 === 0) {
@@ -81,20 +92,6 @@ function tickWeek(prev, extraLog = []) {
   if (newWeek > 52) {
     newWeek = 1
     newAge = prev.age + 1
-
-    // Prison countdown
-    if (newPrison) {
-      prisonYears -= 1
-      if (prisonYears <= 0) {
-        newPrison = false
-        prisonYears = 0
-        newLog.push({ text: 'You were released from prison. Fresh start... 🔓', type: 'neutral', age: newAge })
-      } else {
-        newLog.push({ text: `Another year behind bars. ${prisonYears} year${prisonYears !== 1 ? 's' : ''} left. 🔒`, type: 'bad', age: newAge })
-        newStats.happiness = clamp(newStats.happiness - 5)
-        newStats.health = clamp(newStats.health - 2)
-      }
-    }
 
     // Annual salary
     if (newCareerPathId && newAnnualSalary > 0 && !newPrison) {
@@ -135,7 +132,7 @@ function tickWeek(prev, extraLog = []) {
         jobPerformance: newPerformance,
         careerPathId: newCareerPathId, careerLevel: newCareerLevel,
         yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
-        inPrison: newPrison, prisonYearsLeft: prisonYears,
+        inPrison: newPrison, prisonWeeksLeft: prisonWeeks,
         eventLog: newLog.slice(-60),
         isAlive: false, deathCause: death.cause, screen: 'gameover',
       }
@@ -149,7 +146,7 @@ function tickWeek(prev, extraLog = []) {
     jobPerformance: newPerformance,
     careerPathId: newCareerPathId, careerLevel: newCareerLevel,
     yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
-    inPrison: newPrison, prisonYearsLeft: prisonYears,
+    inPrison: newPrison, prisonWeeksLeft: prisonWeeks,
     eventLog: newLog.slice(-60),
   }
 }
@@ -241,20 +238,51 @@ export default function App() {
         crimeLog.push({ text: `🔓 Crime level up! Now level ${newCrimeLevel} — new crimes unlocked!`, type: 'good', age: prev.age })
       }
 
-      let newPrison = prev.inPrison
-      let prisonYears = prev.prisonYearsLeft
+      let newPrisonActive = prev.inPrison
+      let prisonWks = prev.prisonWeeksLeft
       let newRecord = prev.criminalRecord
       let newTotal = prev.totalCrimeEarnings
       if (result.success) newTotal += Math.max(0, result.money)
-      else if (result.prisonYears > 0) { newPrison = true; prisonYears = result.prisonYears; newRecord += 1 }
+      else if (result.prisonWeeks > 0) { newPrisonActive = true; prisonWks = result.prisonWeeks; newRecord += 1 }
 
       const updated = {
         ...prev, stats: newStats, money: newMoney,
         crimeLevel: newCrimeLevel, crimeXP: newXP,
-        criminalRecord: newRecord, inPrison: newPrison,
-        prisonYearsLeft: prisonYears, totalCrimeEarnings: newTotal,
+        criminalRecord: newRecord, inPrison: newPrisonActive,
+        prisonWeeksLeft: prisonWks, totalCrimeEarnings: newTotal,
       }
       return tickWeek(updated, crimeLog)
+    })
+  }
+
+  const PRISON_CHORES = {
+    chores:   { stat: { happiness: 3 }, msg: '🧹 Cell is spotless. Small comfort. +happiness' },
+    kitchen:  { stat: { money: 50 },    msg: '🍳 Kitchen work pays a little. +€50' },
+    exercise: { stat: { health: 4 },    msg: '🏋️ Stayed in shape. +health' },
+    study:    { stat: { smarts: 2 },    msg: '📚 Used the prison library. +smarts' },
+    network:  { crimeXP: 10,            msg: '🤝 Made connections inside. +10 crime XP' },
+  }
+
+  function doPrisonChore(choreId) {
+    setGame(prev => {
+      if (!prev.inPrison) return prev
+      const chore = PRISON_CHORES[choreId]
+      if (!chore) return prev
+
+      let newCrimeXP = prev.crimeXP
+      let newCrimeLevel = prev.crimeLevel
+      const { stats: newStats, money: newMoney } = applyChanges(prev.stats, prev.money, chore.stat || {})
+
+      if (chore.crimeXP) {
+        newCrimeXP += chore.crimeXP
+        while (newCrimeLevel < 20 && newCrimeXP >= xpToNextLevel(newCrimeLevel)) {
+          newCrimeXP -= xpToNextLevel(newCrimeLevel)
+          newCrimeLevel += 1
+        }
+      }
+
+      const log = [{ text: chore.msg, type: 'activity', age: prev.age }]
+      return tickWeek({ ...prev, stats: newStats, money: newMoney, crimeXP: newCrimeXP, crimeLevel: newCrimeLevel }, log)
     })
   }
 
@@ -270,6 +298,7 @@ export default function App() {
       onActivity={doActivity}
       onCareerAction={doCareerAction}
       onCrimeActivity={doCrimeActivity}
+      onPrisonChore={doPrisonChore}
     />
   )
 }

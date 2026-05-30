@@ -1,10 +1,17 @@
 import {
   CRIMES, CRIME_LEVEL_NAMES, getAvailableCrimes, getLockedCrimes,
-  getSuccessRate, xpToNextLevel,
+  getSuccessRate, getRewardRange, xpToNextLevel,
 } from '../game/crime'
 
+function prisonRange(crime) {
+  const [min, max] = crime.prison
+  if (max === 0) return null
+  if (max < 52) return `🔒 ${min}-${max}w`
+  return `🔒 ${Math.round(min/52)}-${Math.round(max/52)}y`
+}
+
 export default function CrimePanel({ character, onCrimeActivity }) {
-  const { crimeLevel = 1, crimeXP = 0, criminalRecord, inPrison, prisonYearsLeft } = character
+  const { crimeLevel = 1, crimeXP = 0, criminalRecord, inPrison } = character
   const rankName = CRIME_LEVEL_NAMES[Math.min(crimeLevel, 20)] || 'Petty Thief'
   const available = getAvailableCrimes(crimeLevel, character.age)
   const locked = getLockedCrimes(crimeLevel, character.age)
@@ -48,10 +55,10 @@ export default function CrimePanel({ character, onCrimeActivity }) {
         </span>
       </div>
 
-      {/* Prison */}
+      {/* Prison notice */}
       {inPrison && (
         <div className="prison-banner" style={{ marginBottom: 12 }}>
-          🔒 In prison — {prisonYearsLeft} year{prisonYearsLeft !== 1 ? 's' : ''} left. Skip weeks to serve time.
+          🔒 In prison — go to the Life tab to do prison activities.
         </div>
       )}
 
@@ -63,6 +70,9 @@ export default function CrimePanel({ character, onCrimeActivity }) {
             {available.map(crime => {
               const successRate = getSuccessRate(crime, crimeLevel)
               const successColor = successRate >= 80 ? '#4CAF50' : successRate >= 60 ? '#FF9800' : '#F44336'
+              const [minR, maxR] = getRewardRange(crime, crimeLevel)
+              const rewardStr = minR === 0 ? '' : `€${minR >= 1000 ? (minR/1000).toFixed(0)+'k' : minR}–${maxR >= 1000 ? (maxR/1000).toFixed(0)+'k' : maxR}`
+              const prisonStr = prisonRange(crime)
               return (
                 <button
                   key={crime.id}
@@ -73,6 +83,10 @@ export default function CrimePanel({ character, onCrimeActivity }) {
                   <span className="crime-info">
                     <span className="crime-name">{crime.name}</span>
                     <span className="crime-desc">{crime.description}</span>
+                    <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {rewardStr && <span style={{ fontSize: 11, color: '#4CAF50', fontWeight: 600 }}>{rewardStr}</span>}
+                      {prisonStr && <span style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>{prisonStr}</span>}
+                    </span>
                   </span>
                   <span className="crime-stats">
                     <span style={{ color: successColor, fontWeight: 800, fontSize: 15 }}>{successRate}%</span>

@@ -4,6 +4,7 @@ import EventLog from './EventLog'
 import ActivityMenu from './ActivityMenu'
 import CareerPanel from './CareerPanel'
 import CrimePanel from './CrimePanel'
+import PrisonPanel from './PrisonPanel'
 
 const COUNTRY_FLAGS = {
   Netherlands: '🇳🇱', Belgium: '🇧🇪', Germany: '🇩🇪',
@@ -29,10 +30,10 @@ function statColor(v) {
   return v > 70 ? '#4CAF50' : v > 40 ? '#FF9800' : '#F44336'
 }
 
-export default function Dashboard({ character, onSkipWeek, onActivity, onCareerAction, onCrimeActivity }) {
+export default function Dashboard({ character, onSkipWeek, onActivity, onCareerAction, onCrimeActivity, onPrisonChore }) {
   const [activeTab, setActiveTab] = useState('life')
   const { name, age, month, week, country, stats, money, eventLog,
-          careerPathId, annualSalary, inPrison, prisonYearsLeft } = character
+          careerPathId, annualSalary, inPrison, prisonWeeksLeft } = character
 
   const flag = COUNTRY_FLAGS[country] || '🌍'
   const weekProgress = Math.round((week / 52) * 100)
@@ -101,7 +102,7 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
       {/* Prison banner */}
       {inPrison && (
         <div className="prison-banner" style={{ margin: '0 12px 0' }}>
-          🔒 In prison — {prisonYearsLeft} year{prisonYearsLeft !== 1 ? 's' : ''} left. Skip weeks to serve time.
+          🔒 In prison — {prisonWeeksLeft} week{prisonWeeksLeft !== 1 ? 's' : ''} left
         </div>
       )}
 
@@ -120,10 +121,16 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
         <div className="section">
           {activeTab === 'life' && (
             <>
-              {careerPathId && annualSalary > 0 && (
-                <div className="info-chip">💼 Earning €{annualSalary.toLocaleString()}/yr — paid each birthday</div>
+              {inPrison ? (
+                <PrisonPanel character={character} onPrisonChore={onPrisonChore} onSkipWeek={onSkipWeek} />
+              ) : (
+                <>
+                  {careerPathId && annualSalary > 0 && (
+                    <div className="info-chip">💼 Earning €{annualSalary.toLocaleString()}/yr — paid each birthday</div>
+                  )}
+                  <ActivityMenu onActivity={onActivity} character={character} />
+                </>
               )}
-              <ActivityMenu onActivity={onActivity} character={character} />
               <EventLog events={eventLog} />
             </>
           )}
