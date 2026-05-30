@@ -1,10 +1,13 @@
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
 // XP needed to go from crimeLevel to crimeLevel+1
-// 100 → 150 → 225 → 338 → 506 → ... (×1.5 each level)
+// +100 per normal level, +150 at milestone levels (5, 10, 15, 20)
 export function xpToNextLevel(crimeLevel) {
-  return Math.floor(100 * Math.pow(1.5, crimeLevel - 1))
+  if (crimeLevel >= 20) return Infinity
+  const isMilestone = crimeLevel % 5 === 0
+  return crimeLevel * 100 + (isMilestone ? 150 : 0)
 }
+// Results: 100, 200, 300, 400, 650, 600, 700, 800, 900, 1150, 1100, 1200, 1300, 1400, 1650...
 
 export const CRIME_LEVEL_NAMES = [
   '',
