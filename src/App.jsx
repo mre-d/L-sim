@@ -5,7 +5,7 @@ import GameOver from './components/GameOver'
 import { getRandomEvents } from './game/events'
 import { performActivity } from './game/activities'
 import { getCareerById, canPromote } from './game/careers'
-import { attemptCrime, getArrestChance, xpToNextLevel } from './game/crime'
+import { attemptCrime, xpToNextLevel } from './game/crime'
 
 const clamp = (val, min = 0, max = 100) => Math.min(max, Math.max(min, val))
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -47,7 +47,6 @@ const INITIAL_STATE = {
   annualSalary: 0,
 
   // Crime
-  heatLevel: 0,
   crimeLevel: 1,
   crimeXP: 0,
   criminalRecord: 0,
@@ -63,7 +62,6 @@ function tickWeek(prev, extraLog = []) {
   let newAge = prev.age
   let newStats = { ...prev.stats }
   let newMoney = prev.money
-  let newHeat = prev.heatLevel
   let newLog = [...prev.eventLog, ...extraLog]
   let newPrison = prev.inPrison
   let prisonYears = prev.prisonYearsLeft
@@ -113,19 +111,6 @@ function tickWeek(prev, extraLog = []) {
     if (newAge > 50) { newStats.health = clamp(newStats.health - 1); newStats.looks = clamp(newStats.looks - 1) }
     if (newAge > 70) { newStats.health = clamp(newStats.health - 2) }
 
-    // Heat decay
-    newHeat = clamp(newHeat - rand(3, 7), 0, 100)
-
-    // Arrest chance
-    const arrestChance = getArrestChance(newHeat)
-    if (!newPrison && arrestChance > 0 && Math.random() < arrestChance) {
-      const sentence = rand(1, Math.ceil(newHeat / 20))
-      newPrison = true
-      prisonYears = sentence
-      newHeat = clamp(newHeat - 20, 0, 100)
-      newLog.push({ text: `🚨 Police caught up with you! Sentenced to ${sentence} year${sentence > 1 ? 's' : ''}.`, type: 'bad', age: newAge })
-    }
-
     // Career performance drift
     if (newCareerPathId) {
       newPerformance = clamp(newPerformance + rand(-8, 12) + (newStats.smarts > 50 ? 2 : -2))
@@ -147,7 +132,7 @@ function tickWeek(prev, extraLog = []) {
       return {
         ...prev, age: newAge, week: newWeek, month: newMonth,
         stats: newStats, money: newMoney, education: newEducation,
-        heatLevel: newHeat, jobPerformance: newPerformance,
+        jobPerformance: newPerformance,
         careerPathId: newCareerPathId, careerLevel: newCareerLevel,
         yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
         inPrison: newPrison, prisonYearsLeft: prisonYears,
@@ -161,7 +146,7 @@ function tickWeek(prev, extraLog = []) {
     ...prev,
     age: newAge, week: newWeek, month: newMonth,
     stats: newStats, money: newMoney, education: newEducation,
-    heatLevel: newHeat, jobPerformance: newPerformance,
+    jobPerformance: newPerformance,
     careerPathId: newCareerPathId, careerLevel: newCareerLevel,
     yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
     inPrison: newPrison, prisonYearsLeft: prisonYears,
@@ -244,7 +229,6 @@ export default function App() {
       if (result.statBonus) Object.assign(statChanges, result.statBonus)
 
       const { stats: newStats, money: newMoney } = applyChanges(prev.stats, prev.money, statChanges)
-      const newHeat = clamp(prev.heatLevel + result.heatChange, 0, 100)
 
       // XP and leveling
       let newXP = prev.crimeXP + (result.xpGain || 0)
@@ -266,7 +250,7 @@ export default function App() {
 
       const updated = {
         ...prev, stats: newStats, money: newMoney,
-        heatLevel: newHeat, crimeLevel: newCrimeLevel, crimeXP: newXP,
+        crimeLevel: newCrimeLevel, crimeXP: newXP,
         criminalRecord: newRecord, inPrison: newPrison,
         prisonYearsLeft: prisonYears, totalCrimeEarnings: newTotal,
       }

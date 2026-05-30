@@ -1,11 +1,10 @@
 import {
   CRIMES, CRIME_LEVEL_NAMES, getAvailableCrimes, getLockedCrimes,
-  getSuccessRate, getHeatLabel, xpToNextLevel,
+  getSuccessRate, xpToNextLevel,
 } from '../game/crime'
 
 export default function CrimePanel({ character, onCrimeActivity }) {
-  const { heatLevel, crimeLevel = 1, crimeXP = 0, criminalRecord, inPrison, prisonYearsLeft } = character
-  const heatInfo = getHeatLabel(heatLevel)
+  const { crimeLevel = 1, crimeXP = 0, criminalRecord, inPrison, prisonYearsLeft } = character
   const rankName = CRIME_LEVEL_NAMES[Math.min(crimeLevel, 20)] || 'Petty Thief'
   const available = getAvailableCrimes(crimeLevel, character.age)
   const locked = getLockedCrimes(crimeLevel, character.age)
@@ -25,8 +24,8 @@ export default function CrimePanel({ character, onCrimeActivity }) {
       </div>
 
       {/* XP bar */}
-      {!isMaxLevel && (
-        <div style={{ marginBottom: 12 }}>
+      {!isMaxLevel ? (
+        <div style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
             <span>XP to level {crimeLevel + 1}</span>
             <span>{crimeXP} / {xpNeeded}</span>
@@ -35,28 +34,13 @@ export default function CrimePanel({ character, onCrimeActivity }) {
             <div className="stat-bar-fill" style={{ width: `${xpPercent}%`, backgroundColor: '#9C27B0' }} />
           </div>
         </div>
-      )}
-      {isMaxLevel && (
-        <div style={{ fontSize: 13, color: '#9C27B0', fontWeight: 700, marginBottom: 12 }}>
+      ) : (
+        <div style={{ fontSize: 13, color: '#9C27B0', fontWeight: 700, marginBottom: 14 }}>
           👑 Maximum level reached!
         </div>
       )}
 
-      {/* Heat */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-          <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{heatInfo.emoji} Police Heat — {heatInfo.label}</span>
-          <span style={{ fontWeight: 700 }}>{Math.round(heatLevel)}</span>
-        </div>
-        <div className="stat-bar-track">
-          <div className="stat-bar-fill" style={{ width: `${heatLevel}%`, background: `linear-gradient(90deg, #FF9800, ${heatInfo.color})` }} />
-        </div>
-        {heatLevel >= 50 && (
-          <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 3 }}>⚠️ High heat — arrest risk each year!</p>
-        )}
-      </div>
-
-      {/* Stats row */}
+      {/* Convictions */}
       <div className="info-row" style={{ marginBottom: 12 }}>
         <span className="info-label">📋 Convictions</span>
         <span style={{ color: criminalRecord > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 700 }}>
@@ -78,7 +62,7 @@ export default function CrimePanel({ character, onCrimeActivity }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             {available.map(crime => {
               const successRate = getSuccessRate(crime, crimeLevel)
-              const successColor = successRate >= 70 ? '#4CAF50' : successRate >= 45 ? '#FF9800' : '#F44336'
+              const successColor = successRate >= 80 ? '#4CAF50' : successRate >= 60 ? '#FF9800' : '#F44336'
               return (
                 <button
                   key={crime.id}
@@ -91,8 +75,9 @@ export default function CrimePanel({ character, onCrimeActivity }) {
                     <span className="crime-desc">{crime.description}</span>
                   </span>
                   <span className="crime-stats">
-                    <span style={{ color: successColor, fontWeight: 800, fontSize: 14 }}>{successRate}%</span>
+                    <span style={{ color: successColor, fontWeight: 800, fontSize: 15 }}>{successRate}%</span>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>success</span>
+                    <span style={{ fontSize: 11, color: '#9C27B0', fontWeight: 700 }}>+{crime.xpOnSuccess} XP</span>
                   </span>
                 </button>
               )
@@ -113,6 +98,7 @@ export default function CrimePanel({ character, onCrimeActivity }) {
                     </span>
                     <span className="crime-stats">
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>LVL {crime.unlockLevel}</span>
+                      <span style={{ fontSize: 11, color: '#9C27B0' }}>+{crime.xpOnSuccess} XP</span>
                     </span>
                   </div>
                 ))}
