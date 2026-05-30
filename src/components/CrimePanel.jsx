@@ -1,11 +1,11 @@
 import { getAvailableCrimes, getHeatInfo, getCriminalRank, CRIME_ACTIVITIES } from '../game/crime'
 
 export default function CrimePanel({ character, onCrimeActivity }) {
-  const { heatLevel, crimeXP, criminalRecord, inPrison, prisonYearsLeft, busyWeeks } = character
+  const { heatLevel, crimeXP, criminalRecord, inPrison, prisonYearsLeft } = character
   const heatInfo = getHeatInfo(heatLevel)
   const rank = getCriminalRank(crimeXP)
   const available = getAvailableCrimes(character)
-  const disabled = busyWeeks > 0
+  const disabled = inPrison
 
   return (
     <div className="card card-crime">

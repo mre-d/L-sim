@@ -1,4 +1,4 @@
-import { getAvailableActivities, ACTIVITIES } from '../game/activities'
+import { getAvailableActivities } from '../game/activities'
 
 function formatCost(cost) {
   if (!cost) return 'Free'
@@ -6,12 +6,12 @@ function formatCost(cost) {
   return `€${cost}`
 }
 
-export default function ActivityMenu({ onActivity, isBusy, character }) {
+export default function ActivityMenu({ onActivity, character }) {
   const activities = getAvailableActivities(character)
 
   return (
     <div className="card">
-      <div className="card-title">Activities — 1 week each</div>
+      <div className="card-title">Activities — each takes 1 week</div>
       <div className="activity-grid">
         {activities.map(act => {
           const canAfford = !act.cost || character.money >= act.cost
@@ -20,7 +20,7 @@ export default function ActivityMenu({ onActivity, isBusy, character }) {
               key={act.id}
               className="btn-activity"
               onClick={() => onActivity(act.id)}
-              disabled={isBusy || !canAfford}
+              disabled={!canAfford}
               title={act.description}
               style={!canAfford ? { opacity: 0.35 } : {}}
             >
@@ -33,11 +33,6 @@ export default function ActivityMenu({ onActivity, isBusy, character }) {
           )
         })}
       </div>
-      {isBusy && (
-        <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', marginTop: 10 }}>
-          Busy — wait for the week to pass
-        </p>
-      )}
     </div>
   )
 }

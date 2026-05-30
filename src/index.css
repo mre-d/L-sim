@@ -476,6 +476,15 @@ select option {
 
 .flex1 { flex: 1; }
 
+.stat-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 /* HUD Money + Speed */
 .hud-money-row {
   background: var(--surface);
@@ -501,38 +510,33 @@ select option {
   letter-spacing: -0.5px;
 }
 
-.speed-controls {
-  display: flex;
-  gap: 6px;
-}
-
-.speed-btn {
+.btn-skip {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  border-radius: 8px;
-  min-height: 36px;
-  min-width: 36px;
-  padding: 0 10px;
-  font-size: 14px;
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
-.speed-btn.active {
-  background: var(--primary);
+.btn-skip:hover {
   border-color: var(--primary);
-  color: white;
+  color: var(--text);
 }
 
-/* Busy bar */
-.busy-bar {
-  background: rgba(108, 99, 255, 0.15);
-  border-bottom: 1px solid rgba(108, 99, 255, 0.3);
-  padding: 6px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--primary);
+/* Year progress */
+.year-progress {
+  height: 3px;
+  background: var(--surface2);
   flex-shrink: 0;
+}
+
+.year-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #E040FB);
+  transition: width 0.3s ease;
 }
 
 /* Info chip */
