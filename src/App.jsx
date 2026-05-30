@@ -5,7 +5,7 @@ import GameOver from './components/GameOver'
 import { getRandomEvents } from './game/events'
 import { performActivity } from './game/activities'
 import { getCareerById, canPromote } from './game/careers'
-import { attemptCrime, getArrestChance } from './game/crime'
+import { attemptCrime, getArrestChance, xpToNextLevel } from './game/crime'
 
 const clamp = (val, min = 0, max = 100) => Math.min(max, Math.max(min, val))
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -48,6 +48,7 @@ const INITIAL_STATE = {
 
   // Crime
   heatLevel: 0,
+  crimeLevel: 1,
   crimeXP: 0,
   criminalRecord: 0,
   inPrison: false,
@@ -238,24 +239,36 @@ export default function App() {
       const result = attemptCrime(crimeId, prev)
       if (!result) return prev
 
-      const { stats: newStats, money: newMoney } = applyChanges(
-        prev.stats, prev.money,
-        { money: result.money, health: result.healthLoss ? -result.healthLoss : 0 }
-      )
+      const statChanges = { money: result.money }
+      if (result.healthLoss) statChanges.health = -result.healthLoss
+      if (result.statBonus) Object.assign(statChanges, result.statBonus)
+
+      const { stats: newStats, money: newMoney } = applyChanges(prev.stats, prev.money, statChanges)
       const newHeat = clamp(prev.heatLevel + result.heatChange, 0, 100)
-      const newXP = prev.crimeXP + (result.xpGain || 0)
+
+      // XP and leveling
+      let newXP = prev.crimeXP + (result.xpGain || 0)
+      let newCrimeLevel = prev.crimeLevel
+      const crimeLog = [{ text: result.message, type: result.type, age: prev.age }]
+
+      while (newCrimeLevel < 20 && newXP >= xpToNextLevel(newCrimeLevel)) {
+        newXP -= xpToNextLevel(newCrimeLevel)
+        newCrimeLevel += 1
+        crimeLog.push({ text: `🔓 Crime level up! Now level ${newCrimeLevel} — new crimes unlocked!`, type: 'good', age: prev.age })
+      }
+
       let newPrison = prev.inPrison
       let prisonYears = prev.prisonYearsLeft
       let newRecord = prev.criminalRecord
       let newTotal = prev.totalCrimeEarnings
-      if (result.success) newTotal += result.money
+      if (result.success) newTotal += Math.max(0, result.money)
       else if (result.prisonYears > 0) { newPrison = true; prisonYears = result.prisonYears; newRecord += 1 }
 
-      const crimeLog = [{ text: result.message, type: result.type, age: prev.age }]
       const updated = {
         ...prev, stats: newStats, money: newMoney,
-        heatLevel: newHeat, crimeXP: newXP, criminalRecord: newRecord,
-        inPrison: newPrison, prisonYearsLeft: prisonYears, totalCrimeEarnings: newTotal,
+        heatLevel: newHeat, crimeLevel: newCrimeLevel, crimeXP: newXP,
+        criminalRecord: newRecord, inPrison: newPrison,
+        prisonYearsLeft: prisonYears, totalCrimeEarnings: newTotal,
       }
       return tickWeek(updated, crimeLog)
     })

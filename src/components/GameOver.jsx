@@ -1,6 +1,6 @@
 import StatBar from './StatBar'
 import { getCareerById } from '../game/careers'
-import { getCriminalRank } from '../game/crime'
+import { CRIME_LEVEL_NAMES } from '../game/crime'
 
 const COUNTRY_FLAGS = {
   Netherlands: '🇳🇱', Belgium: '🇧🇪', Germany: '🇩🇪',
@@ -16,7 +16,7 @@ export default function GameOver({ character, onRestart }) {
 
   const careerPath = getCareerById(careerPathId)
   const finalTitle = careerPath ? careerPath.levels[careerLevel]?.title : 'Unemployed'
-  const crimRank = getCriminalRank(crimeXP)
+  const crimRank = CRIME_LEVEL_NAMES[Math.min(character.crimeLevel || 1, 20)]
   const wasCriminal = crimeXP > 0
 
   return (
