@@ -39,6 +39,8 @@ const INITIAL_STATE = {
   collegeMajor: null,
   completedDegrees: [],
   enrolledDegree: null,
+  middleSchoolProgress: 0,
+  highSchoolProgress: 0,
   eventLog: [],
   isAlive: true,
   deathCause: '',
@@ -122,17 +124,6 @@ function tickWeek(prev, extraLog = []) {
       newPerformance = clamp(newPerformance + rand(-8, 12) + (newStats.smarts > 50 ? 2 : -2))
     }
 
-    // School milestones
-    if (newAge === 15 && !newCompletedDegrees.includes('Middle School')) {
-      newCompletedDegrees = [...newCompletedDegrees, 'Middle School']
-      if (newEducation === 'None') newEducation = 'Middle School'
-      newLog.push({ text: '🎒 Middle School completed!', type: 'good', age: newAge })
-    }
-    if (newAge === 18 && !newCompletedDegrees.includes('High School')) {
-      newCompletedDegrees = [...newCompletedDegrees, 'High School']
-      if (newEducation === 'None' || newEducation === 'Middle School') newEducation = 'High School'
-      newLog.push({ text: '🎓 High School diploma earned!', type: 'good', age: newAge })
-    }
     // College / Masters progress
     if (newEnrolledDegree) {
       const yearsLeft = newEnrolledDegree.yearsLeft - 1
@@ -189,11 +180,24 @@ function tickWeek(prev, extraLog = []) {
 export default function App() {
   const [game, setGame] = useState(INITIAL_STATE)
 
-  function startGame({ name, gender, country }) {
+  function startGame({ name, gender, country, lifeStart }) {
+    const isYoungAdult = lifeStart === 'youngAdult'
     setGame({
       ...INITIAL_STATE,
       screen: 'game', name, gender, country,
-      eventLog: [{ text: `${name} is 12 years old in ${country}. Life begins! 🌱`, type: 'good', age: 12 }],
+      age: isYoungAdult ? 18 : 12,
+      money: isYoungAdult ? 1000 : 500,
+      education: isYoungAdult ? 'High School' : 'None',
+      middleSchoolProgress: isYoungAdult ? 75 : 0,
+      highSchoolProgress: isYoungAdult ? 100 : 0,
+      completedDegrees: isYoungAdult ? ['Middle School', 'High School'] : [],
+      eventLog: [{
+        text: isYoungAdult
+          ? `${name} is 18 in ${country}. Adult life begins! 🧑`
+          : `${name} is 12 in ${country}. Life begins! 🌱`,
+        type: 'good',
+        age: isYoungAdult ? 18 : 12,
+      }],
     })
   }
 
@@ -355,6 +359,31 @@ export default function App() {
     })
   }
 
+  function doStudySchool(school) {
+    setGame(prev => {
+      const targets = { middleSchool: 75, highSchool: 100 }
+      const target = targets[school]
+      const progressKey = `${school}Progress`
+      const current = prev[progressKey] || 0
+      if (current >= target) return prev
+      if (school === 'highSchool' && (prev.middleSchoolProgress || 0) < 75) return prev
+
+      const newProgress = current + 1
+      const updates = { [progressKey]: newProgress }
+      const log = []
+
+      if (newProgress >= target) {
+        const name = school === 'middleSchool' ? 'Middle School' : 'High School'
+        updates.completedDegrees = [...(prev.completedDegrees || []), name]
+        if (school === 'middleSchool' && prev.education === 'None') updates.education = 'Middle School'
+        if (school === 'highSchool') updates.education = 'High School'
+        log.push({ text: `🎓 ${name} completed!`, type: 'good', age: prev.age })
+      }
+
+      return tickWeek({ ...prev, ...updates }, log)
+    })
+  }
+
   function doEnrollSchool(level, major, cost, years) {
     setGame(prev => {
       if (prev.enrolledDegree) return prev
@@ -384,6 +413,7 @@ export default function App() {
         onCrimeActivity={doCrimeActivity}
         onPrisonChore={doPrisonChore}
         onEnrollSchool={doEnrollSchool}
+        onStudySchool={doStudySchool}
       />
       {game.pendingCrimeResult && (
         <CrimeResultModal result={game.pendingCrimeResult} onClose={clearCrimeResult} />

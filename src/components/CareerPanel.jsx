@@ -2,7 +2,7 @@ import { CAREER_PATHS, canJoinCareer, canPromote, getCareerById } from '../game/
 import StatBar from './StatBar'
 import EducationSection from './EducationSection'
 
-export default function CareerPanel({ character, onCareerAction, onEnrollSchool }) {
+export default function CareerPanel({ character, onCareerAction, onEnrollSchool, onStudySchool }) {
   const { careerPathId, careerLevel, yearsAtJob, jobPerformance, education, stats, age, criminalRecord } = character
   const currentPath = getCareerById(careerPathId)
   const currentLevelData = currentPath?.levels[careerLevel]
@@ -11,7 +11,7 @@ export default function CareerPanel({ character, onCareerAction, onEnrollSchool 
   if (character.inPrison) {
     return (
       <>
-        <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
+        <EducationSection character={character} onEnrollSchool={onEnrollSchool} onStudySchool={onStudySchool} />
         <div className="card card-crime">
           <div className="card-title">Career</div>
           <div className="prison-banner">🔒 You are in prison — no career income</div>
@@ -23,7 +23,7 @@ export default function CareerPanel({ character, onCareerAction, onEnrollSchool 
   if (!currentPath) {
     return (
       <>
-        <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
+        <EducationSection character={character} onEnrollSchool={onEnrollSchool} onStudySchool={onStudySchool} />
         <UnemployedPanel character={character} onCareerAction={onCareerAction} />
       </>
     )
@@ -35,7 +35,7 @@ export default function CareerPanel({ character, onCareerAction, onEnrollSchool 
 
   return (
     <>
-    <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
+    <EducationSection character={character} onEnrollSchool={onEnrollSchool} onStudySchool={onStudySchool} />
     <div className="card">
       <div className="card-title">Career — {currentPath.emoji} {currentPath.name}</div>
 

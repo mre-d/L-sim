@@ -1,5 +1,39 @@
 import { BACHELOR_DEGREES, MASTERS_DEGREES } from '../game/education'
 
+const MS_TARGET = 75
+const HS_TARGET = 100
+
+function SchoolRow({ emoji, name, progress, target, completed, onStudy, locked }) {
+  const pct = Math.min(100, (progress / target) * 100)
+  return (
+    <div className="degree-row">
+      <span className="degree-emoji">{emoji}</span>
+      <div className="degree-info">
+        <div className="degree-name">{name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          <div className="stat-bar-track" style={{ flex: 1 }}>
+            <div className="stat-bar-fill" style={{ width: `${pct}%`, backgroundColor: completed ? '#4CAF50' : '#2196F3' }} />
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            {progress}/{target}
+          </span>
+        </div>
+      </div>
+      <div className="degree-action">
+        {completed ? (
+          <span className="degree-badge-done">Complete</span>
+        ) : locked ? (
+          <span className="degree-badge-done" style={{ opacity: 0.4 }}>🔒</span>
+        ) : (
+          <button className="degree-btn-enroll" onClick={onStudy}>
+            €0
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DegreeRow({ emoji, name, progress, total, completed, enrolled, cost, canAfford, onEnroll }) {
   const pct = total > 0 ? Math.min(100, (progress / total) * 100) : 0
   return (
@@ -30,9 +64,7 @@ function DegreeRow({ emoji, name, progress, total, completed, enrolled, cost, ca
           >
             €{cost >= 1000 ? (cost / 1000).toFixed(0) + 'k' : cost}
           </button>
-        ) : (
-          <span className="degree-badge-done">Free</span>
-        )}
+        ) : null}
       </div>
     </div>
   )
@@ -46,15 +78,14 @@ function SectionHeader({ label }) {
   )
 }
 
-export default function EducationSection({ character, onEnrollSchool }) {
-  const { age, education, completedDegrees = [], enrolledDegree, collegeMajor, money } = character
+export default function EducationSection({ character, onEnrollSchool, onStudySchool }) {
+  const { education, completedDegrees = [], enrolledDegree, money,
+          middleSchoolProgress = 0, highSchoolProgress = 0 } = character
 
-  const midProgress = Math.min(3, Math.max(0, age - 12))
-  const highProgress = Math.min(3, Math.max(0, age - 15))
-  const midDone = completedDegrees.includes('Middle School') || age >= 15
-  const highDone = completedDegrees.includes('High School') || age >= 18
+  const midDone = middleSchoolProgress >= MS_TARGET
+  const highDone = highSchoolProgress >= HS_TARGET
   const hasBachelor = education === "Bachelor's" || education === "Master's"
-  const canEnrollBachelor = highDone && age >= 18 && !enrolledDegree
+  const canEnrollBachelor = highDone && !enrolledDegree
   const canEnrollMasters = hasBachelor && !enrolledDegree
 
   return (
@@ -63,19 +94,22 @@ export default function EducationSection({ character, onEnrollSchool }) {
 
       <SectionHeader label="Primary Education" />
 
-      <DegreeRow
+      <SchoolRow
         emoji="✏️"
         name="Middle School"
-        progress={midProgress}
-        total={3}
+        progress={middleSchoolProgress}
+        target={MS_TARGET}
         completed={midDone}
+        onStudy={() => onStudySchool('middleSchool')}
       />
-      <DegreeRow
+      <SchoolRow
         emoji="📖"
         name="High School"
-        progress={highProgress}
-        total={3}
+        progress={highSchoolProgress}
+        target={HS_TARGET}
         completed={highDone}
+        locked={!midDone}
+        onStudy={() => onStudySchool('highSchool')}
       />
 
       {highDone && (
@@ -136,7 +170,7 @@ export default function EducationSection({ character, onEnrollSchool }) {
 
       {enrolledDegree && (
         <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(33,150,243,0.1)', borderRadius: 8, fontSize: 12, color: '#2196F3', fontWeight: 600 }}>
-          📚 Currently studying: {enrolledDegree.level === 'masters' ? "Masters" : "Bachelor's"} — {enrolledDegree.major} ({enrolledDegree.yearsLeft} yr{enrolledDegree.yearsLeft !== 1 ? 's' : ''} left)
+          📚 Studying: {enrolledDegree.level === 'masters' ? "Masters" : "Bachelor's"} — {enrolledDegree.major} ({enrolledDegree.yearsLeft} yr{enrolledDegree.yearsLeft !== 1 ? 's' : ''} left)
         </div>
       )}
     </div>
