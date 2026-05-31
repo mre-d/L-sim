@@ -116,7 +116,7 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
               ) : (
                 <>
                   {careerPathId && annualSalary > 0 && (
-                    <div className="info-chip">💼 Earning €{annualSalary.toLocaleString()}/yr — paid each birthday</div>
+                    <div className="info-chip">💼 Earning €{Math.round(annualSalary / 52).toLocaleString()}/wk</div>
                   )}
                   <ActivityMenu onActivity={onActivity} character={character} />
                 </>

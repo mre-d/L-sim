@@ -3,7 +3,7 @@ import StatBar from './StatBar'
 import EducationSection from './EducationSection'
 
 export default function CareerPanel({ character, onCareerAction, onEnrollSchool, onStudySchool }) {
-  const { careerPathId, careerLevel, yearsAtJob, jobPerformance, education, stats, age, criminalRecord } = character
+  const { careerPathId, careerLevel, weeksAtJob, jobPerformance, education, stats, age, criminalRecord } = character
   const currentPath = getCareerById(careerPathId)
   const currentLevelData = currentPath?.levels[careerLevel]
   const nextLevelData = currentPath?.levels[careerLevel + 1]
@@ -41,12 +41,12 @@ export default function CareerPanel({ character, onCareerAction, onEnrollSchool,
 
       <div className="career-tier">{currentLevelData?.title}</div>
       <div className="info-row">
-        <span className="info-label">💰 Annual Salary</span>
-        <span className="text-success fw-bold">€{salary.toLocaleString()}</span>
+        <span className="info-label">💰 Weekly Pay</span>
+        <span className="text-success fw-bold">€{Math.round(salary / 52).toLocaleString()}/wk</span>
       </div>
       <div className="info-row">
-        <span className="info-label">📅 Years in role</span>
-        <span>{yearsAtJob}</span>
+        <span className="info-label">📅 Weeks in role</span>
+        <span>{weeksAtJob}</span>
       </div>
 
       <div style={{ marginTop: 10, marginBottom: 10 }}>
@@ -56,7 +56,7 @@ export default function CareerPanel({ character, onCareerAction, onEnrollSchool,
       {!isMaxLevel && (
         <div style={{ marginBottom: 10 }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
-            Next: {nextLevelData?.title} — €{nextLevelData?.salary.toLocaleString()}/yr
+            Next: {nextLevelData?.title} — €{Math.round(nextLevelData?.salary / 52).toLocaleString()}/wk
           </div>
           <button
             className="btn-primary"
@@ -115,7 +115,7 @@ function UnemployedPanel({ character, onCareerAction }) {
               </span>
               <span style={{ fontSize: 12, color: check.ok ? 'var(--success)' : 'var(--danger)' }}>
                 {check.ok
-                  ? `€${path.levels[0].salary.toLocaleString()}/yr`
+                  ? `€${Math.round(path.levels[0].salary / 52).toLocaleString()}/wk`
                   : check.reason}
               </span>
             </button>

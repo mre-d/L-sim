@@ -48,7 +48,7 @@ const INITIAL_STATE = {
   // Career
   careerPathId: null,
   careerLevel: 0,
-  yearsAtJob: 0,
+  weeksAtJob: 0,
   jobPerformance: 50,
   annualSalary: 0,
 
@@ -74,7 +74,7 @@ function tickWeek(prev, extraLog = []) {
   let newPrison = prev.inPrison
   let prisonWeeks = prev.prisonWeeksLeft
   let newPerformance = prev.jobPerformance
-  let newYearsAtJob = prev.yearsAtJob
+  let newWeeksAtJob = prev.weeksAtJob
   let newEducation = prev.education
   let newCollegeMajor = prev.collegeMajor
   let newCompletedDegrees = prev.completedDegrees || []
@@ -94,6 +94,12 @@ function tickWeek(prev, extraLog = []) {
     }
   }
 
+  // Weekly salary payment
+  if (newCareerPathId && newAnnualSalary > 0 && !newPrison) {
+    newMoney += Math.round(newAnnualSalary / 52)
+    newWeeksAtJob += 1
+  }
+
   // Month advances every 4 weeks
   if (newWeek % 4 === 0) {
     newMonth = (newMonth + 1) % 12
@@ -104,13 +110,10 @@ function tickWeek(prev, extraLog = []) {
     newWeek = 1
     newAge = prev.age + 1
 
-    // Annual salary
-    if (newCareerPathId && newAnnualSalary > 0 && !newPrison) {
-      newMoney += newAnnualSalary
-      newYearsAtJob += 1
+    if (newCareerPathId) {
       const path = getCareerById(newCareerPathId)
       newLog.push({
-        text: `💼 ${path?.levels[newCareerLevel]?.title}: salary €${newAnnualSalary.toLocaleString()} received`,
+        text: `💼 ${path?.levels[newCareerLevel]?.title} — €${Math.round(newAnnualSalary / 52).toLocaleString()}/wk`,
         type: 'neutral', age: newAge,
       })
     }
@@ -157,7 +160,7 @@ function tickWeek(prev, extraLog = []) {
         collegeMajor: newCollegeMajor, completedDegrees: newCompletedDegrees, enrolledDegree: newEnrolledDegree,
         jobPerformance: newPerformance,
         careerPathId: newCareerPathId, careerLevel: newCareerLevel,
-        yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
+        weeksAtJob: newWeeksAtJob, annualSalary: newAnnualSalary,
         inPrison: newPrison, prisonWeeksLeft: prisonWeeks,
         eventLog: newLog.slice(-60),
         isAlive: false, deathCause: death.cause, screen: 'gameover',
@@ -171,7 +174,7 @@ function tickWeek(prev, extraLog = []) {
     stats: newStats, money: newMoney, education: newEducation,
     jobPerformance: newPerformance,
     careerPathId: newCareerPathId, careerLevel: newCareerLevel,
-    yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
+    weeksAtJob: newWeeksAtJob, annualSalary: newAnnualSalary,
     inPrison: newPrison, prisonWeeksLeft: prisonWeeks,
     eventLog: newLog.slice(-60),
   }
@@ -228,8 +231,8 @@ export default function App() {
         const path = getCareerById(payload.pathId)
         if (!path) return prev
         const level = path.levels[0]
-        logEntry = { text: `💼 Started as ${level.title} — €${level.salary.toLocaleString()}/yr ${path.emoji}`, type: 'good', age: prev.age }
-        updated = { ...prev, careerPathId: path.id, careerLevel: 0, yearsAtJob: 0, jobPerformance: 50, annualSalary: level.salary }
+        logEntry = { text: `💼 Started as ${level.title} — €${Math.round(level.salary / 52).toLocaleString()}/wk ${path.emoji}`, type: 'good', age: prev.age }
+        updated = { ...prev, careerPathId: path.id, careerLevel: 0, weeksAtJob: 0, jobPerformance: 50, annualSalary: level.salary }
       }
 
       if (action === 'promote') {
@@ -239,14 +242,14 @@ export default function App() {
         if (!check.ok) return prev
         const newLevel = prev.careerLevel + 1
         const lvl = path.levels[newLevel]
-        logEntry = { text: `🚀 Promoted to ${lvl.title}! €${lvl.salary.toLocaleString()}/yr ${path.emoji}`, type: 'good', age: prev.age }
-        updated = { ...prev, careerLevel: newLevel, yearsAtJob: 0, jobPerformance: clamp(prev.jobPerformance - 10), annualSalary: lvl.salary }
+        logEntry = { text: `🚀 Promoted to ${lvl.title}! €${Math.round(lvl.salary / 52).toLocaleString()}/wk ${path.emoji}`, type: 'good', age: prev.age }
+        updated = { ...prev, careerLevel: newLevel, weeksAtJob: 0, jobPerformance: clamp(prev.jobPerformance - 10), annualSalary: lvl.salary }
       }
 
       if (action === 'quit') {
         const path = getCareerById(prev.careerPathId)
         logEntry = { text: `🚪 Quit job as ${path?.levels[prev.careerLevel]?.title}.`, type: 'neutral', age: prev.age }
-        updated = { ...prev, careerPathId: null, careerLevel: 0, yearsAtJob: 0, annualSalary: 0, jobPerformance: 50 }
+        updated = { ...prev, careerPathId: null, careerLevel: 0, weeksAtJob: 0, annualSalary: 0, jobPerformance: 50 }
       }
 
       return tickWeek(updated, logEntry ? [logEntry] : [])
