@@ -187,10 +187,10 @@ export default function App() {
       screen: 'game', name, gender, country,
       age: isYoungAdult ? 18 : 12,
       money: isYoungAdult ? 1000 : 500,
-      education: isYoungAdult ? 'High School' : 'None',
+      education: isYoungAdult ? 'Middle School' : 'None',
       middleSchoolProgress: isYoungAdult ? 75 : 0,
-      highSchoolProgress: isYoungAdult ? 100 : 0,
-      completedDegrees: isYoungAdult ? ['Middle School', 'High School'] : [],
+      highSchoolProgress: isYoungAdult ? 50 : 0,
+      completedDegrees: isYoungAdult ? ['Middle School'] : [],
       eventLog: [{
         text: isYoungAdult
           ? `${name} is 18 in ${country}. Adult life begins! 🧑`
