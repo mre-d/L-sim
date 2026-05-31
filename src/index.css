@@ -50,7 +50,7 @@ body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+  padding-bottom: 16px;
 }
 
 .card {
@@ -556,17 +556,18 @@ select option {
 .tab-bar {
   display: flex;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tab-btn {
   flex: 1;
   background: transparent;
   border: none;
-  border-bottom: 3px solid transparent;
+  border-top: 3px solid transparent;
   color: var(--text-muted);
-  min-height: 48px;
+  min-height: 56px;
   border-radius: 0;
   display: flex;
   flex-direction: column;
@@ -580,11 +581,11 @@ select option {
   transition: color 0.15s, border-color 0.15s;
 }
 
-.tab-btn span:first-child { font-size: 18px; }
+.tab-btn span:first-child { font-size: 20px; }
 
 .tab-btn.active {
   color: var(--primary);
-  border-bottom-color: var(--primary);
+  border-top-color: var(--primary);
 }
 
 .tab-btn:active {

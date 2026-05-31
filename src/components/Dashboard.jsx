@@ -106,16 +106,6 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="tab-bar">
-        {TABS.map(tab => (
-          <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
-            <span>{tab.emoji}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
       {/* Content */}
       <div className="scroll-area">
         <div className="section">
@@ -141,6 +131,16 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
             <CrimePanel character={character} onCrimeActivity={onCrimeActivity} />
           )}
         </div>
+      </div>
+
+      {/* Bottom tab bar */}
+      <div className="tab-bar">
+        {TABS.map(tab => (
+          <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+            <span>{tab.emoji}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
