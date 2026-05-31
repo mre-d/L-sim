@@ -53,8 +53,33 @@ export default function CharacterCreation({ onStart }) {
 
   return (
     <div className="creation-screen">
-      <div className="game-title">L-SIM</div>
-      <div className="game-subtitle">🌱 Life Simulator — Your story starts here</div>
+      {/* Kingpin title area */}
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.22em', color: 'var(--teal)', textTransform: 'uppercase', marginBottom: 10 }}>
+          LIFE SIMULATOR
+        </div>
+        <div style={{
+          display: 'inline-block',
+          background: 'linear-gradient(162deg, #12273C 0%, #0B1726 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 0 32px rgba(33,230,193,0.25)',
+          borderRadius: 20,
+          padding: '10px 32px',
+          marginBottom: 10,
+        }}>
+          <span style={{
+            fontSize: 44,
+            fontWeight: 900,
+            background: 'linear-gradient(135deg, #2BF0CD 0%, #1FA8FF 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            letterSpacing: '-1px',
+            fontFamily: "'Sora', system-ui, sans-serif",
+          }}>L·Sim</span>
+        </div>
+        <div className="game-subtitle" style={{ marginBottom: 0 }}>Your story starts here</div>
+      </div>
 
       <div className="form-group">
         <label className="form-label">Life Start</label>
@@ -66,9 +91,14 @@ export default function CharacterCreation({ onStart }) {
               disabled={ls.disabled}
               style={{
                 flex: 1,
-                background: lifeStart === ls.id ? 'rgba(108,99,255,0.2)' : 'var(--surface2)',
-                border: `2px solid ${lifeStart === ls.id ? 'var(--primary)' : 'var(--border)'}`,
-                borderRadius: 12,
+                background: lifeStart === ls.id
+                  ? 'rgba(33,230,193,0.12)'
+                  : 'linear-gradient(162deg, #12273C 0%, #0B1726 100%)',
+                border: `2px solid ${lifeStart === ls.id ? 'var(--teal)' : 'rgba(255,255,255,0.08)'}`,
+                boxShadow: lifeStart === ls.id
+                  ? 'inset 0 1px 0 rgba(255,255,255,0.10), 0 0 14px rgba(33,230,193,0.2)'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                borderRadius: 14,
                 padding: '10px 6px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -80,11 +110,11 @@ export default function CharacterCreation({ onStart }) {
               }}
             >
               <span style={{ fontSize: 26 }}>{ls.emoji}</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: lifeStart === ls.id ? 'var(--primary)' : 'var(--text)' }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: lifeStart === ls.id ? 'var(--teal)' : 'var(--ink)' }}>
                 {ls.name}
               </span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{ls.age}</span>
-              <span style={{ fontSize: 10, color: '#4CAF50', fontWeight: 700 }}>{ls.money}</span>
+              <span style={{ fontSize: 10, color: 'var(--sub)', fontWeight: 600 }}>{ls.age}</span>
+              <span style={{ fontSize: 10, color: 'var(--good)', fontWeight: 700 }}>{ls.money}</span>
             </button>
           ))}
         </div>
