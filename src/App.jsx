@@ -7,6 +7,7 @@ import { getRandomEvents } from './game/events'
 import { performActivity } from './game/activities'
 import { getCareerById, canPromote } from './game/careers'
 import { attemptCrime, xpToNextLevel, CRIMES, getSuccessFlavor } from './game/crime'
+import { BACHELOR_DEGREES, MASTERS_DEGREES, COST_PER_STUDY } from './game/education'
 
 const clamp = (val, min = 0, max = 100) => Math.min(max, Math.max(min, val))
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -38,7 +39,7 @@ const INITIAL_STATE = {
   education: 'None',
   collegeMajor: null,
   completedDegrees: [],
-  enrolledDegree: null,
+  degreeProgress: {},
   middleSchoolProgress: 0,
   highSchoolProgress: 0,
   eventLog: [],
@@ -75,10 +76,6 @@ function tickWeek(prev, extraLog = []) {
   let prisonWeeks = prev.prisonWeeksLeft
   let newPerformance = prev.jobPerformance
   let newWeeksAtJob = prev.weeksAtJob
-  let newEducation = prev.education
-  let newCollegeMajor = prev.collegeMajor
-  let newCompletedDegrees = prev.completedDegrees || []
-  let newEnrolledDegree = prev.enrolledDegree
   let newCareerPathId = prev.careerPathId
   let newCareerLevel = prev.careerLevel
   let newAnnualSalary = prev.annualSalary
@@ -127,23 +124,6 @@ function tickWeek(prev, extraLog = []) {
       newPerformance = clamp(newPerformance + rand(-8, 12) + (newStats.smarts > 50 ? 2 : -2))
     }
 
-    // College / Masters progress
-    if (newEnrolledDegree) {
-      const yearsLeft = newEnrolledDegree.yearsLeft - 1
-      if (yearsLeft <= 0) {
-        const prefix = newEnrolledDegree.level === 'masters' ? 'Masters' : "Bachelor's"
-        const degreeName = `${prefix} - ${newEnrolledDegree.major}`
-        newCompletedDegrees = [...newCompletedDegrees, degreeName]
-        if (newEnrolledDegree.level === 'bachelor') { newEducation = "Bachelor's"; newCollegeMajor = newEnrolledDegree.major }
-        else newEducation = "Master's"
-        newLog.push({ text: `🎓 Graduated! ${degreeName} earned.`, type: 'good', age: newAge })
-        newEnrolledDegree = null
-      } else {
-        newEnrolledDegree = { ...newEnrolledDegree, yearsLeft }
-        newLog.push({ text: `📚 ${newEnrolledDegree.major}: ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} left`, type: 'neutral', age: newAge })
-      }
-    }
-
     // Random life events
     const { events, death } = getRandomEvents({ ...prev, age: newAge, stats: newStats })
     for (const event of events) {
@@ -156,8 +136,7 @@ function tickWeek(prev, extraLog = []) {
       if (death.text) newLog.push({ text: death.text, type: 'bad', age: newAge })
       return {
         ...prev, age: newAge, week: newWeek, month: newMonth,
-        stats: newStats, money: newMoney, education: newEducation,
-        collegeMajor: newCollegeMajor, completedDegrees: newCompletedDegrees, enrolledDegree: newEnrolledDegree,
+        stats: newStats, money: newMoney,
         jobPerformance: newPerformance,
         careerPathId: newCareerPathId, careerLevel: newCareerLevel,
         weeksAtJob: newWeeksAtJob, annualSalary: newAnnualSalary,
@@ -171,7 +150,7 @@ function tickWeek(prev, extraLog = []) {
   return {
     ...prev,
     age: newAge, week: newWeek, month: newMonth,
-    stats: newStats, money: newMoney, education: newEducation,
+    stats: newStats, money: newMoney,
     jobPerformance: newPerformance,
     careerPathId: newCareerPathId, careerLevel: newCareerLevel,
     weeksAtJob: newWeeksAtJob, annualSalary: newAnnualSalary,
@@ -387,13 +366,33 @@ export default function App() {
     })
   }
 
-  function doEnrollSchool(level, major, cost, years) {
+  function doStudyDegree(level, major) {
     setGame(prev => {
-      if (prev.enrolledDegree) return prev
-      if (prev.money < cost) return prev
-      const log = [{ text: `📚 Enrolled in ${level === 'masters' ? "Masters" : "Bachelor's"} — ${major}. ${years} years ahead!`, type: 'good', age: prev.age }]
-      const updated = { ...prev, money: prev.money - cost, enrolledDegree: { level, major, yearsLeft: years, totalYears: years } }
-      return tickWeek(updated, log)
+      const allDegrees = level === 'masters' ? MASTERS_DEGREES : BACHELOR_DEGREES
+      const deg = allDegrees.find(d => d.major === major)
+      if (!deg) return prev
+      const key = `${level}-${major}`
+      const current = (prev.degreeProgress || {})[key] || 0
+      if (current >= deg.target) return prev
+      if (prev.money < COST_PER_STUDY) return prev
+      if (level === 'bachelor' && (prev.highSchoolProgress || 0) < 100) return prev
+      if (level === 'masters' && prev.education !== "Bachelor's" && prev.education !== "Master's") return prev
+
+      const newProgress = current + 1
+      const newDegreeProgress = { ...prev.degreeProgress, [key]: newProgress }
+      const updates = { money: prev.money - COST_PER_STUDY, degreeProgress: newDegreeProgress }
+      const log = []
+
+      if (newProgress >= deg.target) {
+        const prefix = level === 'masters' ? 'Masters' : "Bachelor's"
+        const degreeName = `${prefix} - ${major}`
+        updates.completedDegrees = [...(prev.completedDegrees || []), degreeName]
+        if (level === 'bachelor') { updates.education = "Bachelor's"; updates.collegeMajor = major }
+        else updates.education = "Master's"
+        log.push({ text: `🎓 Graduated! ${degreeName} earned!`, type: 'good', age: prev.age })
+      }
+
+      return tickWeek({ ...prev, ...updates }, log)
     })
   }
 
@@ -415,7 +414,7 @@ export default function App() {
         onCareerAction={doCareerAction}
         onCrimeActivity={doCrimeActivity}
         onPrisonChore={doPrisonChore}
-        onEnrollSchool={doEnrollSchool}
+        onStudyDegree={doStudyDegree}
         onStudySchool={doStudySchool}
       />
       {game.pendingCrimeResult && (

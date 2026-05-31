@@ -30,7 +30,7 @@ function statColor(v) {
   return v > 70 ? '#4CAF50' : v > 40 ? '#FF9800' : '#F44336'
 }
 
-export default function Dashboard({ character, onSkipWeek, onActivity, onCareerAction, onCrimeActivity, onPrisonChore, onEnrollSchool, onStudySchool }) {
+export default function Dashboard({ character, onSkipWeek, onActivity, onCareerAction, onCrimeActivity, onPrisonChore, onStudyDegree, onStudySchool }) {
   const [activeTab, setActiveTab] = useState('life')
   const { name, age, month, week, country, stats, money, eventLog,
           careerPathId, annualSalary, inPrison, prisonWeeksLeft } = character
@@ -125,7 +125,7 @@ export default function Dashboard({ character, onSkipWeek, onActivity, onCareerA
             </>
           )}
           {activeTab === 'career' && (
-            <CareerPanel character={character} onCareerAction={onCareerAction} onEnrollSchool={onEnrollSchool} onStudySchool={onStudySchool} />
+            <CareerPanel character={character} onCareerAction={onCareerAction} onStudyDegree={onStudyDegree} onStudySchool={onStudySchool} />
           )}
           {activeTab === 'crime' && (
             <CrimePanel character={character} onCrimeActivity={onCrimeActivity} />
