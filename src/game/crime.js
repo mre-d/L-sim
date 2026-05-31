@@ -102,7 +102,7 @@ export const CRIMES = [
     prison: [6, 16],
     fine: [100, 500],
     warnFirst: true,
-    minAge: 13,
+    minAge: 12,
   },
   {
     id: 'mugging',
@@ -115,7 +115,7 @@ export const CRIMES = [
     xpOnSuccess: 15,
     prison: [4, 12],
     fine: [200, 800],
-    minAge: 13,
+    minAge: 12,
   },
   {
     id: 'drug_deal',
@@ -129,7 +129,7 @@ export const CRIMES = [
     prison: [26, 52],
     fine: [500, 2000],
     warnFirst: true,
-    minAge: 15,
+    minAge: 13,
   },
   {
     id: 'car_theft',
@@ -142,7 +142,7 @@ export const CRIMES = [
     xpOnSuccess: 35,
     prison: [26, 52],
     fine: [1000, 3000],
-    minAge: 16,
+    minAge: 14,
   },
   {
     id: 'burglary',
@@ -155,7 +155,7 @@ export const CRIMES = [
     xpOnSuccess: 50,
     prison: [26, 78],
     fine: [2000, 6000],
-    minAge: 16,
+    minAge: 14,
   },
   {
     id: 'fraud',
@@ -355,9 +355,17 @@ export function getAvailableCrimes(crimeLevel, age) {
 
 export function getLockedCrimes(crimeLevel, age) {
   return CRIMES
-    .filter(c => crimeLevel < c.unlockLevel && age >= (c.minAge || 0))
-    .sort((a, b) => a.unlockLevel - b.unlockLevel)
+    .filter(c => crimeLevel < c.unlockLevel || (crimeLevel >= c.unlockLevel && age < c.minAge))
+    .sort((a, b) => {
+      const aScore = a.unlockLevel * 100 + (a.minAge || 0)
+      const bScore = b.unlockLevel * 100 + (b.minAge || 0)
+      return aScore - bScore
+    })
     .slice(0, 3)
+    .map(c => ({
+      ...c,
+      lockReason: crimeLevel < c.unlockLevel ? `level` : `age`,
+    }))
 }
 
 export function attemptCrime(crimeId, character) {

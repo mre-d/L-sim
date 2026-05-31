@@ -108,10 +108,16 @@ export default function CrimePanel({ character, onCrimeActivity }) {
                     <span className="crime-emoji">{crime.emoji}</span>
                     <span className="crime-info">
                       <span className="crime-name">{crime.name}</span>
-                      <span className="crime-desc">Unlocks at level {crime.unlockLevel}</span>
+                      <span className="crime-desc">
+                        {crime.lockReason === 'age'
+                          ? `Requires age ${crime.minAge}`
+                          : `Unlocks at level ${crime.unlockLevel}`}
+                      </span>
                     </span>
                     <span className="crime-stats">
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>LVL {crime.unlockLevel}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {crime.lockReason === 'age' ? `Age ${crime.minAge}` : `LVL ${crime.unlockLevel}`}
+                      </span>
                       <span style={{ fontSize: 11, color: '#9C27B0' }}>+{crime.xpOnSuccess} XP</span>
                     </span>
                   </div>
