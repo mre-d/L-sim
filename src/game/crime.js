@@ -1,5 +1,27 @@
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
 
+const SUCCESS_FLAVORS = {
+  pickpocket:       ['Tourist wallet lifted clean', "Phone swiped at the market", "Old man's cash, easy pickings"],
+  shoplift:         ['Jacket walked out the door', 'Electronics tucked away nicely', 'Designer perfume, no receipt'],
+  drug_deal:        ['3g weed sold to a regular 🌿', '5 pills moved on the corner', 'Small batch delivered, no questions'],
+  car_theft:        ['BMW boosted from the lot', 'Keys left inside — your gain', 'Sold to the chop shop no problem'],
+  burglary:         ['Empty house, full pockets', 'In and out in 4 minutes ⚡', 'Jewelry box hit the jackpot 💍'],
+  fraud:            ['Shell company worked a treat', 'Wire transfer complete', 'Fake invoice cashed out clean'],
+  hacking:          ['Bank database cracked 💾', 'Funds rerouted undetected', 'Backdoor access exploited perfectly'],
+  armed_robbery:    ['Everyone on the floor 🔫', 'Cashier cooperated nicely', 'In and out, clean escape'],
+  money_laundering: ['Accounts look spotless', 'Shell company did the job', 'Wire cleared, no flags raised'],
+  kidnapping:       ['Ransom wire received 💸', 'Family paid without calling police', 'Smooth handoff, clean exit'],
+  heist:            ['Vault cracked in under an hour 🏦', 'Getaway flawless ⚡', 'Guards bribed, no shots fired'],
+  contract_kill:    ['Target eliminated cleanly 🔪', 'One shot, confirmed 🎯', 'Client satisfied, payment done'],
+  drug_empire:      ['Entire shipment distributed smooth 🏭', 'All distributors paid up 💰', 'Territory expanding nicely'],
+}
+
+export function getSuccessFlavor(crimeId) {
+  const list = SUCCESS_FLAVORS[crimeId]
+  if (!list) return null
+  return list[Math.floor(Math.random() * list.length)]
+}
+
 // XP needed to go from crimeLevel to crimeLevel+1
 // +100 per normal level, +150 at milestone levels (5, 10, 15, 20)
 export function xpToNextLevel(crimeLevel) {
@@ -58,6 +80,7 @@ export const CRIMES = [
     xpOnSuccess: 5,
     prison: [3, 8],
     fine: [50, 200],
+    warnFirst: true,
     minAge: 12,
   },
   {
@@ -71,6 +94,7 @@ export const CRIMES = [
     xpOnSuccess: 10,
     prison: [6, 16],
     fine: [100, 500],
+    warnFirst: true,
     minAge: 13,
   },
   {
@@ -84,6 +108,7 @@ export const CRIMES = [
     xpOnSuccess: 25,
     prison: [26, 52],
     fine: [500, 2000],
+    warnFirst: true,
     minAge: 15,
   },
   {

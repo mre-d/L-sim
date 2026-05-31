@@ -2,10 +2,11 @@ import { useState } from 'react'
 import CharacterCreation from './components/CharacterCreation'
 import Dashboard from './components/Dashboard'
 import GameOver from './components/GameOver'
+import CrimeResultModal from './components/CrimeResultModal'
 import { getRandomEvents } from './game/events'
 import { performActivity } from './game/activities'
 import { getCareerById, canPromote } from './game/careers'
-import { attemptCrime, xpToNextLevel } from './game/crime'
+import { attemptCrime, xpToNextLevel, CRIMES, getSuccessFlavor } from './game/crime'
 
 const clamp = (val, min = 0, max = 100) => Math.min(max, Math.max(min, val))
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -53,6 +54,8 @@ const INITIAL_STATE = {
   inPrison: false,
   prisonWeeksLeft: 0,
   totalCrimeEarnings: 0,
+  warnedCrimes: {},
+  pendingCrimeResult: null,
 }
 
 // Advances time by 1 week. Handles month + year transitions.
@@ -221,6 +224,18 @@ export default function App() {
       const result = attemptCrime(crimeId, prev)
       if (!result) return prev
 
+      const crime = CRIMES.find(c => c.id === crimeId)
+
+      // Warning system: first offence for small crimes = fine only, no prison
+      let isWarning = false
+      let effectivePrisonWeeks = result.prisonWeeks || 0
+      let newWarnedCrimes = prev.warnedCrimes || {}
+      if (!result.success && crime?.warnFirst && !newWarnedCrimes[crimeId]) {
+        isWarning = true
+        effectivePrisonWeeks = 0
+        newWarnedCrimes = { ...newWarnedCrimes, [crimeId]: true }
+      }
+
       const statChanges = { money: result.money }
       if (result.healthLoss) statChanges.health = -result.healthLoss
       if (result.statBonus) Object.assign(statChanges, result.statBonus)
@@ -235,21 +250,43 @@ export default function App() {
       while (newCrimeLevel < 20 && newXP >= xpToNextLevel(newCrimeLevel)) {
         newXP -= xpToNextLevel(newCrimeLevel)
         newCrimeLevel += 1
-        crimeLog.push({ text: `🔓 Crime level up! Now level ${newCrimeLevel} — new crimes unlocked!`, type: 'good', age: prev.age })
+        crimeLog.push({ text: `🔓 Crime level up! Now level ${newCrimeLevel}!`, type: 'good', age: prev.age })
       }
 
       let newPrisonActive = prev.inPrison
       let prisonWks = prev.prisonWeeksLeft
       let newRecord = prev.criminalRecord
       let newTotal = prev.totalCrimeEarnings
-      if (result.success) newTotal += Math.max(0, result.money)
-      else if (result.prisonWeeks > 0) { newPrisonActive = true; prisonWks = result.prisonWeeks; newRecord += 1 }
+      if (result.success) {
+        newTotal += Math.max(0, result.money)
+      } else if (effectivePrisonWeeks > 0) {
+        newPrisonActive = true
+        prisonWks = effectivePrisonWeeks
+        newRecord += 1
+      }
+
+      // Build popup data
+      const pendingCrimeResult = {
+        success: result.success,
+        isWarning,
+        crimeId,
+        crimeName: crime?.name,
+        crimeEmoji: crime?.emoji,
+        money: result.money,
+        xpGain: result.xpGain || 0,
+        prisonWeeks: effectivePrisonWeeks,
+        healthLoss: result.healthLoss || 0,
+        flavorText: result.success ? getSuccessFlavor(crimeId) : null,
+        rawMessage: result.message,
+      }
 
       const updated = {
         ...prev, stats: newStats, money: newMoney,
         crimeLevel: newCrimeLevel, crimeXP: newXP,
         criminalRecord: newRecord, inPrison: newPrisonActive,
         prisonWeeksLeft: prisonWks, totalCrimeEarnings: newTotal,
+        warnedCrimes: newWarnedCrimes,
+        pendingCrimeResult,
       }
       return tickWeek(updated, crimeLog)
     })
@@ -286,19 +323,28 @@ export default function App() {
     })
   }
 
+  function clearCrimeResult() {
+    setGame(prev => ({ ...prev, pendingCrimeResult: null }))
+  }
+
   function restart() { setGame(INITIAL_STATE) }
 
   if (game.screen === 'creation') return <CharacterCreation onStart={startGame} />
   if (game.screen === 'gameover') return <GameOver character={game} onRestart={restart} />
 
   return (
-    <Dashboard
-      character={game}
-      onSkipWeek={skipWeek}
-      onActivity={doActivity}
-      onCareerAction={doCareerAction}
-      onCrimeActivity={doCrimeActivity}
-      onPrisonChore={doPrisonChore}
-    />
+    <>
+      <Dashboard
+        character={game}
+        onSkipWeek={skipWeek}
+        onActivity={doActivity}
+        onCareerAction={doCareerAction}
+        onCrimeActivity={doCrimeActivity}
+        onPrisonChore={doPrisonChore}
+      />
+      {game.pendingCrimeResult && (
+        <CrimeResultModal result={game.pendingCrimeResult} onClose={clearCrimeResult} />
+      )}
+    </>
   )
 }

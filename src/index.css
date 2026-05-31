@@ -690,3 +690,44 @@ select option {
 .mb-16 { margin-bottom: 16px; }
 .mt-16 { margin-top: 16px; }
 .fw-bold { font-weight: 700; }
+
+/* Crime Result Modal */
+.crime-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.crime-modal {
+  background: var(--surface);
+  border: 2px solid var(--surface2);
+  border-radius: 20px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  animation: modal-pop 0.18s ease-out;
+}
+
+@keyframes modal-pop {
+  from { transform: scale(0.88); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.crime-modal-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 15px;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.crime-modal-stat:last-child {
+  border-bottom: none;
+}
