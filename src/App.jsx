@@ -36,6 +36,9 @@ const INITIAL_STATE = {
   stats: { health: 80, happiness: 75, smarts: 55, looks: 65 },
   money: 500,
   education: 'None',
+  collegeMajor: null,
+  completedDegrees: [],
+  enrolledDegree: null,
   eventLog: [],
   isAlive: true,
   deathCause: '',
@@ -71,6 +74,9 @@ function tickWeek(prev, extraLog = []) {
   let newPerformance = prev.jobPerformance
   let newYearsAtJob = prev.yearsAtJob
   let newEducation = prev.education
+  let newCollegeMajor = prev.collegeMajor
+  let newCompletedDegrees = prev.completedDegrees || []
+  let newEnrolledDegree = prev.enrolledDegree
   let newCareerPathId = prev.careerPathId
   let newCareerLevel = prev.careerLevel
   let newAnnualSalary = prev.annualSalary
@@ -116,8 +122,33 @@ function tickWeek(prev, extraLog = []) {
       newPerformance = clamp(newPerformance + rand(-8, 12) + (newStats.smarts > 50 ? 2 : -2))
     }
 
-    // Auto education at 18
-    if (newAge === 18 && newEducation === 'None') newEducation = 'High School'
+    // School milestones
+    if (newAge === 15 && !newCompletedDegrees.includes('Middle School')) {
+      newCompletedDegrees = [...newCompletedDegrees, 'Middle School']
+      if (newEducation === 'None') newEducation = 'Middle School'
+      newLog.push({ text: '🎒 Middle School completed!', type: 'good', age: newAge })
+    }
+    if (newAge === 18 && !newCompletedDegrees.includes('High School')) {
+      newCompletedDegrees = [...newCompletedDegrees, 'High School']
+      if (newEducation === 'None' || newEducation === 'Middle School') newEducation = 'High School'
+      newLog.push({ text: '🎓 High School diploma earned!', type: 'good', age: newAge })
+    }
+    // College / Masters progress
+    if (newEnrolledDegree) {
+      const yearsLeft = newEnrolledDegree.yearsLeft - 1
+      if (yearsLeft <= 0) {
+        const prefix = newEnrolledDegree.level === 'masters' ? 'Masters' : "Bachelor's"
+        const degreeName = `${prefix} - ${newEnrolledDegree.major}`
+        newCompletedDegrees = [...newCompletedDegrees, degreeName]
+        if (newEnrolledDegree.level === 'bachelor') { newEducation = "Bachelor's"; newCollegeMajor = newEnrolledDegree.major }
+        else newEducation = "Master's"
+        newLog.push({ text: `🎓 Graduated! ${degreeName} earned.`, type: 'good', age: newAge })
+        newEnrolledDegree = null
+      } else {
+        newEnrolledDegree = { ...newEnrolledDegree, yearsLeft }
+        newLog.push({ text: `📚 ${newEnrolledDegree.major}: ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} left`, type: 'neutral', age: newAge })
+      }
+    }
 
     // Random life events
     const { events, death } = getRandomEvents({ ...prev, age: newAge, stats: newStats })
@@ -132,6 +163,7 @@ function tickWeek(prev, extraLog = []) {
       return {
         ...prev, age: newAge, week: newWeek, month: newMonth,
         stats: newStats, money: newMoney, education: newEducation,
+        collegeMajor: newCollegeMajor, completedDegrees: newCompletedDegrees, enrolledDegree: newEnrolledDegree,
         jobPerformance: newPerformance,
         careerPathId: newCareerPathId, careerLevel: newCareerLevel,
         yearsAtJob: newYearsAtJob, annualSalary: newAnnualSalary,
@@ -323,6 +355,16 @@ export default function App() {
     })
   }
 
+  function doEnrollSchool(level, major, cost, years) {
+    setGame(prev => {
+      if (prev.enrolledDegree) return prev
+      if (prev.money < cost) return prev
+      const log = [{ text: `📚 Enrolled in ${level === 'masters' ? "Masters" : "Bachelor's"} — ${major}. ${years} years ahead!`, type: 'good', age: prev.age }]
+      const updated = { ...prev, money: prev.money - cost, enrolledDegree: { level, major, yearsLeft: years, totalYears: years } }
+      return tickWeek(updated, log)
+    })
+  }
+
   function clearCrimeResult() {
     setGame(prev => ({ ...prev, pendingCrimeResult: null }))
   }
@@ -341,6 +383,7 @@ export default function App() {
         onCareerAction={doCareerAction}
         onCrimeActivity={doCrimeActivity}
         onPrisonChore={doPrisonChore}
+        onEnrollSchool={doEnrollSchool}
       />
       {game.pendingCrimeResult && (
         <CrimeResultModal result={game.pendingCrimeResult} onClose={clearCrimeResult} />

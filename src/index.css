@@ -732,3 +732,69 @@ select option {
 .crime-modal-stat:last-child {
   border-bottom: none;
 }
+
+/* Education / Degree rows */
+.degree-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.degree-emoji {
+  font-size: 32px;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.degree-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.degree-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.degree-action {
+  flex-shrink: 0;
+  min-width: 74px;
+  text-align: right;
+}
+
+.degree-badge-done {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.degree-badge-active {
+  background: rgba(33,150,243,0.2);
+  color: #2196F3;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.degree-btn-enroll {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.degree-btn-enroll:active {
+  background: var(--primary);
+  border-color: var(--primary);
+}

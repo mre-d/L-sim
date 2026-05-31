@@ -1,4 +1,4 @@
-export const EDUCATION_LEVELS = ['None', 'High School', "Bachelor's", "Master's", 'PhD']
+export const EDUCATION_LEVELS = ['None', 'Middle School', 'High School', "Bachelor's", "Master's", 'PhD']
 
 export const CAREER_PATHS = [
   {
@@ -24,6 +24,7 @@ export const CAREER_PATHS = [
     description: 'Save lives and earn big',
     minSmarts: 70,
     minEducation: "Bachelor's",
+    majorRequired: 'Medicine',
     levels: [
       { title: 'Intern',                salary: 32000,  yearsRequired: 0, smartsRequired: 70 },
       { title: 'Resident Doctor',       salary: 52000,  yearsRequired: 3, smartsRequired: 72 },
@@ -40,6 +41,7 @@ export const CAREER_PATHS = [
     description: 'Justice — or the highest bidder',
     minSmarts: 65,
     minEducation: "Bachelor's",
+    majorRequired: 'Law',
     levels: [
       { title: 'Paralegal',       salary: 30000,  yearsRequired: 0, smartsRequired: 65 },
       { title: 'Junior Lawyer',   salary: 55000,  yearsRequired: 2, smartsRequired: 68 },
@@ -179,6 +181,9 @@ export function canJoinCareer(path, character) {
   const eduIndex = EDUCATION_LEVELS.indexOf(path.minEducation)
   const charEduIndex = EDUCATION_LEVELS.indexOf(character.education)
   if (charEduIndex < eduIndex) return { ok: false, reason: `Requires ${path.minEducation}` }
+  if (path.majorRequired && character.collegeMajor !== path.majorRequired) {
+    return { ok: false, reason: `Requires ${path.majorRequired} degree` }
+  }
   return { ok: true }
 }
 

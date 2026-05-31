@@ -1,7 +1,8 @@
 import { CAREER_PATHS, canJoinCareer, canPromote, getCareerById } from '../game/careers'
 import StatBar from './StatBar'
+import EducationSection from './EducationSection'
 
-export default function CareerPanel({ character, onCareerAction }) {
+export default function CareerPanel({ character, onCareerAction, onEnrollSchool }) {
   const { careerPathId, careerLevel, yearsAtJob, jobPerformance, education, stats, age, criminalRecord } = character
   const currentPath = getCareerById(careerPathId)
   const currentLevelData = currentPath?.levels[careerLevel]
@@ -9,15 +10,23 @@ export default function CareerPanel({ character, onCareerAction }) {
 
   if (character.inPrison) {
     return (
-      <div className="card card-crime">
-        <div className="card-title">Career</div>
-        <div className="prison-banner">🔒 You are in prison — no career income</div>
-      </div>
+      <>
+        <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
+        <div className="card card-crime">
+          <div className="card-title">Career</div>
+          <div className="prison-banner">🔒 You are in prison — no career income</div>
+        </div>
+      </>
     )
   }
 
   if (!currentPath) {
-    return <UnemployedPanel character={character} onCareerAction={onCareerAction} />
+    return (
+      <>
+        <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
+        <UnemployedPanel character={character} onCareerAction={onCareerAction} />
+      </>
+    )
   }
 
   const promotionCheck = canPromote(currentPath, careerLevel, character)
@@ -25,6 +34,8 @@ export default function CareerPanel({ character, onCareerAction }) {
   const salary = currentLevelData?.salary || 0
 
   return (
+    <>
+    <EducationSection character={character} onEnrollSchool={onEnrollSchool} />
     <div className="card">
       <div className="card-title">Career — {currentPath.emoji} {currentPath.name}</div>
 
@@ -72,6 +83,7 @@ export default function CareerPanel({ character, onCareerAction }) {
         🚪 Quit Job
       </button>
     </div>
+    </>
   )
 }
 
