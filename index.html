@@ -768,6 +768,12 @@ function drawPieceRaw(c, type, s, ox, oy, mode) {
     if (T) { c.fillStyle = shade(color, 0.38); c.fillRect(X, Y, w - (R ? s * 0.08 : 0), s * 0.12); }
     if (L) { c.fillStyle = shade(color, 0.2); c.fillRect(X, Y + (T ? s * 0.12 : 0), s * 0.07, h - (T ? s * 0.12 : 0) - (B ? s * 0.17 : 0)); }
   }
+  // 4b. binnenhoeken: waar twee randen in een knik samenkomen, het hoekje inkt dichten (anders zit er een trapje in de lijn)
+  c.fillStyle = INK;
+  for (const [x, y] of cells) for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    if (!has(x + dx, y) || !has(x, y + dy) || has(x + dx, y + dy)) continue;
+    c.fillRect(ox + x * s + (dx < 0 ? 0 : s - o), oy + y * s + (dy < 0 ? 0 : s - o), o, o);
+  }
   // 5. naden tussen vakjes binnen het stuk
   c.fillStyle = shade(color, -0.32);
   const sw = Math.max(1, s * 0.045);
