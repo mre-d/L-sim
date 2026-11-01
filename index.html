@@ -498,6 +498,180 @@ body { background: var(--sky); color: var(--ink); }
   .chip kbd { font-size: 13px; }
   #hint { gap: 6px; }
 }
+
+/* ---------- homepage met profiel, tabbladen, winkel, opdrachten ---------- */
+:root { --ov-tint: 79,184,255; }
+.overlay { background: radial-gradient(ellipse at 50% 35%, rgba(255,255,255,.35), rgba(var(--ov-tint),.82)); }
+#homeOv { padding: 0; gap: 0; justify-content: flex-start; overflow: hidden; }
+#homeOv::before, #homeOv::after { content: none; }
+.pbar { flex: none; width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) max(14px, env(safe-area-inset-right, 0px)) 8px max(14px, env(safe-area-inset-left, 0px)); }
+.pb-me { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+  box-shadow: 0 4px 0 var(--ink); padding: 5px 12px 5px 5px; cursor: pointer; text-align: left; font-family: var(--body); color: var(--ink); max-width: 330px; touch-action: manipulation; }
+.pb-me:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.pb-txt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.pb-txt b { font-family: var(--display); font-weight: 400; font-size: 18px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  -webkit-text-stroke: 0; text-shadow: -1.5px 0 var(--ink), 1.5px 0 var(--ink), 0 -1.5px var(--ink), 0 2px var(--ink); padding: 1px 2px 2px; }
+.pb-lv { display: flex; align-items: center; gap: 6px; }
+.pb-lv i, .rw-lv i { font-style: normal; font-family: var(--display); font-size: 13px; color: #fff; background: #7a5cff; border: 2px solid var(--ink); border-radius: 8px;
+  min-width: 26px; height: 22px; display: grid; place-items: center; padding: 0 4px; }
+.xpbar { flex: 1; height: 10px; border-radius: 99px; background: #e9e5f7; border: 2px solid var(--ink); overflow: hidden; display: block; }
+.xpbar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8f7bff, #b46cff); border-radius: 99px; transition: width .9s cubic-bezier(.3,.9,.4,1); }
+.coins { display: inline-flex; align-items: center; gap: 4px; background: #fff; border: 3px solid var(--ink); border-radius: 999px; box-shadow: 0 4px 0 var(--ink);
+  padding: 4px 12px 4px 6px; font-family: var(--display); font-size: 18px; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.coins.bump { animation: bump .35s cubic-bezier(.3,1.8,.5,1); }
+@keyframes bump { 50% { transform: scale(1.18); } }
+svg.coin { width: 1.15em; height: 1.15em; flex: none; vertical-align: -.2em; }
+.pbar .icon-btn { flex: none; width: 44px; height: 44px; }
+.pbar .coins { margin-left: auto; }
+.pbar .icon-btn svg { width: 22px; height: 22px; }
+.av { display: inline-grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 13px; position: relative; }
+.av svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.av.ringed { padding: 3px; background: var(--ring); border-radius: 15px; box-shadow: 0 0 0 2.5px var(--ink); }
+.av.big { width: 96px; height: 96px; border-radius: 26px; }
+.av.big.ringed { padding: 6px; border-radius: 30px; box-shadow: 0 0 0 3px var(--ink); }
+
+.hscroll { flex: 1; min-height: 0; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  display: flex; flex-direction: column; align-items: center; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 18px max(16px, env(safe-area-inset-left, 0px)); }
+.hpanel { width: min(420px, 100%); display: flex; flex-direction: column; align-items: center; gap: 14px; margin: auto 0; }
+.hpanel[hidden] { display: none !important; }
+.hp-title { font-family: var(--display); font-size: 30px; color: #fff; align-self: flex-start;
+  text-shadow: 2.5px 0 0 var(--ink), -2.5px 0 0 var(--ink), 0 2.5px 0 var(--ink), 0 -2.5px 0 var(--ink), 2px 2px 0 var(--ink), -2px 2px 0 var(--ink), 2px -2px 0 var(--ink), -2px -2px 0 var(--ink), 0 5px 0 var(--ink); }
+.card { width: 100%; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 6px 0 var(--ink); padding: 14px; text-align: left; }
+
+.tabbar { flex: none; width: 100%; display: flex; justify-content: center; gap: 4px; background: #fff; border-top: 3px solid var(--ink);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 6px) max(8px, env(safe-area-inset-left, 0px)); }
+.tabbar button { flex: 1; max-width: 96px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; border-radius: 14px;
+  padding: 6px 2px 5px; font-family: var(--body); font-weight: 800; font-size: 11px; color: var(--muted); cursor: pointer; position: relative; touch-action: manipulation; }
+.tabbar button svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button.on { color: var(--ink); background: #ffe58a; }
+.tabbar button.dot::after { content: ""; position: absolute; top: 4px; right: calc(50% - 18px); width: 11px; height: 11px; border-radius: 50%; background: #ff5c8a; border: 2px solid var(--ink); }
+
+/* winkel */
+.shop-cats { display: flex; gap: 6px; width: 100%; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.shop-cats::-webkit-scrollbar { display: none; }
+.shop-cats button { flex: none; font-family: var(--display); font-size: 15px; color: var(--ink); background: #fff; border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 5px 13px 6px; box-shadow: 0 3px 0 var(--ink); cursor: pointer; }
+.shop-cats button.on { background: var(--gold); }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; width: 100%; }
+.sh-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px 9px; background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink); cursor: pointer; font-family: var(--body); color: var(--ink); touch-action: manipulation; }
+.sh-item:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.sh-item.on { background: #fff7d1; border-color: var(--ink); box-shadow: 0 5px 0 var(--ink), inset 0 0 0 3px var(--gold); }
+.sh-item.locked .sh-pv { filter: grayscale(.85) opacity(.55); }
+.sh-item.shake { animation: shake .35s; }
+@keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.sh-item b { font-family: var(--display); font-weight: 400; font-size: 16px; line-height: 1; }
+.sh-pv { height: 64px; display: grid; place-items: center; }
+.sh-pv .av { width: 56px; height: 56px; }
+.sh-act { font-weight: 800; font-size: 13px; border-radius: 999px; padding: 3px 10px; background: #f1eefb; border: 2px solid var(--ink); display: inline-flex; align-items: center; gap: 3px; }
+.sh-act.on { background: #56d364; }
+.sh-act.buy { background: var(--gold); }
+.sh-act.buy.poor { background: #f1eefb; color: var(--muted); }
+.sh-act.lock { background: #e9e5f7; color: var(--muted); border-color: rgba(43,33,64,.3); }
+.sh-item.arm .sh-act { background: #ff8c42; color: #fff; }
+canvas.pv-blocks { width: 90px; height: 63px; }
+.pv-world { width: 92px; height: 58px; border-radius: 12px; border: 2.5px solid var(--ink); position: relative; overflow: hidden; display: block; }
+.pv-world i { position: absolute; left: 14px; top: 9px; width: 16px; height: 16px; border-radius: 50%; }
+.pv-world b { position: absolute; left: 19px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: inherit; filter: brightness(.55); }
+.pv-world em { position: absolute; right: 8px; bottom: 23px; width: 40px; height: 14px; border-radius: 20px 20px 0 0; }
+.pv-fx { font-size: 40px; line-height: 1; }
+.pv-name { font-family: var(--display); font-size: 20px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: -1.5px 0 var(--ink), 1.5px 0 var(--ink), 0 -1.5px var(--ink), 0 2px var(--ink); padding: 2px 4px; }
+
+/* opdrachten + dagelijks */
+.dl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.dl-head b { font-family: var(--display); font-weight: 400; font-size: 21px; }
+.dl-head span { font-weight: 700; font-size: 13px; color: var(--muted); }
+.dl-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.dl-day { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 5px; border-radius: 12px; background: #f1eefb; border: 2px solid rgba(43,33,64,.18); font-size: 12px; }
+.dl-day em { font-style: normal; font-weight: 800; color: var(--muted); font-size: 11px; }
+.dl-day b { font-family: var(--display); font-weight: 400; font-size: 13px; }
+.dl-day.got { background: #e3f9e0; border-color: #56d364; }
+.dl-day.got svg { opacity: .45; }
+.dl-day.cur { background: #fff3c4; border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); animation: bump 1.4s ease-in-out infinite; }
+.dl-claim { width: 100%; margin-top: 12px; font-size: 22px; padding: 10px 20px 12px; }
+.qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.q { display: flex; align-items: center; gap: 12px; background: #fff; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); padding: 11px 12px; color: var(--ink); }
+.q-txt { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; }
+.q-txt b { grid-column: 1 / -1; font-weight: 800; font-size: 15px; line-height: 1.2; }
+.q-txt em { font-style: normal; font-weight: 800; font-size: 12px; color: var(--muted); }
+.q-btn { flex: none; display: inline-flex; align-items: center; gap: 4px; font-family: var(--display); font-size: 16px; color: var(--ink); background: var(--gold);
+  border: 2.5px solid var(--ink); border-radius: 999px; padding: 6px 12px; box-shadow: 0 3px 0 var(--ink); cursor: pointer; }
+.q-btn[disabled] { background: #f1eefb; color: var(--muted); box-shadow: none; cursor: default; }
+.q.done .q-btn { animation: bump 1.2s ease-in-out infinite; }
+.q-btn.got { background: #56d364; color: #fff; min-width: 40px; justify-content: center; }
+.q.claimed { opacity: .65; }
+.fine-w { font-weight: 700; font-size: 13px; color: var(--ink); opacity: .75; text-align: center; }
+
+/* ranglijst + profiel */
+.rank-mine { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.rank-mine li { background: #fff; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-top: 8px solid var(--mc); color: var(--ink); }
+.rank-mine span { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.rank-mine b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+.soon { text-align: center; }
+.soon b { display: block; font-family: var(--display); font-weight: 400; font-size: 20px; margin-bottom: 4px; }
+.soon span { font-weight: 700; font-size: 14px; color: var(--muted); }
+.prf-head { display: flex; align-items: center; gap: 14px; }
+.prf-head > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.prf-head input { box-sizing: border-box; width: 100%; font: 400 22px var(--display); color: var(--ink); background: #f4f2fb; border: 2.5px solid var(--ink); border-radius: 12px; padding: 6px 10px; }
+.prf-head span { font-weight: 800; font-size: 13px; color: var(--muted); }
+.prf-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.prf-stats div { background: #f4f2fb; border-radius: 12px; padding: 7px 4px; text-align: center; }
+.prf-stats b { display: block; font-family: var(--display); font-weight: 400; font-size: 20px; }
+.prf-stats span { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.ach { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.ach li { display: grid; grid-template-columns: 34px 1fr auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center; background: #fff; border: 3px solid var(--ink); border-radius: 16px; padding: 8px 12px; color: var(--ink); opacity: .6; }
+.ach li.got { opacity: 1; background: #fff7d1; }
+.ach i { grid-row: 1 / 3; font-style: normal; font-size: 26px; text-align: center; }
+.ach b { font-weight: 800; font-size: 15px; }
+.ach span { grid-column: 2; font-size: 12px; font-weight: 700; color: var(--muted); }
+.ach em { grid-row: 1 / 3; grid-column: 3; font-style: normal; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 3px; }
+
+/* beloning op het eindscherm */
+.reward { width: 100%; display: flex; flex-direction: column; gap: 6px; background: #f4f2fb; border-radius: 16px; padding: 9px 12px; }
+.reward[hidden] { display: none; }
+.rw-row { display: flex; justify-content: center; gap: 18px; font-family: var(--display); font-size: 20px; }
+.rw-xp { color: #7a5cff; }
+.rw-coins { display: inline-flex; align-items: center; gap: 4px; color: #c98a00; }
+.rw-lv { display: flex; align-items: center; gap: 8px; }
+.rw-lv em { font-style: normal; font-weight: 800; font-size: 12px; color: var(--muted); min-width: 56px; text-align: right; }
+.rw-lv i.pop { animation: bump .5s cubic-bezier(.3,1.8,.5,1); background: var(--gold); color: var(--ink); }
+.rw-up { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; font-family: var(--display); font-size: 18px; color: var(--ink);
+  background: #fff3c4; border: 2.5px solid var(--ink); border-radius: 12px; padding: 5px 10px; animation: cardin .45s cubic-bezier(.2,1.4,.4,1) .7s both; }
+.rw-up span { display: inline-flex; align-items: center; gap: 3px; font-size: 15px; }
+.rw-up b { font-family: var(--body); font-weight: 800; font-size: 13px; color: #7a5cff; }
+
+/* breedte en uitlijning */
+.pbar, .hscroll, .tabbar, .card, .hpanel, .sh-item, .q, .ach li, .rank-mine li, .reward { box-sizing: border-box; }
+.q, .ach li, .rank-mine li, .card:not(.soon):not(.daily-pop) { text-align: left; }
+.pb-txt b, .pv-name { text-shadow: 2px 0 var(--ink), -2px 0 var(--ink), 0 2px var(--ink), 0 -2px var(--ink), 1.5px 1.5px var(--ink), -1.5px 1.5px var(--ink), 1.5px -1.5px var(--ink), -1.5px -1.5px var(--ink), 0 3px var(--ink); }
+.dark-world .tag, .dark-world .fine-w { color: #fff; text-shadow: 0 2px 0 var(--ink); }
+/* dagelijkse pop-up */
+#dailyOv { z-index: 20; }
+.daily-pop { width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: cardin .45s cubic-bezier(.2,1.4,.4,1) both; }
+.daily-pop #dailyPopBox { width: 100%; }
+.dp-title { color: var(--ink); text-shadow: none; font-size: 30px; }
+.daily-pop .dl-head { justify-content: center; }
+.daily-pop .dl-head b { display: none; }
+/* meldingen + vliegende muntjes */
+#toasts { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: min(340px, calc(100% - 32px)); }
+.toast { box-sizing: border-box; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 5px 0 var(--ink); padding: 8px 14px; display: flex; flex-direction: column;
+  animation: toastin .4s cubic-bezier(.2,1.5,.4,1) both; transition: opacity .4s, transform .4s; }
+.toast b { font-family: var(--display); font-weight: 400; font-size: 17px; }
+.toast span { font-weight: 700; font-size: 13px; color: var(--muted); }
+.toast.ach { background: #fff3c4; }
+.toast.quest { background: #e3f9e0; }
+.toast.out { opacity: 0; transform: translateY(-10px); }
+@keyframes toastin { from { opacity: 0; transform: translateY(-16px) scale(.9); } }
+.fly-coin { position: fixed; z-index: 60; width: 24px; height: 24px; pointer-events: none; }
+.fly-coin svg { width: 100%; height: 100%; }
+@media (max-height: 780px) { .hpanel { gap: 10px; } }
+@media (prefers-reduced-motion: reduce) { .dl-day.cur, .q.done .q-btn, .coins.bump { animation: none; } }
+@media (max-height: 520px) and (orientation: landscape) {
+  #toasts { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); top: 12px; transform: none; width: min(260px, 34vw); }
+  .toast { padding: 6px 12px; } .toast b { font-size: 15px; } .toast span { font-size: 12px; }
+}
 </style>
 
 <div id="app">
@@ -549,9 +723,15 @@ body { background: var(--sky); color: var(--ink); }
   </div>
 
   <div class="overlay" id="homeOv">
-    <button class="icon-btn corner-btn" id="setBtn" aria-label="Instellingen">
+    <header class="pbar">
+      <button class="pb-me" id="pbMe" aria-label="Jouw profiel"><span id="pbAv"></span><span class="pb-txt"><b id="pbName"></b><span class="pb-lv"><i id="pbLvl">1</i><span class="xpbar"><span id="pbXp"></span></span></span></span></button>
+      <button class="coins" id="pbCoins" aria-label="Munten, naar de winkel"><svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#ffcf3a" stroke="#2b2140" stroke-width="2.6"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="pbCoinN">0</b></button>
+      <button class="icon-btn" id="setBtn" aria-label="Instellingen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    </button>
+      </button>
+    </header>
+    <div class="hscroll" id="hScroll">
+    <section class="hpanel" id="hpPlay">
     <div class="title" id="title"></div>
     <p class="tag">Stapel blokken op een klif midden in de storm. Kies hoe je wilt spelen.</p>
     <div class="modes">
@@ -577,7 +757,51 @@ body { background: var(--sky); color: var(--ink); }
       <span class="go">Samen</span>
     </button>
     <div class="controls" id="startControls"></div>
+    </section>
+    <section class="hpanel" id="hpShop" hidden>
+      <div class="hp-title">Winkel</div>
+      <div class="shop-cats" id="shopCats"></div>
+      <div class="shop-grid" id="shopGrid"></div>
+      <p class="fine-w">Munten verdien je met spelen, opdrachten en je dagelijkse beloning. Sommige skins speel je vrij met levels.</p>
+    </section>
+    <section class="hpanel" id="hpQuests" hidden>
+      <div class="hp-title">Opdrachten</div>
+      <div class="card" id="dailyBox"></div>
+      <ul class="qlist" id="questList"></ul>
+      <p class="fine-w" id="questReset"></p>
+    </section>
+    <section class="hpanel" id="hpRank" hidden>
+      <div class="hp-title">Ranglijst</div>
+      <ul class="rank-mine" id="rankMine"></ul>
+      <div class="card soon"><b>Wereldranglijst komt eraan</b><span>Zodra je een account hebt, zie je hier de beste spelers per modus.</span></div>
+    </section>
+    <section class="hpanel" id="hpProfile" hidden>
+      <div class="hp-title">Profiel</div>
+      <div class="card">
+        <div class="prf-head"><span id="prfAv"></span><div><input id="prfName" maxlength="14" autocomplete="off" spellcheck="false" aria-label="Jouw naam"><span id="prfLvl"></span></div></div>
+        <div class="prf-stats" id="prfStats"></div>
+      </div>
+      <div class="hp-title">Prestaties</div>
+      <ul class="ach" id="prfAch"></ul>
+      <div class="card soon"><b>Account</b><span>Je voortgang staat nu op dit apparaat. Binnenkort maak je een account met gebruikersnaam en wachtwoord, zodat je overal verder kunt spelen.</span></div>
+    </section>
+    </div>
+    <nav class="tabbar" aria-label="Menu">
+      <button data-tab="play" class="on"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>Spelen</button>
+      <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11.5a1.5 1.5 0 0 1-1.5 1.5H7.7a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>Winkel</button>
+      <button data-tab="quests" id="tabQuests"><svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8.5 9l1.8 1.8L14 7.5M8.5 15.5h7"/></svg>Opdrachten</button>
+      <button data-tab="rank"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17M5 20.5v-6h4.5v6M9.5 20.5V10h5v10.5M14.5 20.5v-8H19v8"/></svg>Ranglijst</button>
+      <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>Profiel</button>
+    </nav>
   </div>
+  <div class="overlay" id="dailyOv" hidden>
+    <div class="card daily-pop">
+      <div class="over-h dp-title">Dagelijkse beloning</div>
+      <div id="dailyPopBox"></div>
+      <button class="link-btn soft" id="dailyLater">Later</button>
+    </div>
+  </div>
+  <div id="toasts" aria-live="polite"></div>
 
   <div class="overlay" id="introOv" hidden>
     <div class="intro-card" id="introCard">
@@ -601,7 +825,7 @@ body { background: var(--sky); color: var(--ink); }
     </div>
     <div class="set-list">
       <button class="set-row plain" id="setIntro"><span><b>Uitleg opnieuw tonen</b><span>Zie de spelregels weer bij elke modus</span></span></button>
-      <button class="set-row plain danger" id="setReset"><span><b id="setResetLabel">Voortgang wissen</b><span>Alle records gaan terug naar nul</span></span></button>
+      <button class="set-row plain danger" id="setReset"><span><b id="setResetLabel">Voortgang wissen</b><span>Records, level, munten en skins gaan terug naar het begin</span></span></button>
     </div>
     <p class="fine">Stormtoren · versie 1.0</p>
   </div>
@@ -621,6 +845,7 @@ body { background: var(--sky); color: var(--ink); }
         <div><b id="resS2v">0</b><span id="resS2l"></span></div>
         <div><b id="resS3v">0</b><span id="resS3l"></span></div>
       </div>
+      <div class="reward" id="resReward" hidden></div>
       <button class="btn" id="resMain">Nog een keer</button>
       <div class="pr-links"><button class="link-btn soft" id="resMenu">Naar het menu</button></div>
     </div>
@@ -675,6 +900,7 @@ body { background: var(--sky); color: var(--ink); }
       <div class="podium" id="prPodium"></div>
       <ol class="pr-rest" id="prRest" hidden></ol>
       <p class="pr-me" id="prMe"></p>
+      <div class="reward" id="prReward" hidden></div>
       <button class="btn rematch" id="prRematch"><span id="prRematchLbl">Rematch</span><span class="cnt" id="prCount">0/1</span></button>
       <div class="pr-voters" id="prVoters"></div>
       <button class="btn ghost small" id="prForce" hidden>Start zonder…</button>
@@ -809,6 +1035,8 @@ function drawPieceRaw(c, type, s, ox, oy, mode) {
     rr(c, X + s * 0.2, Y + s * 0.22, s * 0.22, s * 0.09, s * 0.045); c.fill();
     c.beginPath(); c.arc(X + s * 0.5, Y + s * 0.265, s * 0.045, 0, 7); c.fill();
   }
+  // 7. extra laag van de gekozen blok-skin (strepen, hout, neon…)
+  if (mode === 'color') drawBlockStyle(c, cells, has, s, ox, oy, color);
 }
 
 /* ---------- DOM ---------- */
@@ -1256,6 +1484,7 @@ function dropActive() {
 
 /* ---------- impact / effects ---------- */
 function puff(x, y, k) {
+  if (themedBurst(x, y, k)) k *= 0.4;   // effect-skin: hartjes/sterren/vonken/confetti, met minder stofwolkjes
   const n = 5 + Math.round(12 * k);
   for (let i = 0; i < n; i++) {
     const dir = Math.random() < 0.5 ? -1 : 1;
@@ -1332,7 +1561,7 @@ function onSettle(b) {
   const err = Math.max(b.pd.maxErr || 0, Math.abs(b.angle - Math.round(b.angle / quarter) * quarter));
   const perfect = err < 0.035;
   placed++;
-  if (perfect) { streak++; perfects++; } else streak = 0;
+  if (perfect) { streak++; perfects++; if (streak > runBestStreak) runBestStreak = streak; } else streak = 0;
   sfx.settle(perfect ? streak : 0, perfect);
   b.pd.glow = 1;
   const col = COLORS[b.pd.type];
@@ -1477,6 +1706,7 @@ $('setReset').onclick = () => {
   if (performance.now() - resetArmed > 3000) { resetArmed = performance.now(); lbl.textContent = 'Tik nog een keer om te wissen'; setTimeout(() => { lbl.textContent = 'Voortgang wissen'; }, 3000); return; }
   for (const k of ['st_best', 'st_puzbest', 'st_racebest']) store(k, '0');
   best = 0; puzzleBest = 0; raceBest = 0; resetArmed = 0;
+  { const nm = profile.name; profile = freshProfile(); profile.name = nm; saveProfile(); applySkins(true); renderProfileBar(); }
   lbl.textContent = 'Voortgang gewist'; sfx.lose();
 };
 function showToastIn(row, text) {
@@ -1570,7 +1800,7 @@ function launch(m) {
   $('introIco').innerHTML = MODE_ICON(m); $('introIco').style.background = info.color + '33';
   $('introTitle').textContent = info.title;
   $('introList').innerHTML = info.rules.map((r, i) => `<li><i>${i + 1}</i><span>${r}</span></li>`).join('');
-  for (const id of ['homeOv', 'resOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'dailyOv', 'resOv']) $(id).hidden = true;
   $('introOv').hidden = false; $('introGo').focus();
   introThen = () => { store('st_seen_' + m, '1'); $('introOv').hidden = true; go(); };
 }
@@ -1604,10 +1834,10 @@ function resetRun(def) {
   buildPlatform(def);
   particles.length = rings.length = floaters.length = 0; countLabels.length = 0; gc = null; oppCountLabels.clear(); for (const c of oppCache.values()) { c.shown.clear(); c.popT.clear(); c.parts.length = c.rings.length = 0; } $('waitPill').hidden = true;
   active = null; bag = []; queue = []; result = null; winT = 0; laserHot = 0; laserFail = 0;
-  lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
+  lives = 3; placed = 0; perfects = 0; streak = 0; runBestStreak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
   state = 'play'; paused = false; shownH = -1; laserY = null; raceRunning = false; holdT = 0;
-  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv', 'prOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'dailyOv', 'pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv', 'prOv']) $(id).hidden = true;
   hud.classList.add('on'); padEl.hidden = false;
   actionsDone = 0; hint.classList.remove('off');
   clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 9000);
@@ -1987,6 +2217,8 @@ function showResult() {
   $('resBarLbl').textContent = bar.label;
   const md = $('resMedal');
   md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
+  const rw = grantRewards({ mode, party: false, score, height: maxH, medal: medal ? medal[0] : null, placed, perfects, record: isRec });
+  renderReward($('resReward'), rw);
   $('resMain').textContent = party ? 'Terug naar lobby' : 'Nog een keer';
   $('resMenu').textContent = party ? 'Party verlaten' : 'Naar het menu';
   $('resOv').hidden = false; $('resMain').focus(); renderRank();
@@ -2001,7 +2233,7 @@ function clearScene() {
 function goHome() {
   clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
   for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv', 'prOv']) $(id).hidden = true;
-  $('homeOv').hidden = false; renderHomeRecords();
+  $('homeOv').hidden = false; renderHomeRecords(); renderProfileBar(); showTab('play'); maybeShowDaily();
 }
 function renderHomeRecords() {
   $('recPuzzle').textContent = puzzleBest ? `Record: ${puzzleBest} blokken` : '';
@@ -2103,7 +2335,7 @@ function renderPartyAvail() {
 }
 const defaultName = 'Bouwer ' + (10 + Math.floor(Math.random() * 90));
 $('pName').value = store('st_name') || defaultName;
-$('pName').addEventListener('change', () => store('st_name', $('pName').value.trim()));
+$('pName').addEventListener('change', () => { const v = $('pName').value.trim().slice(0, 14); store('st_name', v); if (v && typeof profile === 'object') { profile.name = v; saveProfile(); renderProfileBar(); } });
 const myNick = () => ($('pName').value.trim() || defaultName).slice(0, 14);
 // elke speler in de party een eigen kleur: op volgorde van de (voor iedereen gelijke) peer-labels
 const peerColor = p => {
@@ -2115,7 +2347,7 @@ const peerColor = p => {
 function showPartyStep(id) { for (const s of ['pStart', 'pMode', 'pJoin', 'pLobby']) $(s).hidden = s !== id; }
 function openParty() {
   initAudio(); clearScene(); state = 'menu';
-  for (const id of ['homeOv', 'resOv', 'pauseOv', 'introOv', 'setOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'dailyOv', 'resOv', 'pauseOv', 'introOv', 'setOv']) $(id).hidden = true;
   $('partyOv').hidden = false;
   showPartyStep(party ? 'pLobby' : 'pStart');
   if (party) renderLobby();
@@ -2275,6 +2507,8 @@ function showPartyResult() {
   });
   rest.hidden = rows.length <= 3;
   $('prMe').textContent = `Jouw potje: ${score} ${score === 1 ? 'blok' : 'blokken'} · platform +${rises} · ${perfects} strak`;
+  const iWin = winners.some(w => w.me);
+  renderReward($('prReward'), grantRewards({ mode: 'puzzle', party: true, win: iWin, score, height: 0, medal: null, placed, perfects, record: false }));
   $('prOv').hidden = false; renderPartyResult();
   if (winners.some(w => w.me)) haptic('success');
 }
@@ -2347,7 +2581,7 @@ function resize() {
   }
   // zonnige lucht
   skyGrad = ctx.createLinearGradient(0, 0, 0, cv.height);
-  skyGrad.addColorStop(0, '#4fb8ff'); skyGrad.addColorStop(0.6, '#8fd6ff'); skyGrad.addColorStop(1, '#d4f3ff');
+  skyGrad.addColorStop(0, THEME.sky[0]); skyGrad.addColorStop(0.6, THEME.sky[1]); skyGrad.addColorStop(1, THEME.sky[2]);
   // bolle cartoonwolken: witte bollen met een blauwige onderkant
   cloudSprites = [0, 1, 2].map(i => {
     const c = document.createElement('canvas'), w = 520, h = 220; c.width = w; c.height = h; const g = c.getContext('2d');
@@ -2357,8 +2591,8 @@ function resize() {
       blobs.push([70 + f * (w - 140), h - 50 - r * 0.55 + rand(-6, 6), r]);
     }
     const all = () => { g.beginPath(); for (const [x, y, r] of blobs) { g.moveTo(x + r, y); g.arc(x, y, r, 0, 7); } g.rect(70, h - 70, w - 140, 40); };
-    g.fillStyle = '#cfe9ff'; g.save(); g.translate(0, 8); all(); g.fill(); g.restore();   // schaduw-onderkant
-    g.fillStyle = '#ffffff'; all(); g.fill();
+    g.fillStyle = THEME.cloud[0]; g.save(); g.translate(0, 8); all(); g.fill(); g.restore();   // schaduw-onderkant
+    g.fillStyle = THEME.cloud[1]; all(); g.fill();
     return c;
   });
 }
@@ -2499,6 +2733,8 @@ function stepFx(particles, rings, dt) {
     if (q.t === 'dust') { q.vx *= Math.exp(-dt * 5); q.vy *= Math.exp(-dt * 4); q.vy -= 10 * dt; }
     else if (q.t === 'conf') { q.vx += wind.vis * 60 * dt; q.vx *= Math.exp(-dt); q.vy = Math.min(q.vy + 120 * dt, 160); q.rot += q.vr * dt; }
     else if (q.t === 'star') { q.vx *= Math.exp(-dt * 6); q.vy *= Math.exp(-dt * 6); }
+    else if (q.t === 'heart') { q.vx *= Math.exp(-dt * 3); q.vy = q.vy * Math.exp(-dt * 3) - 30 * dt; q.rot += q.vr * 0.3 * dt; }
+    else if (q.t === 'spark') { q.vy += 700 * dt; }
     else if (q.t === 'leaf') { q.vy = Math.min(q.vy + 140 * dt, 55); q.vx = q.vx * Math.exp(-dt * 2) + Math.sin(q.life * 6 + q.ph) * 40 * dt; q.rot += q.vr * dt; }
     else { q.vy += 900 * dt; if (q.rot !== undefined) q.rot += q.vr * dt; }
     q.x += q.vx * dt; q.y += q.vy * dt;
@@ -2527,6 +2763,16 @@ function drawFx(particles, rings) {
       ctx.fillStyle = q.color; ctx.strokeStyle = INK; ctx.lineWidth = 0.9;
       ctx.beginPath(); ctx.ellipse(0, 0, q.size, q.size * 0.55, 0, 0, 7); ctx.fill(); ctx.stroke();
       ctx.restore(); ctx.globalAlpha = 1;
+    }
+    else if (q.t === 'heart') {
+      const s = q.size * (1 - k * 0.3);
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(Math.sin(q.rot) * 0.3); ctx.globalAlpha = 1 - k * k;
+      ctx.beginPath(); ctx.moveTo(0, s * 0.9); ctx.bezierCurveTo(-s * 1.6, -s * 0.2, -s * 0.6, -s * 1.3, 0, -s * 0.4); ctx.bezierCurveTo(s * 0.6, -s * 1.3, s * 1.6, -s * 0.2, 0, s * 0.9);
+      ctx.fillStyle = q.color; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.stroke(); ctx.restore(); ctx.globalAlpha = 1;
+    }
+    else if (q.t === 'spark') {
+      ctx.globalAlpha = 1 - k; ctx.strokeStyle = q.color; ctx.lineWidth = q.size; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x - q.vx * 0.03, q.y - q.vy * 0.03); ctx.stroke(); ctx.lineCap = 'butt'; ctx.globalAlpha = 1;
     }
     else if (q.t === 'drop') { ctx.fillStyle = `rgba(255,255,255,${(1 - k).toFixed(3)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - k * 0.5), 0, 7); ctx.fill(); }
     else if (q.t === 'star') {
@@ -2923,9 +3169,9 @@ function render(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   // lucht: zonnig blauw; hoe hoger je bouwt, hoe dieper het blauw en hoe meer sterretjes
   ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, cw, ch);
-  const alt = clamp(-camY / CELL * M_PER_CELL / 40, 0, 1);
+  const alt0 = clamp(-camY / CELL * M_PER_CELL / 40, 0, 1), alt = Math.max(alt0, THEME.stars);
   if (alt > 0) {
-    ctx.fillStyle = `rgba(48,40,140,${(alt * 0.55).toFixed(3)})`; ctx.fillRect(0, 0, cw, ch);
+    if (alt0 > 0) { ctx.fillStyle = `rgba(48,40,140,${(alt0 * 0.55).toFixed(3)})`; ctx.fillRect(0, 0, cw, ch); }
     for (const s of stars) {
       const a = alt * (0.5 + 0.5 * Math.sin(t * 0.002 + s.ph));
       ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
@@ -2936,12 +3182,14 @@ function render(t) {
   {
     const sx = cw * 0.18, sy = ch * 0.13 - camY * 0.05 * K, r = 34 * DPR;
     ctx.save(); ctx.translate(sx, sy); ctx.rotate(t * 0.00008);
-    ctx.fillStyle = 'rgba(255,240,170,.35)';
-    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-6 * DPR, r * 1.25); ctx.lineTo(6 * DPR, r * 1.25); ctx.lineTo(0, r * 2.3); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = `rgba(${THEME.glow},.35)`;
+    if (!THEME.moon) for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-6 * DPR, r * 1.25); ctx.lineTo(6 * DPR, r * 1.25); ctx.lineTo(0, r * 2.3); ctx.closePath(); ctx.fill(); }
     ctx.restore();
-    ctx.fillStyle = 'rgba(255,248,200,.45)'; ctx.beginPath(); ctx.arc(sx, sy, r * 1.25, 0, 7); ctx.fill();
-    ctx.fillStyle = '#ffe36b'; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.35, 0, 7); ctx.fill();
+    ctx.fillStyle = `rgba(${THEME.glow},.4)`; ctx.beginPath(); ctx.arc(sx, sy, r * 1.25, 0, 7); ctx.fill();
+    ctx.fillStyle = THEME.sun; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill();
+    if (THEME.moon) {   // maansikkel met kraters
+      ctx.fillStyle = 'rgba(40,46,120,.35)'; for (const [dx, dy, rr2] of [[0.3, -0.2, 0.18], [-0.25, 0.3, 0.13], [0.1, 0.4, 0.09]]) { ctx.beginPath(); ctx.arc(sx + dx * r, sy + dy * r, rr2 * r, 0, 7); ctx.fill(); }
+    } else { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.35, 0, 7); ctx.fill(); }
   }
   // bolle cartoonwolken (parallax)
   for (const c of clouds) {
@@ -2950,6 +3198,13 @@ function render(t) {
     ctx.globalAlpha = c.par < 0.2 ? 0.75 : 1;
     ctx.drawImage(spr, cw / 2 + c.x * cw * 0.7 - w / 2, (y < -h ? y + ch * 1.6 : y) - h / 2, w, h);
     ctx.globalAlpha = 1;
+  }
+  if (THEME.snow) {   // dwarrelende sneeuw
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    for (const r2 of rain) {
+      const y = ((r2.y + t * 0.00004 * r2.v) % 1) * ch, x = ((r2.x + Math.sin(t * 0.0006 + r2.l) * 0.02) % 1 + 1) % 1 * cw;
+      ctx.beginPath(); ctx.arc(x, y, (1.2 + r2.l * 0.12) * DPR, 0, 7); ctx.fill();
+    }
   }
 
   drawViews(t);
@@ -2990,7 +3245,7 @@ function drawHills(t, left, right, bottom) {
     if (x + w < left - 40 || x - w > right + 40) continue;
     ctx.beginPath(); ctx.moveTo(x - w, base);
     ctx.bezierCurveTo(x - w * 0.7, base - h * 1.25, x + w * 0.7, base - h * 1.25, x + w, base); ctx.closePath();
-    ctx.fillStyle = '#8fd9a0'; ctx.fill();
+    ctx.fillStyle = THEME.hill; ctx.fill();
     ctx.beginPath(); ctx.moveTo(x - w * 0.6, base - h * 0.55);
     ctx.bezierCurveTo(x - w * 0.3, base - h * 0.95, x + w * 0.2, base - h * 0.95, x + w * 0.45, base - h * 0.62);
     ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineCap = 'butt';
@@ -3124,7 +3379,7 @@ function drawSea(t, left, right, bottom, layer) {
   for (let x = left; x <= right + 10; x += 8) ctx.lineTo(x, wy(x));
   ctx.lineTo(right + 10, bottom + 40); ctx.closePath();
   if (layer) {
-    const g = ctx.createLinearGradient(0, base, 0, base + 160); g.addColorStop(0, '#3cc3f2'); g.addColorStop(1, '#1f86d6');
+    const g = ctx.createLinearGradient(0, base, 0, base + 160); g.addColorStop(0, THEME.sea[0]); g.addColorStop(1, THEME.sea[1]);
     ctx.fillStyle = g; ctx.fill();
     // schuimkop met inktrand
     ctx.beginPath();
@@ -3138,7 +3393,7 @@ function drawSea(t, left, right, bottom, layer) {
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 14 + (i % 2) * 8, y); ctx.stroke();
     }
     ctx.lineCap = 'butt';
-  } else { ctx.fillStyle = '#7fd6f5'; ctx.fill(); }
+  } else { ctx.fillStyle = THEME.seaBack; ctx.fill(); }
 }
 
 function drawLine(y, left, right, color, label) {
@@ -3158,6 +3413,503 @@ function frame(t) {
   render(t);
   requestAnimationFrame(frame);
 }
+/* ---------- profiel: XP, levels, munten, skins, dagelijkse beloning, opdrachten, prestaties ----------
+   Stap 1: alles staat op dit apparaat (localStorage). Stap 2 zet hetzelfde profiel in Supabase (account met gebruikersnaam + wachtwoord). */
+const PROFILE_KEY = 'st_profile';
+const CATS = [['blocks', 'Blokken'], ['world', 'Wereld'], ['fx', 'Effecten'], ['avatar', 'Avatar'], ['namecol', 'Naamkleur'], ['frame', 'Rand']];
+/* alle skins. level = vrij te spelen op dat level, price = te koop met munten, beide leeg = standaard */
+const ITEMS = [
+  { id: 'b_classic', cat: 'blocks', name: 'Klassiek' },
+  { id: 'b_pastel', cat: 'blocks', name: 'Pastel', level: 3 },
+  { id: 'b_ocean', cat: 'blocks', name: 'Oceaan', price: 300 },
+  { id: 'b_candy', cat: 'blocks', name: 'Snoep', price: 450 },
+  { id: 'b_wood', cat: 'blocks', name: 'Hout', level: 8 },
+  { id: 'b_neon', cat: 'blocks', name: 'Neon', price: 700 },
+  { id: 'b_gold', cat: 'blocks', name: 'Goud', level: 15 },
+  { id: 'w_sunny', cat: 'world', name: 'Zonnig' },
+  { id: 'w_sunset', cat: 'world', name: 'Zonsondergang', level: 5 },
+  { id: 'w_desert', cat: 'world', name: 'Woestijn', price: 500 },
+  { id: 'w_night', cat: 'world', name: 'Sterrennacht', price: 750 },
+  { id: 'w_snow', cat: 'world', name: 'Sneeuw', level: 12 },
+  { id: 'f_puff', cat: 'fx', name: 'Wolkjes' },
+  { id: 'f_stars', cat: 'fx', name: 'Sterren', level: 6 },
+  { id: 'f_hearts', cat: 'fx', name: 'Hartjes', price: 300 },
+  { id: 'f_sparks', cat: 'fx', name: 'Vonken', price: 450 },
+  { id: 'f_confetti', cat: 'fx', name: 'Confetti', level: 10 },
+  { id: 'a_happy', cat: 'avatar', name: 'Blij' },
+  { id: 'a_wink', cat: 'avatar', name: 'Knipoog' },
+  { id: 'a_cool', cat: 'avatar', name: 'Cool', level: 4 },
+  { id: 'a_wow', cat: 'avatar', name: 'Wauw', price: 150 },
+  { id: 'a_grr', cat: 'avatar', name: 'Fanatiek', price: 200 },
+  { id: 'a_sleepy', cat: 'avatar', name: 'Slaapkop', price: 200 },
+  { id: 'a_star', cat: 'avatar', name: 'Sterrenogen', price: 350 },
+  { id: 'a_king', cat: 'avatar', name: 'Koning', level: 20 },
+  { id: 'n_white', cat: 'namecol', name: 'Wit' },
+  { id: 'n_sky', cat: 'namecol', name: 'Lucht', price: 100 },
+  { id: 'n_mint', cat: 'namecol', name: 'Mint', price: 100 },
+  { id: 'n_pink', cat: 'namecol', name: 'Roze', price: 100 },
+  { id: 'n_gold', cat: 'namecol', name: 'Goud', level: 20 },
+  { id: 'n_rainbow', cat: 'namecol', name: 'Regenboog', price: 900 },
+  { id: 'r_none', cat: 'frame', name: 'Geen' },
+  { id: 'r_bronze', cat: 'frame', name: 'Brons', level: 5 },
+  { id: 'r_silver', cat: 'frame', name: 'Zilver', level: 10 },
+  { id: 'r_gold', cat: 'frame', name: 'Goud', level: 20 },
+  { id: 'r_rainbow', cat: 'frame', name: 'Regenboog', price: 1000 },
+];
+const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+const DEFAULT_EQ = { blocks: 'b_classic', world: 'w_sunny', fx: 'f_puff', avatar: 'a_happy', namecol: 'n_white', frame: 'r_none' };
+
+/* blok-skins: kleuren per stuk + een stijl die drawPieceRaw extra tekent */
+const BASE_COLORS = { ...COLORS };
+const BLOCK_SKINS = {
+  b_classic: { colors: BASE_COLORS },
+  b_pastel: { colors: { I: '#9ee3f7', O: '#ffe9a3', T: '#d9b8ff', L: '#ffc49e', J: '#a9bfff', S: '#a8e8b0', Z: '#ffb0c7' } },
+  b_ocean: { colors: { I: '#3fd0e0', O: '#8fe8d4', T: '#4d9bff', L: '#2fb8b0', J: '#3a6fe0', S: '#5fe0a8', Z: '#7aa8ff' }, style: 'waves' },
+  b_candy: { colors: BASE_COLORS, style: 'stripes' },
+  b_wood: { colors: { I: '#c98a55', O: '#dba468', T: '#b07040', L: '#c88452', J: '#a8693c', S: '#d29a5c', Z: '#b9784a' }, style: 'wood' },
+  b_neon: { colors: { I: '#3ff5ff', O: '#fff23f', T: '#d46cff', L: '#ff9b3f', J: '#5d95ff', S: '#4dff7a', Z: '#ff3f9b' }, style: 'neon' },
+  b_gold: { colors: { I: '#ffd23f', O: '#ffc93a', T: '#f7bd2e', L: '#ffcf45', J: '#f2b62a', S: '#ffd84f', Z: '#f9c437' }, style: 'gold' },
+};
+let BLOCK_STYLE = null;
+/* wereld-thema's: lucht, zon/maan, wolken, heuvels, zee */
+const WORLDS = {
+  w_sunny: { sky: ['#4fb8ff', '#8fd6ff', '#d4f3ff'], sun: '#ffe36b', glow: '255,240,170', cloud: ['#cfe9ff', '#ffffff'], hill: '#8fd9a0', sea: ['#3cc3f2', '#1f86d6'], seaBack: '#7fd6f5', stars: 0, ui: '79,184,255' },
+  w_sunset: { sky: ['#ff8a6b', '#ffb87a', '#ffe6b0'], sun: '#ffb347', glow: '255,200,140', cloud: ['#f7b6c2', '#ffe8e0'], hill: '#d08fb0', sea: ['#f394a6', '#8e5cab'], seaBack: '#f8b8a8', stars: 0, ui: '255,150,120' },
+  w_desert: { sky: ['#f2b56f', '#f8d7a2', '#fdf0d8'], sun: '#fff1b0', glow: '255,240,190', cloud: ['#f0d2ae', '#fff6ea'], hill: '#e3ad6c', sea: ['#55d0c4', '#2a9693'], seaBack: '#8fe0d6', stars: 0, ui: '240,170,100' },
+  w_night: { sky: ['#121845', '#262c78', '#474c9c'], sun: '#f4f1d0', moon: true, glow: '220,225,255', cloud: ['#353d7a', '#555ea6'], hill: '#35577a', sea: ['#2b4b8f', '#131d4d'], seaBack: '#3a5a9a', stars: 1, ui: '40,46,120' },
+  w_snow: { sky: ['#9fc7e8', '#cfe3f3', '#f2f8fd'], sun: '#fff8d6', glow: '255,255,240', cloud: ['#dbe7f2', '#ffffff'], hill: '#eef5fb', sea: ['#7fc3e8', '#3f86c0'], seaBack: '#bfe3f5', stars: 0, snow: true, ui: '140,190,230' },
+};
+let THEME = WORLDS.w_sunny, FX = 'f_puff';
+const NAME_COLORS = { n_white: '#ffffff', n_sky: '#8fd8ff', n_mint: '#7ef0c0', n_pink: '#ff9cc2', n_gold: '#ffcf3a', n_rainbow: 'rainbow' };
+const FRAME_COLORS = { r_none: null, r_bronze: '#d08a4a', r_silver: '#c9d3e0', r_gold: '#ffcf3a', r_rainbow: 'rainbow' };
+const RAINBOW_CSS = 'linear-gradient(90deg,#ff5c8a,#ffb347,#ffe36b,#56d364,#3fc4f5,#b46cff)';
+
+/* ---- opslag ---- */
+const todayStr = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function freshProfile() {
+  return { v: 1, name: (store('st_name') || '').slice(0, 14) || defaultName, xp: 0, level: 1, coins: 0,
+    owned: ITEMS.filter(i => !i.level && !i.price).map(i => i.id), eq: { ...DEFAULT_EQ },
+    stats: { games: 0, puzzle: 0, race: 0, survival: 0, party: 0, partyWins: 0, blocks: 0, perfects: 0, bestStreak: 0, bestPuzzle: 0, bestSurvival: 0, raceGold: 0 },
+    ach: {}, daily: { last: '', streak: 0 }, quests: { date: '', list: [] } };
+}
+let profile = (() => {
+  let p = null; try { p = JSON.parse(store(PROFILE_KEY) || 'null'); } catch (e) { p = null; }
+  const f = freshProfile();
+  if (!p || typeof p !== 'object') return f;
+  // nieuwe velden aanvullen, zodat oude profielen blijven werken
+  p.stats = { ...f.stats, ...(p.stats || {}) }; p.eq = { ...f.eq, ...(p.eq || {}) };
+  p.owned = Array.isArray(p.owned) ? [...new Set([...f.owned, ...p.owned])] : f.owned;
+  for (const k of ['ach', 'daily', 'quests']) if (!p[k] || typeof p[k] !== 'object') p[k] = f[k];
+  for (const k of ['xp', 'level', 'coins']) p[k] = Math.max(k === 'level' ? 1 : 0, Math.floor(+p[k] || 0));
+  if (typeof p.name !== 'string' || !p.name.trim()) p.name = f.name;
+  for (const c of Object.keys(DEFAULT_EQ)) if (!ITEM[p.eq[c]] || !p.owned.includes(p.eq[c])) p.eq[c] = DEFAULT_EQ[c];
+  return p;
+})();
+function saveProfile() { store(PROFILE_KEY, JSON.stringify(profile)); }
+saveProfile();
+
+/* ---- levels ---- */
+const xpNeed = L => Math.round(60 + 40 * L + 6 * L * L);   // XP van level L naar L+1
+const levelCoins = L => 40 + 10 * L;
+function addXP(n) {
+  const ups = [];
+  profile.xp += n;
+  while (profile.xp >= xpNeed(profile.level)) {
+    profile.xp -= xpNeed(profile.level); profile.level++;
+    const coins = levelCoins(profile.level); profile.coins += coins;
+    const items = ITEMS.filter(i => i.level && i.level <= profile.level && !profile.owned.includes(i.id));
+    for (const i of items) profile.owned.push(i.id);
+    ups.push({ level: profile.level, coins, items });
+  }
+  return ups;
+}
+
+/* ---- skins toepassen ---- */
+function applySkins(rebuild) {
+  const bs = BLOCK_SKINS[profile.eq.blocks] || BLOCK_SKINS.b_classic;
+  Object.assign(COLORS, bs.colors); BLOCK_STYLE = bs.style || null;
+  THEME = WORLDS[profile.eq.world] || WORLDS.w_sunny; FX = profile.eq.fx;
+  document.documentElement.style.setProperty('--ov-tint', THEME.ui);
+  document.documentElement.classList.toggle('dark-world', !!THEME.moon);
+  if (rebuild) { resize(); drawNext(); }
+}
+/* extra tekenwerk per blok-skin (na de gewone tegel), in de sprite */
+function drawBlockStyle(c, cells, has, s, ox, oy, color) {
+  if (!BLOCK_STYLE) return;
+  c.save();
+  c.beginPath(); for (const [x, y] of cells) c.rect(ox + x * s + s * 0.09, oy + y * s + s * 0.09, s * 0.82, s * 0.82); c.clip();
+  if (BLOCK_STYLE === 'stripes') {
+    c.strokeStyle = 'rgba(255,255,255,.42)'; c.lineWidth = s * 0.13;
+    const W2 = 6 * s;
+    for (let d = -W2; d < W2; d += s * 0.42) { c.beginPath(); c.moveTo(ox + d, oy + 5 * s); c.lineTo(ox + d + 5 * s, oy); c.stroke(); }
+  } else if (BLOCK_STYLE === 'wood') {
+    c.strokeStyle = shade(color, -0.28); c.lineWidth = Math.max(1, s * 0.05); c.lineCap = 'round';
+    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
+      for (const f of [0.38, 0.66]) { c.beginPath(); c.moveTo(X + s * 0.15, Y + s * f); c.quadraticCurveTo(X + s * 0.5, Y + s * (f - 0.1), X + s * 0.85, Y + s * (f + 0.03)); c.stroke(); }
+      c.fillStyle = shade(color, -0.3); c.beginPath(); c.ellipse(X + s * 0.7, Y + s * 0.5, s * 0.06, s * 0.04, 0, 0, 7); c.fill(); }
+  } else if (BLOCK_STYLE === 'waves') {
+    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = Math.max(1, s * 0.06); c.lineCap = 'round';
+    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s + s * 0.62;
+      c.beginPath(); c.moveTo(X + s * 0.15, Y); c.quadraticCurveTo(X + s * 0.32, Y - s * 0.1, X + s * 0.5, Y); c.quadraticCurveTo(X + s * 0.68, Y + s * 0.1, X + s * 0.85, Y); c.stroke(); }
+  } else if (BLOCK_STYLE === 'gold') {
+    c.fillStyle = 'rgba(255,255,255,.38)';
+    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
+      c.beginPath(); c.moveTo(X + s * 0.55, Y); c.lineTo(X + s * 0.78, Y); c.lineTo(X + s * 0.3, Y + s); c.lineTo(X + s * 0.07, Y + s); c.closePath(); c.fill(); }
+  } else if (BLOCK_STYLE === 'neon') {
+    c.restore(); c.save();
+    c.fillStyle = '#211a45';
+    for (const [x, y] of cells) c.fillRect(ox + x * s + s * 0.09, oy + y * s + s * 0.09, s * 0.82, s * 0.82);
+    for (const [x, y] of cells) {   // naden dichten tussen buurvakjes
+      if (has(x + 1, y)) c.fillRect(ox + x * s + s * 0.85, oy + y * s + s * 0.09, s * 0.3, s * 0.82);
+      if (has(x, y + 1)) c.fillRect(ox + x * s + s * 0.09, oy + y * s + s * 0.85, s * 0.82, s * 0.3);
+    }
+    c.strokeStyle = color; c.lineWidth = s * 0.1; c.lineCap = 'round'; c.shadowColor = color; c.shadowBlur = s * 0.35;
+    const i = s * 0.2;
+    c.beginPath();
+    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
+      if (!has(x, y - 1)) { c.moveTo(X + (has(x - 1, y) ? 0 : i), Y + i); c.lineTo(X + s - (has(x + 1, y) ? 0 : i), Y + i); }
+      if (!has(x, y + 1)) { c.moveTo(X + (has(x - 1, y) ? 0 : i), Y + s - i); c.lineTo(X + s - (has(x + 1, y) ? 0 : i), Y + s - i); }
+      if (!has(x - 1, y)) { c.moveTo(X + i, Y + (has(x, y - 1) ? 0 : i)); c.lineTo(X + i, Y + s - (has(x, y + 1) ? 0 : i)); }
+      if (!has(x + 1, y)) { c.moveTo(X + s - i, Y + (has(x, y - 1) ? 0 : i)); c.lineTo(X + s - i, Y + s - (has(x, y + 1) ? 0 : i)); }
+    }
+    c.stroke(); c.stroke();
+  }
+  c.restore();
+}
+/* landingseffect volgens de gekozen effect-skin (alleen voor je eigen blokken) */
+function themedBurst(x, y, k) {
+  if (fxOut !== particles || FX === 'f_puff') return false;
+  const n = 4 + Math.round(8 * k);
+  for (let i = 0; i < n; i++) {
+    const a = rand(-Math.PI * 0.95, -Math.PI * 0.05), sp = rand(60, 170) * (0.6 + k);
+    const base = { x: x + rand(-8, 8), y: y + rand(-4, 2), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0, rot: rand(0, 6), vr: rand(-6, 6) };
+    if (FX === 'f_hearts') particles.push({ ...base, t: 'heart', vy: base.vy * 0.6, max: rand(0.6, 1), size: rand(4, 6.5), color: ['#ff5c8a', '#ff8fb8', '#ff3f6e'][i % 3] });
+    else if (FX === 'f_stars') particles.push({ ...base, t: 'star', max: rand(0.45, 0.75), size: rand(2.5, 4.2), color: ['#ffd166', '#fff3b0', '#ffffff'][i % 3] });
+    else if (FX === 'f_sparks') particles.push({ ...base, t: 'spark', vy: base.vy * 1.2, max: rand(0.35, 0.6), size: rand(1.6, 2.6), color: ['#ffb347', '#ff6b3f', '#ffe36b'][i % 3] });
+    else if (FX === 'f_confetti') particles.push({ ...base, t: 'conf', vy: base.vy * 1.3, max: rand(0.8, 1.3), size: rand(3.5, 5.5), color: COLORS[TYPES[i % 7]] });
+  }
+  return true;
+}
+
+/* ---- avatars (SVG) ---- */
+function avatarSVG(id) {
+  const A = {
+    a_happy: ['#ffd23f', 'eyes', 'smile'], a_wink: ['#ff8fb8', 'wink', 'smile'], a_cool: ['#4d9bff', 'shades', 'grin'], a_wow: ['#56d364', 'eyes', 'o'],
+    a_grr: ['#ff8c42', 'brows', 'flat'], a_sleepy: ['#b46cff', 'sleep', 'small'], a_star: ['#3fc4f5', 'stars', 'smile'], a_king: ['#ffcf3a', 'eyes', 'smile', 'crown'],
+  }[id] || ['#ffd23f', 'eyes', 'smile'];
+  const [col, eyes, mouth, extra] = A, ink = '#2b2140';
+  let s = `<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="9" width="38" height="35" rx="9" fill="${col}" stroke="${ink}" stroke-width="3.5"/>`
+    + `<rect x="10" y="13" width="12" height="4" rx="2" fill="#fff" opacity=".6"/>`;
+  const eye = (x) => `<ellipse cx="${x}" cy="26" rx="3" ry="3.8" fill="${ink}"/><circle cx="${x + 1}" cy="24.6" r="1.1" fill="#fff"/>`;
+  if (eyes === 'eyes') s += eye(17) + eye(31);
+  else if (eyes === 'wink') s += eye(17) + `<path d="M28 26.5q3-3 6 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else if (eyes === 'shades') s += `<path d="M11 22h26v3q0 5-6 5h-2q-4 0-5-4h0q-1 4-5 4h-2q-6 0-6-5z" fill="${ink}"/><path d="M14 24h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`;
+  else if (eyes === 'brows') s += eye(17) + eye(31) + `<path d="M12 19l9 3M36 19l-9 3" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+  else if (eyes === 'sleep') s += `<path d="M13 27q4 3 8 0M27 27q4 3 8 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/><text x="37" y="15" font-size="9" font-family="Lilita One,sans-serif" fill="${ink}">z</text>`;
+  else if (eyes === 'stars') for (const x of [17, 31]) s += `<path d="M${x} 21l1.6 3.4 3.6.4-2.7 2.4.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.4 3.6-.4z" fill="#fff" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  if (mouth === 'smile') s += `<path d="M18 34q6 5 12 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else if (mouth === 'grin') s += `<path d="M17 33h14q-1 5-7 5t-7-5z" fill="${ink}"/><path d="M19 34h10" stroke="#fff" stroke-width="1.6"/>`;
+  else if (mouth === 'o') s += `<ellipse cx="24" cy="35.5" rx="3.6" ry="4.2" fill="${ink}"/>`;
+  else if (mouth === 'flat') s += `<path d="M19 35h10" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+  else if (mouth === 'small') s += `<path d="M21 35q3 2 6 0" stroke="${ink}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  if (extra === 'crown') s += `<path d="M13 11l3-9 5 6 3-7 3 7 5-6 3 9z" fill="#ffcf3a" stroke="${ink}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  return s + '</svg>';
+}
+/* avatar + rand als HTML */
+function avatarHTML(id, frame, cls = '') {
+  const f = FRAME_COLORS[frame];
+  const ring = !f ? '' : f === 'rainbow' ? `style="--ring:${RAINBOW_CSS}"` : `style="--ring:${f}"`;
+  return `<span class="av ${f ? 'ringed' : ''} ${cls}" ${ring}>${avatarSVG(id)}</span>`;
+}
+function nameStyle(id) { const c = NAME_COLORS[id] || '#fff'; return c === 'rainbow' ? `background:${RAINBOW_CSS};-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;-webkit-text-stroke:1.2px #2b2140` : `color:${c}`; }
+
+/* ---- dagelijkse beloning ---- */
+const DAILY = [50, 75, 100, 125, 150, 200, 300];
+function dailyState() {
+  const t = todayStr(), y = todayStr(new Date(Date.now() - 864e5)), d = profile.daily;
+  if (d.last === t) return { claimed: true, day: d.streak };
+  const next = d.last === y ? (d.streak % 7) + 1 : 1;
+  return { claimed: false, day: next };
+}
+function claimDaily() {
+  const st = dailyState(); if (st.claimed) return 0;
+  const amt = DAILY[st.day - 1];
+  profile.daily = { last: todayStr(), streak: st.day }; profile.coins += amt; saveProfile();
+  return amt;
+}
+
+/* ---- opdrachten (3 per dag, voor iedereen dezelfde op dezelfde dag) ---- */
+const QUEST_POOL = [
+  { k: 'games_puzzle', n: [2, 3], txt: n => `Speel ${n} potjes Puzzel` },
+  { k: 'games_race', n: [2, 3], txt: n => `Speel ${n} potjes Race` },
+  { k: 'games_survival', n: [2, 3], txt: n => `Speel ${n} potjes Overleven` },
+  { k: 'blocks', n: [30, 45, 60], txt: n => `Plaats ${n} blokken` },
+  { k: 'perfects', n: [8, 12, 16], txt: n => `Leg ${n} blokken strak` },
+  { k: 'puzzleScore', n: [6, 8, 10], txt: n => `Haal ${n} blokken onder de laser in één potje` },
+  { k: 'survivalH', n: [8, 10, 14], txt: n => `Bouw ${n} m hoog in Overleven` },
+  { k: 'raceMedal', n: [1], txt: () => 'Haal een medaille in Race' },
+  { k: 'party', n: [1, 2], txt: n => n > 1 ? `Speel ${n} party-potjes` : 'Speel een party-potje' },
+];
+function ensureQuests() {
+  const t = todayStr(); if (profile.quests.date === t && profile.quests.list.length) return;
+  const r = seededRandom([...t].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 17));
+  const pool = QUEST_POOL.slice(), list = [];
+  while (list.length < 3 && pool.length) {
+    const q = pool.splice(Math.floor(r() * pool.length), 1)[0], ni = Math.floor(r() * q.n.length), n = q.n[ni];
+    list.push({ k: q.k, n, prog: 0, claimed: false, coins: 60 + ni * 20 + list.length * 10, xp: 30 + ni * 10 });
+  }
+  profile.quests = { date: t, list }; saveProfile();
+}
+const questText = q => (QUEST_POOL.find(p => p.k === q.k) || { txt: () => q.k }).txt(q.n);
+const questClaimable = () => profile.quests.list.some(q => q.prog >= q.n && !q.claimed);
+
+/* ---- prestaties ---- */
+const ACHS = [
+  { id: 'first', name: 'Eerste toren', txt: 'Speel je eerste potje', coins: 50, test: s => s.games >= 1 },
+  { id: 'games10', name: 'Bouwvakker', txt: 'Speel 10 potjes', coins: 100, test: s => s.games >= 10 },
+  { id: 'games50', name: 'Architect', txt: 'Speel 50 potjes', coins: 250, test: s => s.games >= 50 },
+  { id: 'blocks500', name: 'Blokkenberg', txt: 'Plaats 500 blokken', coins: 150, test: s => s.blocks >= 500 },
+  { id: 'puz10', name: 'Laserjager', txt: '10 blokken onder de laser', coins: 100, test: s => s.bestPuzzle >= 10 },
+  { id: 'puz15', name: 'Laserkoning', txt: '15 blokken onder de laser', coins: 200, test: s => s.bestPuzzle >= 15 },
+  { id: 'surv10', name: 'Hoogvlieger', txt: '10 m hoog in Overleven', coins: 100, test: s => s.bestSurvival >= 10 },
+  { id: 'surv25', name: 'Wolkenkrabber', txt: '25 m hoog in Overleven', coins: 200, test: s => s.bestSurvival >= 25 },
+  { id: 'gold', name: 'Goud!', txt: 'Haal goud in Race', coins: 150, test: s => s.raceGold >= 1 },
+  { id: 'streak5', name: 'Strak, strakker', txt: '5 keer strak achter elkaar', coins: 100, test: s => s.bestStreak >= 5 },
+  { id: 'party1', name: 'Samen sterk', txt: 'Speel een party-potje', coins: 75, test: s => s.party >= 1 },
+  { id: 'partyWin', name: 'Kampioen', txt: 'Win een party', coins: 150, test: s => s.partyWins >= 1 },
+  { id: 'lvl10', name: 'Doorzetter', txt: 'Bereik level 10', coins: 200, test: (s, p) => p.level >= 10 },
+  { id: 'items8', name: 'Verzamelaar', txt: 'Verzamel 8 skins', coins: 150, test: (s, p) => p.owned.filter(id => ITEM[id] && (ITEM[id].level || ITEM[id].price)).length >= 8 },
+];
+function checkAchievements() {
+  const got = [];
+  for (const a of ACHS) if (!profile.ach[a.id] && a.test(profile.stats, profile)) { profile.ach[a.id] = Date.now(); profile.coins += a.coins; got.push(a); }
+  return got;
+}
+
+/* ---- einde van een potje: XP, munten, statistieken, opdrachten, prestaties ---- */
+let runBestStreak = 0;
+function grantRewards(r) {   // r: { mode, party, win, score, height, medal, placed, perfects, record }
+  const s = profile.stats;
+  s.games++; s[r.mode] = (s[r.mode] || 0) + 1; s.blocks += r.placed; s.perfects += r.perfects;
+  s.bestStreak = Math.max(s.bestStreak, runBestStreak);
+  if (r.party) { s.party++; if (r.win) s.partyWins++; }
+  let xp = 0, coins = 0;
+  if (r.mode === 'puzzle') { xp = 20 + 6 * r.score; coins = 5 + 2 * r.score; s.bestPuzzle = Math.max(s.bestPuzzle, r.score); }
+  else if (r.mode === 'race') { const mb = { gold: 40, silver: 25, bronze: 12 }[r.medal] || 0; xp = 25 + mb + r.placed; coins = 8 + Math.round(mb / 2); if (r.medal === 'gold') s.raceGold++; }
+  else { xp = 15 + Math.round(4 * r.height) + r.perfects; coins = 4 + Math.floor(r.height); s.bestSurvival = Math.max(s.bestSurvival, r.height); }
+  if (r.record) xp += 20;
+  if (r.party) { xp += 25; coins += 5; if (r.win) { xp += 50; coins += 30; } }
+  // opdrachten bijwerken
+  ensureQuests();
+  const doneBefore = profile.quests.list.map(q => q.prog >= q.n);
+  for (const q of profile.quests.list) {
+    if (q.k === 'games_' + r.mode) q.prog++;
+    else if (q.k === 'blocks') q.prog += r.placed;
+    else if (q.k === 'perfects') q.prog += r.perfects;
+    else if (q.k === 'puzzleScore' && r.mode === 'puzzle') q.prog = Math.max(q.prog, r.score);
+    else if (q.k === 'survivalH' && r.mode === 'survival') q.prog = Math.max(q.prog, Math.floor(r.height));
+    else if (q.k === 'raceMedal' && r.mode === 'race' && r.medal) q.prog = 1;
+    else if (q.k === 'party' && r.party) q.prog++;
+  }
+  const questsDone = profile.quests.list.filter((q, i) => q.prog >= q.n && !doneBefore[i]);
+  const before = { level: profile.level, xp: profile.xp, need: xpNeed(profile.level) };
+  profile.coins += coins;
+  const ups = addXP(xp);
+  const achs = checkAchievements();
+  saveProfile(); renderProfileBar();
+  for (const q of questsDone) toast('Opdracht klaar!', questText(q), 'quest');
+  for (const a of achs) toast('Prestatie: ' + a.name, `+${a.coins} munten`, 'ach');
+  return { xp, coins, before, ups, achs };
+}
+/* beloning tonen in een eindscherm */
+function renderReward(el, rw) {
+  const lv = profile.level, need = xpNeed(lv);
+  el.innerHTML = `<div class="rw-row"><span class="rw-xp">+${rw.xp} XP</span><span class="rw-coins">${COIN_SVG}+${rw.coins}</span></div>
+    <div class="rw-lv"><i>${rw.before.level}</i><span class="xpbar"><span></span></span><em>${profile.xp}/${need}</em></div>`
+    + rw.ups.map(u => `<div class="rw-up">Level ${u.level}! <span>${COIN_SVG}+${u.coins}</span>${u.items.map(i => `<b>${i.name} vrijgespeeld</b>`).join('')}</div>`).join('');
+  el.hidden = false;
+  const bar = el.querySelector('.xpbar span'), lvl = el.querySelector('.rw-lv i');
+  bar.style.transition = 'none'; bar.style.width = (rw.before.xp / rw.before.need * 100) + '%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bar.style.transition = '';
+    if (rw.ups.length) {
+      bar.style.width = '100%';
+      setTimeout(() => { lvl.textContent = lv; lvl.classList.add('pop'); bar.style.transition = 'none'; bar.style.width = '0%';
+        requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.transition = ''; bar.style.width = (profile.xp / need * 100) + '%'; })); confetti(); sfx.milestone(); }, 700);
+    } else bar.style.width = (profile.xp / need * 100) + '%';
+  }));
+}
+
+/* ---- meldingen ---- */
+const toastQ = []; let toastBusy = false;
+function toast(title, sub, kind) { toastQ.push([title, sub, kind]); if (!toastBusy) nextToast(); }
+function nextToast() {   // één melding tegelijk, zodat ze het scherm niet volstapelen
+  const t = toastQ.shift(); if (!t) { toastBusy = false; return; }
+  toastBusy = true;
+  const [title, sub, kind] = t, el = document.createElement('div'); el.className = 'toast ' + (kind || '');
+  const b = document.createElement('b'); b.textContent = title; const s = document.createElement('span'); s.textContent = sub || '';
+  el.append(b, s); $('toasts').append(el);
+  tone(880, 0.1, 'triangle', 0.06); tone(1320, 0.12, 'triangle', 0.05, null, 0.08);
+  const stay = toastQ.length ? 1500 : 2400;
+  setTimeout(() => el.classList.add('out'), stay); setTimeout(() => { el.remove(); nextToast(); }, stay + 350);
+}
+const COIN_SVG = '<svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#ffcf3a" stroke="#2b2140" stroke-width="2.6"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#e0a800" stroke-width="2"/><path d="M8.6 8.4a5 5 0 0 1 3-1.3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
+
+/* ---- homepage: profielbalk en tabbladen ---- */
+function renderProfileBar() {
+  $('pbAv').innerHTML = avatarHTML(profile.eq.avatar, profile.eq.frame);
+  const nm = $('pbName'); nm.textContent = profile.name; nm.setAttribute('style', nameStyle(profile.eq.namecol));
+  $('pbLvl').textContent = profile.level;
+  $('pbXp').style.width = (profile.xp / xpNeed(profile.level) * 100) + '%';
+  $('pbCoinN').textContent = profile.coins;
+  const dot = !dailyState().claimed || questClaimable();
+  $('tabQuests').classList.toggle('dot', dot);
+}
+let homeTab = 'play';
+function showTab(t) {
+  homeTab = t;
+  for (const [id, key] of [['hpPlay', 'play'], ['hpShop', 'shop'], ['hpQuests', 'quests'], ['hpRank', 'rank'], ['hpProfile', 'profile']]) $(id).hidden = key !== t;
+  for (const b of document.querySelectorAll('.tabbar button')) b.classList.toggle('on', b.dataset.tab === t);
+  if (t === 'shop') renderShop(); else if (t === 'quests') renderQuests(); else if (t === 'rank') renderRankTab(); else if (t === 'profile') renderProfileTab();
+  $('hScroll').scrollTop = 0;
+}
+for (const b of document.querySelectorAll('.tabbar button')) b.onclick = () => { haptic('light'); tone(520, 0.05, 'triangle', 0.05); showTab(b.dataset.tab); };
+$('pbMe').onclick = () => showTab('profile');
+$('pbCoins').onclick = () => showTab('shop');
+
+/* winkel */
+let shopCat = 'blocks';
+function itemPreview(i) {
+  if (i.cat === 'avatar') return avatarHTML(i.id, profile.eq.frame);
+  if (i.cat === 'frame') return avatarHTML(profile.eq.avatar, i.id);
+  if (i.cat === 'namecol') return `<span class="pv-name" style="${nameStyle(i.id)}">${profile.name.replace(/[<>&"]/g, '')}</span>`;
+  if (i.cat === 'world') { const w = WORLDS[i.id];
+    return `<span class="pv-world" style="background:linear-gradient(${w.sky[0]},${w.sky[1]} 55%,${w.sea[0]} 56%,${w.sea[1]})"><i style="background:${w.sun};box-shadow:0 0 0 4px rgba(${w.glow},.45)"></i>${w.moon ? '<b></b>' : ''}<em style="background:${w.hill}"></em></span>`; }
+  if (i.cat === 'fx') return `<span class="pv-fx">${{ f_puff: '☁️', f_stars: '⭐', f_hearts: '💖', f_sparks: '🔥', f_confetti: '🎉' }[i.id]}</span>`;
+  return `<canvas class="pv-blocks" data-skin="${i.id}" width="120" height="84"></canvas>`;
+}
+function drawBlockPreviews(root) {
+  for (const cv2 of root.querySelectorAll('canvas.pv-blocks')) {
+    const g = cv2.getContext('2d'), keep = { ...COLORS }, keepStyle = BLOCK_STYLE, sk = BLOCK_SKINS[cv2.dataset.skin];
+    Object.assign(COLORS, sk.colors); BLOCK_STYLE = sk.style || null;
+    g.clearRect(0, 0, 120, 84);
+    drawPieceRaw(g, 'T', 26, 8, 6, 'color'); drawPieceRaw(g, 'J', 26, 72, 6, 'color'); drawPieceRaw(g, 'O', 26, 20, 32, 'color');
+    Object.assign(COLORS, keep); BLOCK_STYLE = keepStyle;
+  }
+}
+function renderShop() {
+  const tabs = $('shopCats'); tabs.textContent = '';
+  for (const [k, l] of CATS) { const b = document.createElement('button'); b.textContent = l; b.className = k === shopCat ? 'on' : ''; b.onclick = () => { shopCat = k; renderShop(); }; tabs.append(b); }
+  const grid = $('shopGrid'); grid.innerHTML = '';
+  for (const i of ITEMS.filter(x => x.cat === shopCat)) {
+    const own = profile.owned.includes(i.id), on = profile.eq[i.cat] === i.id;
+    const card = document.createElement('button'); card.className = 'sh-item' + (on ? ' on' : '') + (!own && i.level ? ' locked' : '');
+    let act;
+    if (on) act = '<span class="sh-act on">Gekozen</span>';
+    else if (own) act = '<span class="sh-act">Kies</span>';
+    else if (i.level) act = `<span class="sh-act lock">🔒 Level ${i.level}</span>`;
+    else act = `<span class="sh-act buy ${profile.coins < i.price ? 'poor' : ''}">${COIN_SVG}${i.price}</span>`;
+    card.innerHTML = `<span class="sh-pv">${itemPreview(i)}</span><b>${i.name}</b>${act}`;
+    card.onclick = () => shopClick(i, card);
+    grid.append(card);
+  }
+  drawBlockPreviews(grid);
+}
+function shopClick(i, card) {
+  const own = profile.owned.includes(i.id);
+  if (!own && i.level) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); return; }
+  if (!own) {
+    if (profile.coins < i.price) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast('Te weinig munten', `Nog ${i.price - profile.coins} nodig`); return; }
+    if (card.dataset.arm !== '1') { card.dataset.arm = '1'; card.querySelector('.sh-act').innerHTML = `Kopen? ${COIN_SVG}${i.price}`; card.classList.add('arm'); setTimeout(() => { if (card.isConnected) { card.dataset.arm = ''; renderShop(); } }, 2500); return; }
+    profile.coins -= i.price; profile.owned.push(i.id);
+    sfx.milestone(); haptic('success');
+    const got = checkAchievements(); for (const a of got) toast('Prestatie: ' + a.name, `+${a.coins} munten`, 'ach');
+  } else { tone(660, 0.08, 'triangle', 0.08); haptic('light'); }
+  profile.eq[i.cat] = i.id; saveProfile();
+  if (['blocks', 'world', 'fx'].includes(i.cat)) applySkins(true);
+  renderProfileBar(); renderShop();
+}
+
+/* opdrachten + dagelijkse beloning */
+function renderQuests() {
+  ensureQuests();
+  renderDaily($('dailyBox'), () => renderQuests());
+  renderQuestList();
+}
+function renderDaily(box, after) {
+  const ds = dailyState();
+  box.innerHTML = '<div class="dl-head"><b>Dagelijkse beloning</b><span>' + (ds.claimed ? `Reeks: ${profile.daily.streak} ${profile.daily.streak === 1 ? 'dag' : 'dagen'} · kom morgen terug!` : `Dag ${ds.day} van 7`) + '</span></div>'
+    + '<div class="dl-days">' + DAILY.map((a, i) => {
+      const d = i + 1, got = ds.claimed ? d <= ds.day : d < ds.day, cur = !ds.claimed && d === ds.day;
+      return `<span class="dl-day${got ? ' got' : ''}${cur ? ' cur' : ''}"><em>${d}</em>${COIN_SVG}<b>${a}</b></span>`; }).join('') + '</div>'
+    + (ds.claimed ? '' : `<button class="btn dl-claim">Ophalen · ${DAILY[ds.day - 1]}</button>`);
+  const btn = box.querySelector('.dl-claim');
+  if (btn) btn.onclick = () => { const amt = claimDaily(); if (amt) { coinBurst(btn); sfx.milestone(); haptic('success'); toast('Opgehaald!', `+${amt} munten`); } renderProfileBar(); after(); };
+}
+function renderQuestList() {
+  const list = $('questList'); list.textContent = '';
+  for (const q of profile.quests.list) {
+    const done = q.prog >= q.n, li = document.createElement('li'); li.className = 'q' + (q.claimed ? ' claimed' : done ? ' done' : '');
+    li.innerHTML = `<div class="q-txt"><b></b><span class="xpbar"><span style="width:${Math.min(1, q.prog / q.n) * 100}%"></span></span><em>${Math.min(q.prog, q.n)}/${q.n}</em></div>`
+      + (q.claimed ? '<span class="q-btn got">✓</span>' : `<button class="q-btn" ${done ? '' : 'disabled'}>${COIN_SVG}${q.coins}</button>`);
+    li.querySelector('b').textContent = questText(q);
+    const btn = li.querySelector('button');
+    if (btn) btn.onclick = () => { if (q.claimed || q.prog < q.n) return; q.claimed = true; profile.coins += q.coins; const ups = addXP(q.xp); for (const u of ups) toast(`Level ${u.level}!`, `+${u.coins} munten`); checkAchievements(); saveProfile(); coinBurst(btn); sfx.milestone(); haptic('success'); renderProfileBar(); renderQuests(); };
+    list.append(li);
+  }
+  const ms = new Date(); ms.setHours(24, 0, 0, 0); const h = Math.floor((ms - Date.now()) / 36e5), m = Math.floor((ms - Date.now()) / 6e4) % 60;
+  $('questReset').textContent = `Nieuwe opdrachten over ${h} u ${m} min`;
+}
+function coinBurst(el) {   // muntjes vliegen van de knop naar je munten-teller
+  const a = el.getBoundingClientRect(), b = $('pbCoins').getBoundingClientRect();
+  for (let i = 0; i < 8; i++) {
+    const c = document.createElement('span'); c.className = 'fly-coin'; c.innerHTML = COIN_SVG;
+    c.style.left = (a.left + a.width / 2 + rand(-30, 30)) + 'px'; c.style.top = (a.top + a.height / 2 + rand(-10, 10)) + 'px';
+    document.body.append(c);
+    const dx = b.left + b.width / 2 - parseFloat(c.style.left), dy = b.top + b.height / 2 - parseFloat(c.style.top);
+    c.animate([{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: `translate(calc(-50% + ${dx * 0.4}px), calc(-50% + ${dy * 0.4 - 60}px)) scale(1.2)`, offset: 0.4 }, { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.6)` }],
+      { duration: 650 + i * 50, easing: 'cubic-bezier(.4,0,.6,1)' }).onfinish = () => c.remove();
+  }
+  setTimeout(() => { const n = $('pbCoins'); n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump'); }, 700);
+}
+
+/* ranglijst (stap 1: je eigen records; de wereldranglijst komt met accounts) */
+function renderRankTab() {
+  const s = profile.stats;
+  $('rankMine').innerHTML = [
+    ['Puzzel', puzzleBest ? `${puzzleBest} blokken` : '—', '#c77dff'], ['Race', raceBest ? fmtTime(raceBest) : '—', '#4cc9f0'],
+    ['Overleven', best ? `${best.toFixed(1)} m` : '—', '#ff5d8f'], ['Party gewonnen', String(s.partyWins), '#ffd23f'],
+  ].map(([l, v, c]) => `<li style="--mc:${c}"><span>${l}</span><b>${v}</b></li>`).join('');
+}
+/* profiel */
+function renderProfileTab() {
+  const s = profile.stats;
+  $('prfAv').innerHTML = avatarHTML(profile.eq.avatar, profile.eq.frame, 'big');
+  $('prfName').value = profile.name;
+  $('prfLvl').textContent = `Level ${profile.level} · ${profile.xp}/${xpNeed(profile.level)} XP`;
+  $('prfStats').innerHTML = [[s.games, 'Potjes'], [s.blocks, 'Blokken'], [s.perfects, 'Strak'], [s.partyWins, 'Party-winst'], [s.bestStreak, 'Langste reeks'], [Object.keys(profile.ach).length + '/' + ACHS.length, 'Prestaties']]
+    .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+  $('prfAch').innerHTML = ACHS.map(a => `<li class="${profile.ach[a.id] ? 'got' : ''}"><i>${profile.ach[a.id] ? '🏅' : '🔒'}</i><b>${a.name}</b><span>${a.txt}</span><em>${COIN_SVG}${a.coins}</em></li>`).join('');
+}
+$('prfName').addEventListener('change', () => {
+  const v = $('prfName').value.trim().slice(0, 14); if (!v) { $('prfName').value = profile.name; return; }
+  profile.name = v; saveProfile(); store('st_name', v); $('pName').value = v; renderProfileBar();
+});
+
+/* dagelijkse beloning als pop-up bij het openen van de homepage (één keer per dag) */
+let dailyShownFor = '';
+function maybeShowDaily() {
+  if (dailyState().claimed || dailyShownFor === todayStr() || $('homeOv').hidden) return;
+  dailyShownFor = todayStr();
+  const close = () => { $('dailyOv').hidden = true; };
+  renderDaily($('dailyPopBox'), () => setTimeout(close, 900));
+  $('dailyLater').onclick = close;
+  $('dailyOv').hidden = false;
+}
+
+applySkins(false);
+$('pName').value = profile.name;
+ensureQuests(); renderProfileBar(); showTab('play'); setTimeout(maybeShowDaily, 600);
 resize();
 renderHearts(false);
 window.__storm = () => ({ kind: curDef.kind, pillarSig: curDef.blocks.map(b => b.join(',')).join(';'), firstQ: queue.slice(0, 2).join(''), state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
