@@ -909,7 +909,26 @@ function colsDef(cols) {
     poleAt[x0 + i] = p;
     for (let r = 0; r < h; r++) blocks.push([x0 + i, r]);
   });
-  return { runs: [[x0, x0 + W - 1]], blocks, pillar: true, wood: true, poleAt };
+  // inkepingen van 1 diep in de vrije zijkanten van brede palen (net als de gaten bij de stam), 1 of 2 hoog.
+  // Links en rechts nooit op dezelfde of een aangrenzende rij, zodat een brede paal altijd heel blijft. De bovenste rij blijft dicht.
+  const height = i => (cols[i] && cols[i][0] ? cols[i][1] : 0), cut = new Set();
+  cols.forEach(([p], i) => {
+    if (!p) return;
+    for (const d of [-1, 1]) {
+      const j = i + d;                                   // buurman aan deze kant
+      if (cols[j] && cols[j][0] === p) continue;         // binnenkant van de paal
+      if (!(cols[i - d] && cols[i - d][0] === p)) continue;   // alleen brede palen
+      const h = height(i), other = i - d;
+      let r = Math.max(1, height(j)) + (gameRandom() < 0.5 ? 0 : 1);
+      while (r <= h - 2) {
+        const len = gameRandom() < 0.45 ? 2 : 1;
+        for (let k = 0; k < len && r <= h - 2; k++, r++) if (![r - 1, r, r + 1].some(q => cut.has(other + ',' + q))) cut.add(i + ',' + r);
+        r += 1 + Math.floor(gameRandom() * 3);           // daarna 1 tot 3 rijen dicht
+      }
+    }
+  });
+  const left = blocks.filter(([x, r]) => !cut.has((x - x0) + ',' + r));
+  return { runs: [[x0, x0 + W - 1]], blocks: left, pillar: true, wood: true, poleAt };
 }
 /* palen: een van drie vaste ontwerpen (hoogste paal = PILLAR_ROWS) */
 const POLE_LAYOUTS = [
