@@ -477,6 +477,27 @@ body { background: var(--sky); color: var(--ink); }
 .res-stats > div + div { border-left: 2px solid rgba(43,33,64,.12); }
 .res-stats b { font-family: var(--display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
 .res-stats span { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+
+/* kleine schermen: een overlay die niet past wordt scrollbaar i.p.v. boven en onder afgekapt */
+.overlay { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.overlay::before, .overlay::after { content: ""; flex: 1 0 0; min-height: 0; }
+@media (max-height: 780px) {
+  .overlay { gap: 12px; }
+  .title i { font-size: clamp(26px, 8.5vw, 38px); }
+  .tag { font-size: 15px; }
+  .modes { gap: 8px; }
+  .mode { grid-template-columns: 46px 1fr auto; gap: 12px; padding: 8px 12px 8px 10px; }
+  .mode .ico { width: 46px; height: 46px; border-radius: 13px; }
+  .mode .ico svg { width: 32px; height: 32px; }
+  .mode b { font-size: 21px; }
+  .mode span span { font-size: 13px; }
+  #startControls { display: none; }
+}
+@media (max-width: 480px) {
+  .chip { font-size: 12px; padding: 4px 10px; }
+  .chip kbd { font-size: 13px; }
+  #hint { gap: 6px; }
+}
 </style>
 
 <div id="app">
@@ -2306,12 +2327,14 @@ const TROPHY_SVG = '<svg viewBox="-24 -26 48 52" aria-hidden="true"><g stroke="#
 
 /* ---------- canvas / sprites ---------- */
 let W = 0, H = 0, DPR = 1, SCALE = 1, K = 1;
+const VIEW_TOP = 88, VIEW_BOT = 72;   // ruimte (px) voor de bovenbalk en de bedieningsknoppen
 const sprites = {}; let whiteSprite = null, shadowSprite = null, skyGrad = null, cloudSprites = [];
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2.5);
   W = cv.clientWidth || innerWidth; H = cv.clientHeight || innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
-  SCALE = Math.min(W / (CELL * 12.5), H / (CELL * 21));
+  // speelveld = de ruimte tussen de bovenbalk en de knoppen onderin, zodat de toren nooit achter de knoppen valt
+  SCALE = Math.min(W / (CELL * 12.5), (H - VIEW_TOP - VIEW_BOT) / (CELL * 19.5));
   K = SCALE * DPR;
   const s = Math.max(8, Math.ceil(CELL * K));
   for (const t of TYPES) {
@@ -2703,7 +2726,8 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
   const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
   const sx = shake > 0.05 ? rand(-shake, shake) * DPR : 0, sy = shake > 0.05 ? rand(-shake, shake) * DPR : 0;
-  const ox = vx + vw / 2 + (opt.offX || 0) * K + sx, oy = vy + vh * 0.5 - (opt.cam !== undefined ? opt.cam : camY) * K + sy;
+  const fullView = !opt.shared && vp.w === W && vp.h === H, vdy = fullView ? (VIEW_TOP - VIEW_BOT) / 2 * DPR : 0;   // midden van het speelveld i.p.v. van het scherm
+  const ox = vx + vw / 2 + (opt.offX || 0) * K + sx, oy = vy + vh * 0.5 + vdy - (opt.cam !== undefined ? opt.cam : camY) * K + sy;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20, top = (vy - oy) / K - 20;
   if (!opt.shared) drawHills(t, left, right, bottom);
