@@ -3637,6 +3637,14 @@ function frame(t) {
    Skins gaan open met party-wins en koop je daarna met munten; levels geven munten.
    Stap 1: alles staat op dit apparaat (localStorage). Stap 2 zet hetzelfde profiel in Supabase (account met gebruikersnaam + wachtwoord). */
 const PROFILE_KEY = 'st_profile';
+/* grote reset: verhoog RESET_EPOCH om bij iedereen de gastvoortgang (profiel + records) één keer te wissen.
+   Naam en instellingen blijven staan; accounts op de server worden hier niet door geraakt. */
+const RESET_EPOCH = '2';
+if (store('st_epoch') !== RESET_EPOCH) {
+  try { for (const k of ['st_profile', 'st_best', 'st_puzbest', 'st_racebest']) localStorage.removeItem(k); } catch (e) {}
+  best = 0; puzzleBest = 0; raceBest = 0; renderHomeRecords();
+  store('st_epoch', RESET_EPOCH);
+}
 const CATS = [['blocks', 'Blokken'], ['world', 'Wereld'], ['fx', 'Effecten'], ['avatar', 'Avatar'], ['namecol', 'Naamkleur'], ['frame', 'Rand']];
 /* alle skins. level = vrij te spelen op dat level, price = te koop met munten, beide leeg = standaard */
 const ITEMS = [   // wins = aantal party-wins om de skin vrij te spelen, price = daarna kopen met munten; beide leeg = standaard
