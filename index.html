@@ -901,28 +901,23 @@ function generatePillar() {
   def.kind = PLATFORM_KINDS[k];
   return def;
 }
-/* kolommen → platform. cols: per kolom { p: paal-id (null = gat), h: hoogte }; notches: [kolom, rij] vakjes die eruit gaan.
-   Wordt willekeurig gespiegeld, zodat dezelfde vorm er niet altijd hetzelfde uitziet. */
-function colsDef(cols, notches = []) {
-  const W = cols.length, mirror = gameRandom() < 0.5, x0 = -Math.floor(W / 2), poleAt = {}, blocks = [];
-  cols.forEach((c, i) => {
-    const x = x0 + (mirror ? W - 1 - i : i);
-    if (!c.p) return;
-    poleAt[x] = c.p;
-    for (let r = 0; r < c.h; r++) if (!notches.some(([ni, nr]) => ni === i && nr === r)) blocks.push([x, r]);
+/* kolommen → platform. cols: per kolom [paal-id (null = gat), hoogte]. Palen met hetzelfde id vormen samen één brede paal. */
+function colsDef(cols) {
+  const W = cols.length, x0 = -Math.floor(W / 2), poleAt = {}, blocks = [];
+  cols.forEach(([p, h], i) => {
+    if (!p) return;
+    poleAt[x0 + i] = p;
+    for (let r = 0; r < h; r++) blocks.push([x0 + i, r]);
   });
   return { runs: [[x0, x0 + W - 1]], blocks, pillar: true, wood: true, poleAt };
 }
 /* palen: een van drie vaste ontwerpen (hoogste paal = PILLAR_ROWS) */
 const POLE_LAYOUTS = [
-  { cols: [['a', 6], ['a', 5], [null, 0], ['b', 4], ['c', 8], ['c', 9]], notches: [[1, 2], [4, 5]] },   // breed blok · dun paaltje · breed hoog blok
-  { cols: [['a', 6], ['a', 5], ['b', 8], [null, 0], ['c', 9]], notches: [[0, 3]] },                  // breed blok · twee dunne hoge palen
-  { cols: [['a', 5], ['b', 9], [null, 0], ['c', 5], [null, 0], ['d', 5]], notches: [] },             // losse dunne palen
+  [['a', 6], ['a', 6], [null, 0], ['b', 5], ['c', 9], ['c', 9]],              // breed blok · gat · dun paaltje tegen een breed hoog blok
+  [['a', 6], ['a', 6], ['b', 8], [null, 0], ['c', 9]],                         // breed blok met een dunne paal ertegen · gat · dunne hoge paal
+  [['a', 5], ['b', 9], [null, 0], ['c', 5], [null, 0], ['d', 5]],             // losse dunne palen
 ];
-function genPoles() {
-  const L = POLE_LAYOUTS[Math.floor(gameRandom() * POLE_LAYOUTS.length)];
-  return colsDef(L.cols.map(([p, h]) => ({ p, h })), L.notches);
-}
+function genPoles() { return colsDef(POLE_LAYOUTS[Math.floor(gameRandom() * POLE_LAYOUTS.length)]); }
 function genTrunk() {
   const blocks = [];
   for (let r = 0; r < PILLAR_ROWS; r++) blocks.push([0, r]);          // de stam
