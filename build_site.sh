@@ -1,3 +1,3 @@
 #!/bin/sh
-# Maakt de versie voor de eigen site (stormtoren.cordain.nl): index.html met doctype + mobiele meta-tags ervoor.
-cd "$(dirname "$0")" && mkdir -p site && cat site_head.html index.html > site/index.html && echo "site/index.html klaar"
+# Maakt site/index.html voor de eigen site (verdoezeld). Zie build_site.js.
+cd "$(dirname "$0")" && node build_site.js

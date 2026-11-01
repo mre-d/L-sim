@@ -1,0 +1,7 @@
+{
+  "name": "stormtoren",
+  "private": true,
+  "description": "Stormtoren - bouwscript voor de eigen site",
+  "scripts": { "build": "node build_site.js" },
+  "devDependencies": { "javascript-obfuscator": "4.1.1" }
+}
