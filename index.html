@@ -685,6 +685,7 @@ const sfx = {
   milestone() { [0, 4, 7, 12, 16].forEach((s, i) => tone(523.25*Math.pow(2, s/12), 0.3, 'triangle', 0.11, null, i*0.075)); },
   thunder() { noise(2.2, 0.22, 'lowpass', 160, 0.7, 0, 0.08); noise(0.5, 0.08, 'lowpass', 500, 0.7, 0.05, 0.02); },
   gust() { noise(1.6, 0.06, 'bandpass', 900, 0.6, 0, 0.5); },
+  rumble() { noise(0.8, 0.22, 'lowpass', 220, 0.8, 0, 0.05); tone(90, 0.7, 'sine', 0.16, 60); tone(330, 0.12, 'triangle', 0.06, 495, 0.55); },
   over() { [12, 7, 4, 0].forEach((s, i) => tone(392*Math.pow(2, s/12), 0.35, 'triangle', 0.1, null, i*0.12)); },
 };
 
@@ -718,7 +719,8 @@ const PILLAR_LAYOUT = [
 const PILLAR_ROWS = PILLAR_LAYOUT.length;
 const PUZZLE_DEF = { runs: [[-1, 0]], blocks: [], pillar: true };
 PILLAR_LAYOUT.forEach((cols, r) => cols.forEach(c => PUZZLE_DEF.blocks.push([c, r])));
-const PUZZLE_START_ROWS = PILLAR_ROWS + 2, RISE_EVERY = 10, RISE_ROWS = 3;
+const PUZZLE_START_ROWS = PILLAR_ROWS + 4;   // laser staat vast; je begint met 2 vakjes meer ruimte
+const RISE_TIME = 0.7;                        // duur van de platform-animatie (s)
 
 /* omtrek van een groep vakjes als gesloten lus. Eén doorlopende rand zonder naden,
    zodat blokken niet achter de voegen tussen losse stenen blijven haken. */
@@ -743,14 +745,43 @@ function outlineLoops(cells) {
   }
   return loops;
 }
-let curDef = SURVIVAL_DEF, groundBody = null, staticCells = [], staticLoops = [];
+let curDef = SURVIVAL_DEF, groundBody = null, staticCells = [], staticLoops = [], baseCells = [];
+let rise = null, pendingRise = 0, rises = 0;
+const groundOff = () => (groundBody ? groundBody.getPosition().y : 0);   // hoeveel vakjes het platform is gestegen (negatief = omhoog)
+function refreshStaticCells() { const o = groundOff(); staticCells = baseCells.map(([x, y]) => [x, y + o]); }
+/* puzzel: valt er een blok in zee, dan schuift het hele platform (pilaar + alle blokken erop) één vakje omhoog.
+   De grond wordt even kinematisch en duwt alles soepel mee; daarna staat hij weer vast, precies op het raster. */
+function platformRise() {
+  if (rise) { pendingRise++; return; }
+  const from = groundOff();
+  rise = { to: Math.round(from) - 1, t: 0 };
+  groundBody.setKinematic(); groundBody.setLinearVelocity(Vec2(0, -1 / RISE_TIME));
+  for (const P of pieces) if (P.body) P.body.setAwake(true);
+  rises++; updatePuzzleTag();
+  sfx.rumble(); addShake(4); haptic('heavy');
+  showBanner('Platform omhoog!', 'Een vakje dichter bij de laser');
+}
+function updateRise(dt) {
+  if (!rise) return;
+  rise.t += dt;
+  if (rise.t >= RISE_TIME) {
+    groundBody.setLinearVelocity(Vec2(0, 0)); groundBody.setTransform(Vec2(0, rise.to), 0); groundBody.setStatic();
+    rise = null;
+    // stofwolkjes langs de randen van de plaat
+    const off = groundOff() * CELL;
+    for (const [a, b] of curDef.runs) { puff((a - 0.5) * CELL, CELL + off, 0.6); puff((b + 0.5) * CELL, CELL + off, 0.6); }
+    if (pendingRise > 0) { pendingRise--; platformRise(); }
+  }
+  refreshStaticCells();
+}
 function buildPlatform(def) {
   if (groundBody) world.destroyBody(groundBody);
   // vakjes in physics-coördinaten: kolom c → x c-0.5 .. c+0.5 ; plaat y 0..1 ; rij r → y -(r+1) .. -r
   const cells = [];
   for (const [a, b] of def.runs) for (let c = a; c <= b; c++) cells.push([c - 0.5, 0]);
   for (const [c, r] of def.blocks) cells.push([c - 0.5, -(r + 1)]);
-  staticCells = cells;   // massieve vakjes, voor de vrij-controle van het vallende blok (de physics-rand zelf is hol)
+  baseCells = cells; staticCells = cells;   // massieve vakjes, voor de vrij-controle van het vallende blok (de physics-rand zelf is hol)
+  rise = null; pendingRise = 0;
   groundBody = world.createBody({ type: 'static' });
   staticLoops = outlineLoops(cells);
   for (const loop of staticLoops) groundBody.createFixture(Chain(loop.map(([x, y]) => Vec2(x, y)), true), { friction: 0.9, restitution: 0 });
@@ -836,7 +867,7 @@ let wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 };
 let lightningT = rand(8, 18);
 let actionsDone = 0;
 let mode = 'survival', laserY = null, laserTarget = 0, laserRows = 0, laserHot = 0, laserFail = 0, winT = 0, result = null;
-let score = 0, dropped = 0, nextRise = 10, puzzleBest = parseInt(store('st_puzbest') || '0', 10) || 0;
+let score = 0, dropped = 0, puzzleBest = parseInt(store('st_puzbest') || '0', 10) || 0;
 const particles = [], rings = [], floaters = [];
 
 function drawFromBag() {
@@ -1059,7 +1090,7 @@ function loseLife(b) {
   sfx.splash(); setTimeout(() => sfx.lose(), 150);
   addShake(8); hurtA = 1;
   haptic('heavy');
-  if (mode === 'puzzle') { dropped++; floater(b.position.x, SEA_Y - 24, 'In zee!', '#d6ecf2', 14); return; }
+  if (mode === 'puzzle') { dropped++; floater(b.position.x, SEA_Y - 24, 'In zee!', '#ffffff', 14); if (state === 'play') platformRise(); return; }
   if (mode === 'race') { penalty += RACE_PENALTY; floater(b.position.x, SEA_Y - 24, `+${RACE_PENALTY} s`, '#ff8fb0', 16); return; }
   renderHearts(true);
   if (lives <= 0 && state === 'play') { state = 'dying'; overTimer = 1.6; active = null; }
@@ -1256,7 +1287,7 @@ const MODE_INFO = {
   puzzle: { title: 'Puzzel', color: '#c77dff', rules: [
     'Bouw rond de stenen pilaar. Schuif blokken opzij in de gaten.',
     'Alles moet onder de laser blijven. Raakt een blok de laser, dan is het voorbij.',
-    'Elke 10 blokken gaat de laser omhoog. Hoeveel krijg jij eronder?' ] },
+    'Valt er een blok in zee, dan schuift het platform een vakje omhoog, dichter naar de laser.' ] },
   race: { title: 'Race', color: '#4cc9f0', rules: [
     'Bouw zo snel mogelijk een toren tot aan de finishlijn op 10 meter.',
     'Houd je toren 1,5 seconde boven de lijn om te finishen.',
@@ -1335,7 +1366,7 @@ function startPuzzle() {
   mode = 'puzzle';
   resetRun(PUZZLE_DEF);
   laserRows = PUZZLE_START_ROWS; laserTarget = -laserRows * CELL; laserY = laserTarget;
-  score = 0; dropped = 0; nextRise = RISE_EVERY;
+  score = 0; dropped = 0; rises = 0;
   camY = (laserY - 4 * CELL) / 2 - 3 * CELL;
   livesEl.hidden = true; $('lvlTag').hidden = false;
   hval.textContent = '0'; $('hunit').textContent = 'onder de laser';
@@ -1343,7 +1374,8 @@ function startPuzzle() {
 }
 function updatePuzzleTag() {
   $('lvlNum').textContent = puzzleBest ? `Record ${puzzleBest}` : 'Puzzel';
-  $('lvlName').textContent = `Laser stijgt bij ${nextRise}`;
+  const room = Math.max(0, PUZZLE_START_ROWS - PILLAR_ROWS - rises);
+  $('lvlName').textContent = rises ? `Platform +${rises} · nog ${room} vrij` : `Nog ${room} vakjes vrij`;
 }
 function puzzleCheck(dt) {
   let above = null, count = 0;
@@ -1359,11 +1391,6 @@ function puzzleCheck(dt) {
   if (above) {
     laserHot = 1;
     if (Math.random() < 0.6) particles.push({ t: 'star', x: above.position.x + rand(-CELL, CELL), y: laserY, vx: rand(-80, 80), vy: rand(-90, 30), life: 0, max: rand(0.2, 0.4), size: rand(1.5, 3), color: '#ff7aa2' });
-  }
-  if (score >= nextRise) {
-    nextRise += RISE_EVERY; laserRows += RISE_ROWS; laserTarget = -laserRows * CELL;
-    showBanner('Laser omhoog!', `+${RISE_ROWS * M_PER_CELL} m ruimte`);
-    sfx.milestone(); confetti(); updatePuzzleTag(); haptic('success');
   }
 }
 function fail(reason, b) {
@@ -1420,7 +1447,7 @@ function showResult() {
     isRec = score > puzzleBest;
     if (isRec) { puzzleBest = score; store('st_puzbest', String(score)); }
     title = 'Laser geraakt!'; big = String(score); unit = 'blokken onder de laser';
-    stats = [[puzzleBest, 'Record'], [(laserRows * M_PER_CELL).toFixed(1), 'Laser (m)'], [dropped, 'In zee']];
+    stats = [[puzzleBest, 'Record'], [placed, 'Geplaatst'], [`+${rises}`, 'Platform']];
   } else if (mode === 'race') {
     const t = result && result.time || raceT + penalty;
     isRec = !raceBest || t < raceBest;
@@ -1544,6 +1571,7 @@ function update(dt) {
     acc += dt; let n = 0;
     while (acc >= STEP_S && n < 8) { world.step(STEP_S, 16, 8); acc -= STEP_S; n++; }
     if (n === 8) acc = 0;
+    updateRise(dt);
     for (const b of pieces) syncPiece(b);
     handleContacts();
     for (const b of pieces.slice()) {
@@ -1840,22 +1868,23 @@ function drawHills(t, left, right, bottom) {
 
 /* bruin rotseiland onder elke plaat */
 function drawIslands() {
+  const off = groundOff() * CELL;   // de rots groeit mee als het platform stijgt
   const jag = n => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
   for (const [a, b2] of curDef.runs) {
-    const x0 = (a - 0.5) * CELL, x1 = (b2 + 0.5) * CELL, w = x1 - x0, n = 6, depth = SEA_Y + CELL * 0.5;
+    const x0 = (a - 0.5) * CELL, x1 = (b2 + 0.5) * CELL, w = x1 - x0, n = 6, depth = SEA_Y + CELL * 0.5 - off, top0 = CELL + off;
     const spread = curDef.runs.length === 1 ? -w * 0.18 : Math.min(w * 0.15, 14);
-    const pts = [[x0 + 2, CELL]];
-    for (let i = 1; i <= n; i++) pts.push([x0 + spread * i / n + (jag(a * 7 + i) - 0.5) * 10, CELL + i * depth / n]);
-    for (let i = n; i >= 1; i--) pts.push([x1 - spread * i / n + (jag(b2 * 5 + i + 40) - 0.5) * 10, CELL + i * depth / n]);
-    pts.push([x1 - 2, CELL]);
+    const pts = [[x0 + 2, top0]];
+    for (let i = 1; i <= n; i++) pts.push([x0 + spread * i / n + (jag(a * 7 + i) - 0.5) * 10, top0 + i * depth / n]);
+    for (let i = n; i >= 1; i--) pts.push([x1 - spread * i / n + (jag(b2 * 5 + i + 40) - 0.5) * 10, top0 + i * depth / n]);
+    pts.push([x1 - 2, top0]);
     ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
     ctx.fillStyle = '#b97f55'; ctx.fill();
     ctx.save(); ctx.clip();
     ctx.fillStyle = '#9a6442';                                    // schaduwkant
-    ctx.fillRect(x1 - Math.max(10, w * 0.28), CELL, w, depth + 20);
+    ctx.fillRect(x1 - Math.max(10, w * 0.28), top0, w, depth + 20);
     ctx.strokeStyle = 'rgba(43,33,64,.25)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';   // gesteentelagen
-    for (let i = 1; i < 5; i++) { const yy = CELL + i * depth / 5.5; ctx.beginPath(); ctx.moveTo(x0 + 6 + jag(i) * 10, yy); ctx.lineTo(x0 + w * 0.45 + jag(i + 9) * 16, yy + 6); ctx.stroke(); }
-    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x0, CELL, Math.max(6, w * 0.12), depth);
+    for (let i = 1; i < 5; i++) { const yy = top0 + i * depth / 5.5; ctx.beginPath(); ctx.moveTo(x0 + 6 + jag(i) * 10, yy); ctx.lineTo(x0 + w * 0.45 + jag(i + 9) * 16, yy + 6); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x0, top0, Math.max(6, w * 0.12), depth);
     ctx.restore(); ctx.lineCap = 'butt';
     ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
     ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
@@ -1864,19 +1893,20 @@ function drawIslands() {
 
 /* plaat + pilaar: één silhouet met dikke inktrand, aarde/steen binnenin, gras met plukjes op elke vrije bovenkant */
 function drawStatic() {
-  const cells = staticCells;   // [x, ybovenkant] in vakjes; x = kolom - 0.5
+  const cells = staticCells;   // [x, ybovenkant] in vakjes; x = kolom - 0.5 (al verschoven met het stijgende platform)
+  const off = groundOff() * CELL;
   const key = (x, y) => x + ',' + y, set = new Set(cells.map(c => key(c[0], c[1]))), has = (x, y) => set.has(key(x, y));
   // gaten in de pilaar: donkere uitsparing (achter het silhouet)
   if (curDef.pillar) for (let r = 0; r < PILLAR_ROWS; r++) for (const c of [-1, 0]) {
     if (curDef.blocks.some(b => b[0] === c && b[1] === r)) continue;
-    const x = (c - 0.5) * CELL, y = -(r + 1) * CELL;
+    const x = (c - 0.5) * CELL, y = -(r + 1) * CELL + off;
     ctx.fillStyle = '#5a4c7a'; ctx.fillRect(x, y, CELL, CELL);
     ctx.fillStyle = '#3e3360'; ctx.fillRect(x, y, CELL, 7);
     ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(c === -1 ? x : x + CELL - 8, y, 8, CELL);
   }
   // vulling per vakje
   for (const [sx, sy] of cells) {
-    const x = sx * CELL, y = sy * CELL, slab = sy === 0;
+    const x = sx * CELL, y = sy * CELL, slab = Math.abs(sy * CELL - off) < 0.5;
     if (slab) {   // aarde
       ctx.fillStyle = '#c98a5a'; ctx.fillRect(x, y, CELL, CELL);
       ctx.fillStyle = '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
@@ -1887,14 +1917,14 @@ function drawStatic() {
       ctx.fillStyle = '#a5a9d0'; ctx.fillRect(x, y + CELL * 0.7, CELL, CELL * 0.3);
       ctx.fillStyle = 'rgba(43,33,64,.35)';
       ctx.fillRect(x, y + CELL - 2, CELL, 2);
-      const r = Math.round(-sy);
+      const r = Math.round(-sy + off / CELL);
       if (r % 2) ctx.fillRect(x + CELL / 2 - 1, y, 2, CELL - 2); else ctx.fillRect(x - 1, y, 2, CELL - 2);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x + 5, y + 5, 7, 3);
     }
   }
   // inktrand om het hele silhouet
   ctx.beginPath();
-  for (const loop of staticLoops) { loop.forEach(([x, y], i) => i ? ctx.lineTo(x * CELL, y * CELL) : ctx.moveTo(x * CELL, y * CELL)); ctx.closePath(); }
+  for (const loop of staticLoops) { loop.forEach(([x, y], i) => i ? ctx.lineTo(x * CELL, y * CELL + off) : ctx.moveTo(x * CELL, y * CELL + off)); ctx.closePath(); }
   ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
   // gras op elke vrije bovenkant, met bolle plukjes die over de rand hangen
   for (const [sx, sy] of cells) {
