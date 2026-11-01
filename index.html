@@ -1404,13 +1404,28 @@ function puzzleCheck(dt) {
 }
 /* puzzel-einde: de toren bevriest en de blokken worden één voor één geteld (van onder naar boven),
    met een cijfertje boven elk blok, een steeds hoger toontje en de teller bovenin. Tik om over te slaan. */
-let countList = [], countIdx = 0, countT = 0, countDone = false;
+/* puzzel-einde in twee stappen:
+   1. floepen: elk blok dat de laser raakt of erboven uitsteekt (zelfde regel als het game-over-moment) zwelt op en verdwijnt;
+   2. tellen: de overgebleven blokken worden één voor één geteld (van onder naar boven). Tik om over te slaan. */
+const POP_GROW = 0.16, POP_GAP = 0.2;
+let countList = [], countIdx = 0, countT = 0, countDone = false, popList = [], popIdx = 0, popPhase = false;
 const countLabels = [];
+const touchesLaser = b => b.bounds.min.y < laserTarget - 1.5;
 function startCounting() {
   state = 'counting';
-  countList = pieces.filter(b => !b.pd.lost && b.pd.ever && b.position.y < SEA_Y).sort((a, b) => b.position.y - a.position.y);
-  score = countList.length; countIdx = 0; countT = 0.35; countDone = false; countLabels.length = 0;
+  const alive = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y);
+  popList = alive.filter(touchesLaser).sort((a, b) => a.bounds.min.y - b.bounds.min.y);   // hoogste eerst
+  countList = alive.filter(b => !touchesLaser(b) && b.pd.ever).sort((a, b) => b.position.y - a.position.y);
+  score = countList.length; countIdx = 0; countDone = false; countLabels.length = 0;
+  popIdx = 0; popPhase = popList.length > 0; countT = popPhase ? 0.25 : 0.35;
   hval.textContent = '0';
+}
+function popBurst(b) {   // het blok verdwijnt met een wolkje, sterretjes en een floep
+  puff(b.position.x, b.position.y, 1); puff(b.position.x, b.position.y, 0.6);
+  sparkle(b.position.x, b.position.y, '#ffffff', 10); sparkle(b.position.x, b.position.y, COLORS[b.pd.type], 8);
+  rings.push({ x: b.position.x, y: b.position.y, r: 8, life: 0, max: 0.35, color: '255,255,255', w: 4 });
+  tone(420, 0.12, 'sine', 0.12, 1100); noise(0.08, 0.06, 'highpass', 2500);
+  haptic('medium'); removePiece(b);
 }
 function countStep() {
   const b = countList[countIdx++];
@@ -1422,12 +1437,18 @@ function countStep() {
 }
 function updateCounting(dt) {
   for (const l of countLabels) l.t += dt;
-  for (const b of pieces) {   // de physics staat stil, dus oplichten en verende squash hier zelf laten uitdoven
+  for (const b of pieces.slice()) {   // de physics staat stil, dus oplichten, squash en het opzwellen hier zelf bijwerken
     const d = b.pd; d.sqv += -0.32 * d.sq; d.sqv *= 0.78; d.sq += d.sqv;
+    if (d.popping !== undefined) { d.popping += dt; d.flash = 1; if (d.popping >= POP_GROW) popBurst(b); continue; }
     d.flash = Math.max(0, d.flash - dt * 4); d.glow = Math.max(0, d.glow - dt * 1.5);
   }
   countT -= dt;
   if (countT > 0) return;
+  if (popPhase) {
+    if (popIdx < popList.length) { popList[popIdx++].pd.popping = 0; tone(300, 0.05, 'triangle', 0.05, 380); countT = POP_GAP; }
+    else { popPhase = false; countT = 0.45; }   // even ademhalen voor het tellen
+    return;
+  }
   if (countIdx < countList.length) {
     countStep();
     // eerst rustig, dan steeds sneller; samen nooit veel langer dan ~3 s
@@ -1440,6 +1461,8 @@ function updateCounting(dt) {
 }
 function skipCounting() {
   if (state !== 'counting') return;
+  for (const b of popList) if (b.body) removePiece(b);
+  popPhase = false;
   while (countIdx < countList.length) { const b = countList[countIdx++]; countLabels.push({ x: b.position.x, y: b.position.y, n: countIdx, t: 1 }); }
   setCount(countList.length); gameOver();
 }
@@ -1706,6 +1729,7 @@ function blit(d, mode) { ctx.drawImage(sprites[d.type][mode], d.sx, d.sy, d.box.
 function drawBody(b) {
   const d = b.pd;
   ctx.save(); ctx.translate(b.position.x, b.position.y);
+  if (d.popping !== undefined) { const g = 1 + 0.35 * easeOutBack(Math.min(1, d.popping / POP_GROW)); ctx.scale(g, g); }   // opzwellen voor het floepen
   if (d.sq) ctx.scale(1 + d.sq * 0.6, 1 - d.sq);
   ctx.rotate(b.angle);
   blit(d, 'color');
