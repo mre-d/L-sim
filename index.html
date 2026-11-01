@@ -751,7 +751,7 @@ function drawPieceRaw(c, type, s, ox, oy, mode) {
     for (const [x, y] of cells) c.fillRect(ox + x * s, oy + y * s, s, s);
     return;
   }
-  const color = COLORS[type], o = Math.max(1.5, s * 0.09);
+  const color = mode === 'stone' ? '#c3c7e6' : COLORS[type], o = Math.max(1.5, s * 0.09);   // 'stone' = begroeide steenversie
   // 1. silhouet in inkt
   c.fillStyle = INK;
   for (const [x, y] of cells) c.fillRect(ox + x * s, oy + y * s, s, s);
@@ -1611,6 +1611,7 @@ function popBurst(b) {   // het blok verdwijnt met een wolkje, sterretjes en een
 }
 function countStep() {
   const b = countList[countIdx++];
+  b.pd.bloom = true;   // opbloeien: terug naar de eigen kleur
   b.pd.flash = 1; b.pd.sq = 0.12; b.pd.sqv = 0;
   countLabels.push({ x: b.position.x, y: b.position.y, n: countIdx, t: 0 });
   const semi = Math.min(countIdx - 1, 24);
@@ -1655,8 +1656,72 @@ function skipCounting() {
    Wie het meest heeft, telt als laatste alleen door en krijgt de trofee. */
 let gc = null, waitT = 0;                       // { tick, max, t, done, parts, winners, endT }
 const oppCountLabels = new Map();    // peer -> [{ id, n, t }]
+/* ---------- begroeien (party): wie klaar is, wordt door de natuur overgenomen ----------
+   grow 0..1 per blok: de kleur zakt weg naar steen en er groeit mos op elke vrije bovenkant (in wereldrichting).
+   Een golf van onder naar boven; bij het samen tellen bloeit elk getelde blok weer op naar zijn eigen kleur. */
+const GROW_GAP = 0.08, GROW_DUR = 0.45;
+function startOwnGrowth() {
+  const list = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y).sort((a, b) => b.position.y - a.position.y);
+  list.forEach((b, i) => { b.pd.growT = -i * GROW_GAP; b.pd.grow = 0; b.pd.bloom = false; });
+}
+function advanceOwnGrowth(dt) {
+  for (const b of pieces) {
+    const d = b.pd; if (d.growT === undefined) continue;
+    if (d.bloom) { d.grow = Math.max(0, d.grow - dt * 4); continue; }
+    const before = d.growT; d.growT += dt;
+    if (before < 0 && d.growT >= 0) leafBurst(b.position.x, b.bounds.min.y, true);
+    d.grow = clamp(d.growT / GROW_DUR, 0, 1);
+  }
+}
+function leafBurst(x, y, sound) {
+  for (let i = 0; i < 3; i++) particles.push({ t: 'leaf', x: x + rand(-14, 14), y: y + rand(-4, 2), vx: rand(-30, 30), vy: rand(-60, -20),
+    rot: rand(0, 6), vr: rand(-5, 5), ph: rand(0, 6), life: 0, max: rand(0.9, 1.4), size: rand(3, 4.5), color: chance2() ? '#6fd65b' : '#4fae3c' });
+  if (sound) { noise(0.12, 0.025, 'highpass', 3200, 0.7); tone(rand(700, 900), 0.08, 'sine', 0.025, 1100); }
+}
+const chance2 = () => Math.random() < 0.5;
+/* mos tekenen bij een blok: steenkleur draait mee met het blok, het mos zit op de bovenkant in wereldrichting.
+   Verwacht dat de context al op het middelpunt van het blok staat (zonder rotatie). */
+function drawMoss(d, angle, grow) {
+  if (grow <= 0.002) return;
+  ctx.save(); ctx.rotate(angle); ctx.globalAlpha = Math.min(1, grow * 1.1); blit(d, 'stone'); ctx.restore();
+  const qa = Math.round(angle / (Math.PI / 2)) * (Math.PI / 2), c = Math.round(Math.cos(qa)), s = Math.round(Math.sin(qa));
+  const cells = d.offs.map(o => [o.x * c - o.y * s, o.x * s + o.y * c]);
+  const key = (x, y) => Math.round(x / CELL * 2) + ',' + Math.round(y / CELL * 2);
+  const set = new Set(cells.map(([x, y]) => key(x, y)));
+  const g = clamp((grow - 0.25) / 0.75, 0, 1);   // het mos groeit pas na het verkleuren
+  if (g <= 0) return;
+  ctx.save(); ctx.rotate(angle - qa);
+  for (const [x, y] of cells) {
+    if (set.has(key(x, y - CELL))) continue;
+    const l = set.has(key(x - CELL, y)) && !set.has(key(x - CELL, y - CELL)) ? 0 : 2, r = set.has(key(x + CELL, y)) && !set.has(key(x + CELL, y - CELL)) ? 0 : 2;
+    const x0 = x - CELL / 2 - l, x1 = x + CELL / 2 + r, gy = y - CELL / 2 - 3, gh = 4 + 5 * g;
+    ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.lineTo(x1, gy + gh - 3);
+    for (let i = 3; i > 0; i--) { const bx1 = x0 + (x1 - x0) * (i - 1) / 3, bx0 = x0 + (x1 - x0) * i / 3; ctx.quadraticCurveTo((bx0 + bx1) / 2, gy + gh + 4 * g, bx1, gy + gh - 3); }
+    ctx.closePath(); ctx.fillStyle = '#6fd65b'; ctx.fill();
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
+    ctx.fillStyle = '#a8f08f'; ctx.fillRect(x0 + 3, gy + 1.5, x1 - x0 - 6, 2.2);
+    if (g > 0.6) {   // sprietjes
+      ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      const h = 4 * (g - 0.6) / 0.4;
+      ctx.beginPath(); ctx.moveTo(x - 8, gy); ctx.lineTo(x - 10, gy - h); ctx.moveTo(x + 6, gy); ctx.lineTo(x + 8, gy - h * 0.8); ctx.stroke(); ctx.lineCap = 'butt';
+    }
+  }
+  ctx.restore();
+}
+/* begroeiing van een tegenstander: start zodra hij 'klaar' doorgeeft; volgorde = zijn telvolgorde (onder eerst) */
+function oppGrow(o, id) {
+  const c = o.c; if (!o.g.d) { c.growStart = null; return 0; }
+  const t = performance.now() / 1000;
+  if (c.growStart == null) { c.growStart = t; c.bloomAt = new Map(); }
+  const order = Array.isArray(o.g.c) ? o.g.c.map(String) : [];
+  let idx = order.indexOf(String(id)); if (idx < 0) idx = order.length;
+  const g = clamp((t - c.growStart - idx * GROW_GAP) / GROW_DUR, 0, 1);
+  const bt = c.bloomAt.get(String(id));
+  return bt == null ? g : g * (1 - clamp((t - bt) / 0.25, 0, 1));
+}
 function enterWaiting() {
   state = 'waiting'; waitT = 0;
+  startOwnGrowth();
   setCount(countList.length);
   updateWaitPill();
 }
@@ -1694,6 +1759,7 @@ function updateGroupCount(dt) {
     else { const semi = Math.min(gc.tick - 1, 24); tone(523.25 * Math.pow(2, semi / 12), 0.12, 'triangle', 0.07); }
     for (const p of gc.parts) if (!p.self && gc.tick <= p.n) {
       const arr = oppCountLabels.get(p.peer) || []; arr.push({ id: p.ids[gc.tick - 1], n: gc.tick, t: 0 }); oppCountLabels.set(p.peer, arr);
+      const oc = oppCache.get(p.peer); if (oc && oc.bloomAt) oc.bloomAt.set(String(p.ids[gc.tick - 1]), performance.now() / 1000);
     }
     // even tempo voor iedereen; samen niet veel langer dan ~3,5 s
     gc.t = Math.min(Math.max(0.08, 0.32 * Math.pow(0.9, gc.tick)), 3.2 / Math.max(1, gc.max));
@@ -1710,6 +1776,7 @@ function updateGroupCount(dt) {
   } else gameOver();
 }
 function decayCountingFx(dt) {
+  advanceOwnGrowth(dt);
   for (const l of countLabels) l.t += dt;
   for (const b of pieces.slice()) {
     const d = b.pd; d.sqv += -0.32 * d.sq; d.sqv *= 0.78; d.sq += d.sqv;
@@ -2119,7 +2186,7 @@ function resize() {
   for (const t of TYPES) {
     const bx = pieceBox(t);
     sprites[t] = {};
-    for (const mode of ['color', 'white', 'shadow']) {
+    for (const mode of ['color', 'white', 'shadow', 'stone']) {
       const c = document.createElement('canvas'); c.width = bx.w * s; c.height = bx.h * s;
       drawPieceRaw(c.getContext('2d'), t, s, 0, 0, mode); sprites[t][mode] = c;
     }
@@ -2244,6 +2311,7 @@ function update(dt) {
     if (q.t === 'dust') { q.vx *= Math.exp(-dt * 5); q.vy *= Math.exp(-dt * 4); q.vy -= 10 * dt; }
     else if (q.t === 'conf') { q.vx += wind.vis * 60 * dt; q.vx *= Math.exp(-dt); q.vy = Math.min(q.vy + 120 * dt, 160); q.rot += q.vr * dt; }
     else if (q.t === 'star') { q.vx *= Math.exp(-dt * 6); q.vy *= Math.exp(-dt * 6); }
+    else if (q.t === 'leaf') { q.vy = Math.min(q.vy + 140 * dt, 55); q.vx = q.vx * Math.exp(-dt * 2) + Math.sin(q.life * 6 + q.ph) * 40 * dt; q.rot += q.vr * dt; }
     else { q.vy += 900 * dt; if (q.rot !== undefined) q.rot += q.vr * dt; }
     q.x += q.vx * dt; q.y += q.vy * dt;
   }
@@ -2283,6 +2351,7 @@ function drawBody(b) {
     blit(d, 'white'); ctx.globalAlpha = 1;
   }
   ctx.restore();
+  if (d.grow > 0.002) { ctx.save(); ctx.translate(b.position.x, b.position.y); drawMoss(d, b.angle, d.grow); ctx.restore(); }
 }
 function drawShadow(b) {
   ctx.save(); ctx.translate(b.position.x + 3, b.position.y + 4); ctx.rotate(b.angle);
@@ -2478,6 +2547,12 @@ function drawOwnWorld(t, vp) {
       ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(43,33,64,.35)'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.arc(q.x, q.y, rr2, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
     }
+    else if (q.t === 'leaf') {
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.globalAlpha = 1 - k * k;
+      ctx.fillStyle = q.color; ctx.strokeStyle = INK; ctx.lineWidth = 0.9;
+      ctx.beginPath(); ctx.ellipse(0, 0, q.size, q.size * 0.55, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.restore(); ctx.globalAlpha = 1;
+    }
     else if (q.t === 'drop') { ctx.fillStyle = `rgba(255,255,255,${(1 - k).toFixed(3)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - k * 0.5), 0, 7); ctx.fill(); }
     else if (q.t === 'star') {
       ctx.fillStyle = q.color; ctx.strokeStyle = INK; ctx.lineWidth = 0.8; ctx.globalAlpha = 1 - k; const s = q.size * 1.2 * (1 - k * 0.4);
@@ -2532,7 +2607,11 @@ function drawOppWorld(t, vp, o) {
   ctx.globalAlpha = 0.18;
   for (const q of o.pieces) { const d = TYPE_PD[q.t]; ctx.save(); ctx.translate(q.x + 3, q.y + 4); ctx.rotate(q.a); blit(d, 'shadow'); ctx.restore(); }
   ctx.globalAlpha = 1;
-  for (const q of o.pieces) drawP(q, 1);
+  for (const q of o.pieces) {
+    drawP(q, 1);
+    const g = oppGrow(o, q.id);
+    if (g > 0.002 && TYPE_PD[q.t]) { ctx.save(); ctx.translate(q.x, q.y); drawMoss(TYPE_PD[q.t], q.a, g); ctx.restore(); }
+  }
   if (o.act) drawP(o.act, 0.85);
   drawOppCountLabels(o);
   drawSea(t, left, right, bottom, 1);
@@ -2550,12 +2629,6 @@ function drawColumnFrame(vp, o, i) {
   outlinedText(`${name} · ${s}`, 0, 0, 17, o.self ? '#ffcf3a' : '#ffffff', 'center');
   ctx.restore();
   if (isWinner(o)) drawTrophy(vp.x + vp.w / 2, 74, 46);
-  if (!o.self && o.g.d && state !== 'groupcount' && state !== 'over') {
-    ctx.fillStyle = 'rgba(43,33,64,.35)'; ctx.fillRect(vp.x, 0, vp.w, vp.h);
-    ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.h * 0.45);
-    outlinedText('Klaar!', 0, -6, 24, '#ffffff', 'center');
-    ctx.restore();
-  }
 }
 /* mini-toren rechtsboven (A): eerst achtergrond, daarna rand en naam */
 function drawMiniFrame(vp, o, before) {
@@ -2568,7 +2641,6 @@ function drawMiniFrame(vp, o, before) {
   ctx.save(); ctx.translate(vp.x + vp.w - 4, vp.y + 12);
   outlinedText(String(shownScore(o)), 0, 0, 16, '#ffcf3a', 'right'); ctx.restore();
   if (isWinner(o)) drawTrophy(vp.x + vp.w / 2, vp.y + 4, 28);
-  if (o.g.d && state !== 'groupcount' && state !== 'over') { ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.y + vp.h / 2); outlinedText('Klaar', 0, 0, 14, '#ffffff', 'center'); ctx.restore(); }
 }
 
 /* ranglijst op het eindscherm (werkt live bij terwijl anderen nog spelen) */
