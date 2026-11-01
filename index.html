@@ -601,9 +601,9 @@ const sfx = {
 const { World, Vec2, Box, Chain, Transform, AABB, testOverlap } = planck;
 const HZ = 120, STEP_S = 1 / HZ, V60 = 1;   // V60 = 1: stuk.speed staat al in px per 1/60 s
 const GRAVITY = 30;                          // vakjes per s²
-const INSET = 0.02;                          // speling per buitenkant van een blok (in vakjes)
-const TOL_MOVE = 0.03;                       // vallend blok mag ~1 px langs een rand schuren
-const CORE_INSET = 0.06;                     // vangnet in de pilaar ligt ~2 px binnen de rand                       // vallend blok mag ~2 px langs een rand schuren
+const INSET = 0.035;                         // physics-vorm ~1 px per kant kleiner dan wat je ziet: gaten zijn net iets vergevingsgezinder
+const TOL_MOVE = 0.045;                      // vallend blok mag ~1,5 px langs een rand schuren
+const CORE_INSET = 0.06;                     // vangnet in de pilaar ligt ~2 px binnen de rand
 const world = new World({ gravity: Vec2(0, GRAVITY) });
 const pieces = [];                           // alle stukken in de wereld
 
@@ -773,6 +773,19 @@ function fits(p, x, y, a, kind = 'move') {
   return !hit;
 }
 
+/* trechter: raakt het vallende blok alleen met een hoekje de rand van een gat (dat net naast het raster ligt),
+   dan zoeken we een kleine zijwaartse verschuiving waarmee het wél verder kan vallen. Hooguit FUNNEL_PX
+   van het raster af, zodat een blok niet van schuine vlakken wegglijdt en altijd in de buurt van je keuze blijft. */
+const FUNNEL_PX = 14;
+function funnel(p, ny) {
+  const gx = snapX(p.offs, p.x, p.angle);
+  for (let d = 1; d <= FUNNEL_PX; d++) for (const sg of [1, -1]) {
+    const x = p.x + sg * d;
+    if (Math.abs(x - gx) > FUNNEL_PX) continue;
+    if (fits(p, x, ny, p.angle)) return x;
+  }
+  return null;
+}
 function landedTop() {
   let top = 0;
   for (const b of pieces) if (b.pd.landed && !b.pd.lost && b.bounds.min.y < top) top = b.bounds.min.y;
@@ -806,7 +819,7 @@ function snapX(offs, x, a) {
 }
 function tryMove(dir, byWind) {
   if (!active || paused) return false;
-  const nx = active.x + dir * CELL;
+  const nx = snapX(active.offs, active.x + dir * CELL, active.angle);
   if (Math.abs(nx) > 9 * CELL) return false;
   if (!fits(active, nx, active.y, active.angle)) {
     // inschuifhulp: past het blok een fractie hoger of lager wel (bv. in een gat van de pilaar)? dan schuift het erin
@@ -918,10 +931,11 @@ function handleContacts() {
 function gridNudge(b, d) {
   const q = Math.PI / 2, aErr = Math.abs(b.angle - Math.round(b.angle / q) * q);
   if (now - d.landT < 1.5) d.maxErr = Math.max(d.maxErr, aErr);
-  if (now - d.landT > 0.9 || !b.body || !b.body.isAwake()) return;
+  // ook later (na botsingen) blijven stilliggende, rechte blokken richting het raster geduwd zolang ze wakker zijn
+  if (!b.body || !b.body.isAwake()) return;
   if (aErr > 0.02 || b.speed > 1.2 || Math.abs(b.angularVelocity) > 0.02) return;
   const tx = snapX(d.offs, b.position.x, Math.round(b.angle / q) * q), dx = tx - b.position.x;
-  if (Math.abs(dx) < 0.3 || Math.abs(dx) > 9) return;
+  if (Math.abs(dx) < 0.3 || Math.abs(dx) > 12) return;
   const v = b.body.getLinearVelocity();
   b.body.setLinearVelocity(Vec2(clamp(dx / CELL * 5, -0.6, 0.6), v.y));
 }
@@ -1408,7 +1422,9 @@ function update(dt) {
       const p = active;
       p.pop = Math.min(1, p.pop + dt * 4.5);
       const ny = p.y + (p.fast ? 18 * CELL : fallSpeed()) * dt;
+      let fx;
       if (fits(p, p.x, ny, p.angle)) p.y = ny;
+      else if ((fx = funnel(p, ny)) !== null) { p.x = fx; p.y = ny; }
       else {
         let lo = p.y, hi = ny;
         for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (fits(p, p.x, m, p.angle)) lo = m; else hi = m; }
