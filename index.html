@@ -458,6 +458,24 @@ body { background: var(--sky); color: var(--ink); }
 .link-btn.soft { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .pod-block, .pod-cup, .pod-name, .pod-score, .pr-card { animation-duration: .01s !important; animation-delay: 0s !important; } }
 @media (max-height: 520px) { .podium { min-height: 150px; } .pr-title { font-size: 28px; } .pr-card { gap: 8px; padding: 12px; } }
+
+/* solo-eindscherm in dezelfde stijl */
+.res-card .pr-title { font-size: 34px; }
+.res-hero { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; padding: 6px 0 2px; }
+.res-score { display: flex; flex-direction: column; align-items: center; }
+.res-card .big { font-size: 78px; line-height: .95; animation: starpop .55s cubic-bezier(.3,1.8,.5,1) .15s both; }
+.res-unit { margin-top: 6px; font-size: 13px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); text-align: center; }
+.res-card .medal { width: 70px; height: 70px; font-size: 13px; flex: none; }
+.res-card .newrec { margin-top: -4px; }
+.res-bar { position: relative; width: 100%; height: 30px; border-radius: 999px; background: #f4f2fb; border: 3px solid var(--ink); overflow: hidden; box-sizing: border-box; }
+.res-bar-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: #b46cff; border-right: 3px solid var(--ink); transition: width .9s cubic-bezier(.3,1.2,.5,1) .35s; }
+.res-bar.rec .res-bar-fill { background: var(--gold); }
+.res-bar span { position: relative; display: block; text-align: center; line-height: 24px; font-size: 13px; font-weight: 800; color: var(--ink); }
+.res-stats { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid rgba(43,33,64,.12); border-bottom: 2px solid rgba(43,33,64,.12); }
+.res-stats > div { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; }
+.res-stats > div + div { border-left: 2px solid rgba(43,33,64,.12); }
+.res-stats b { font-family: var(--display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.res-stats span { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
 </style>
 
 <div id="app">
@@ -567,22 +585,22 @@ body { background: var(--sky); color: var(--ink); }
   </div>
 
   <div class="overlay" id="resOv" hidden>
-    <div class="over-h" id="resTitle"></div>
-    <div class="medal" id="resMedal" hidden></div>
-    <div class="newrec" id="resRec" hidden>Nieuw record</div>
-    <div class="stack" style="gap:4px">
-      <div class="big" id="resScore">0</div>
-      <div class="hunit" id="resUnit"></div>
-    </div>
-    <ol class="rank" id="resRank" hidden></ol>
-    <div class="stats">
-      <div class="stat"><b id="resS1v">0</b><span id="resS1l"></span></div>
-      <div class="stat"><b id="resS2v">0</b><span id="resS2l"></span></div>
-      <div class="stat"><b id="resS3v">0</b><span id="resS3l"></span></div>
-    </div>
-    <div class="stack">
+    <div class="pr-card res-card">
+      <div class="over-h pr-title" id="resTitle"></div>
+      <div class="res-hero">
+        <div class="medal" id="resMedal" hidden></div>
+        <div class="res-score"><div class="big" id="resScore">0</div><div class="res-unit" id="resUnit"></div></div>
+      </div>
+      <div class="newrec" id="resRec" hidden>Nieuw record</div>
+      <div class="res-bar" id="resBar"><div class="res-bar-fill" id="resBarFill"></div><span id="resBarLbl"></span></div>
+      <ol class="rank" id="resRank" hidden></ol>
+      <div class="res-stats">
+        <div><b id="resS1v">0</b><span id="resS1l"></span></div>
+        <div><b id="resS2v">0</b><span id="resS2l"></span></div>
+        <div><b id="resS3v">0</b><span id="resS3l"></span></div>
+      </div>
       <button class="btn" id="resMain">Nog een keer</button>
-      <button class="btn ghost" id="resMenu">Naar het menu</button>
+      <div class="pr-links"><button class="link-btn soft" id="resMenu">Naar het menu</button></div>
     </div>
   </div>
 
@@ -1790,21 +1808,27 @@ function gameOver() { if (party && mode === 'puzzle') showPartyResult(); else sh
 function showResult() {
   state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; raceRunning = false;
   let title, big, unit, stats, isRec = false, medal = null;
+  let bar = null;
   if (mode === 'puzzle') {
+    const prev = puzzleBest;
     isRec = score > puzzleBest;
+    bar = { ratio: prev ? score / prev : 1, label: isRec ? (prev ? `Oud record: ${prev} · ${score - prev} meer!` : 'Je eerste record!') : `Record ${prev} · nog ${prev - score} te gaan` };
     if (isRec) { puzzleBest = score; store('st_puzbest', String(score)); }
     title = 'Laser geraakt!'; big = String(score); unit = 'blokken onder de laser';
     stats = [[puzzleBest, 'Record'], [placed, 'Geplaatst'], [`+${rises}`, 'Platform']];
   } else if (mode === 'race') {
-    const t = result && result.time || raceT + penalty;
+    const t = result && result.time || raceT + penalty, prev = raceBest;
     isRec = !raceBest || t < raceBest;
+    bar = { ratio: prev ? prev / t : 1, label: isRec ? (prev ? `${(prev - t).toFixed(1)} s sneller dan je oude record` : 'Je eerste record!') : `Record ${fmtTime(prev)} · ${(t - prev).toFixed(1)} s langzamer` };
     if (isRec) { raceBest = t; store('st_racebest', String(t)); }
     const m = MEDALS.find(x => t <= x[2]);
     medal = m;
     title = 'Finish!'; big = fmtTime(t); unit = m ? `${m[1]} · onder ${fmtTime(m[2])}` : `Goud haal je onder ${fmtTime(MEDALS[0][2])}`;
     stats = [[fmtTime(raceBest), 'Record'], [placed, 'Blokken'], [`+${penalty}s`, 'Straftijd']];
   } else {
+    const prev = best;
     isRec = maxH > best + 0.001;
+    bar = { ratio: prev ? maxH / prev : 1, label: isRec ? (prev ? `Oud record: ${prev.toFixed(1)} m` : 'Je eerste record!') : `Record ${prev.toFixed(1)} m · nog ${(prev - maxH).toFixed(1)} m` };
     if (isRec) { best = maxH; store('st_best', String(best)); }
     title = 'Ingestort!'; big = maxH.toFixed(1); unit = 'meter hoog';
     stats = [[placed, 'Blokken'], [perfects, 'Strak'], [best.toFixed(1), 'Record (m)']];
@@ -1813,6 +1837,10 @@ function showResult() {
   $('resScore').textContent = big; $('resUnit').textContent = unit;
   stats.forEach(([v, l], i) => { $(`resS${i + 1}v`).textContent = v; $(`resS${i + 1}l`).textContent = l; });
   $('resRec').hidden = !isRec;
+  $('resBar').classList.toggle('rec', isRec);
+  $('resBarFill').style.width = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => { $('resBarFill').style.width = Math.round(clamp(bar.ratio, 0.04, 1) * 100) + '%'; }));
+  $('resBarLbl').textContent = bar.label;
   const md = $('resMedal');
   md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
   $('resMain').textContent = party ? 'Terug naar lobby' : 'Nog een keer';
