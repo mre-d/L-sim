@@ -1133,6 +1133,7 @@ function drawNext() {
 /* ---------- input ---------- */
 let ptr = null;
 cv.addEventListener('pointerdown', e => {
+  if (state === 'counting') { skipCounting(); return; }
   if (state !== 'play' || paused) return;
   cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
   ptr = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lx: e.clientX, t0: performance.now(), acc: 0, moved: false };
@@ -1156,6 +1157,7 @@ function endPtr(e) {
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
 addEventListener('keydown', e => {
+  if (state === 'counting') { skipCounting(); return; }
   if (state !== 'play') { if ((e.key === 'Enter' || e.key === ' ') && state === 'over') { e.preventDefault(); restartCurrent(); } return; }
   if (e.key === 'p' || e.key === 'Escape') { setPaused(!paused); return; }
   if (paused) return;
@@ -1346,7 +1348,7 @@ function updateCountdown(dt) {
 function resetRun(def) {
   clearPieces(); contactEvents.length = 0;
   buildPlatform(def);
-  particles.length = rings.length = floaters.length = 0;
+  particles.length = rings.length = floaters.length = 0; countLabels.length = 0;
   active = null; bag = []; queue = []; result = null; winT = 0; laserHot = 0; laserFail = 0;
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
@@ -1400,9 +1402,51 @@ function puzzleCheck(dt) {
     if (Math.random() < 0.6) particles.push({ t: 'star', x: above.position.x + rand(-CELL, CELL), y: laserY, vx: rand(-80, 80), vy: rand(-90, 30), life: 0, max: rand(0.2, 0.4), size: rand(1.5, 3), color: '#ff7aa2' });
   }
 }
+/* puzzel-einde: de toren bevriest en de blokken worden één voor één geteld (van onder naar boven),
+   met een cijfertje boven elk blok, een steeds hoger toontje en de teller bovenin. Tik om over te slaan. */
+let countList = [], countIdx = 0, countT = 0, countDone = false;
+const countLabels = [];
+function startCounting() {
+  state = 'counting';
+  countList = pieces.filter(b => !b.pd.lost && b.pd.ever && b.position.y < SEA_Y).sort((a, b) => b.position.y - a.position.y);
+  score = countList.length; countIdx = 0; countT = 0.35; countDone = false; countLabels.length = 0;
+  hval.textContent = '0';
+}
+function countStep() {
+  const b = countList[countIdx++];
+  b.pd.flash = 1; b.pd.sq = 0.12; b.pd.sqv = 0;
+  countLabels.push({ x: b.position.x, y: b.position.y, n: countIdx, t: 0 });
+  const semi = Math.min(countIdx - 1, 24);
+  tone(523.25 * Math.pow(2, semi / 12), 0.12, 'triangle', 0.1); tone(1046.5 * Math.pow(2, semi / 12), 0.08, 'sine', 0.03, null, 0.02);
+  haptic('light'); setCount(countIdx);
+}
+function updateCounting(dt) {
+  for (const l of countLabels) l.t += dt;
+  for (const b of pieces) {   // de physics staat stil, dus oplichten en verende squash hier zelf laten uitdoven
+    const d = b.pd; d.sqv += -0.32 * d.sq; d.sqv *= 0.78; d.sq += d.sqv;
+    d.flash = Math.max(0, d.flash - dt * 4); d.glow = Math.max(0, d.glow - dt * 1.5);
+  }
+  countT -= dt;
+  if (countT > 0) return;
+  if (countIdx < countList.length) {
+    countStep();
+    // eerst rustig, dan steeds sneller; samen nooit veel langer dan ~3 s
+    countT = Math.min(Math.max(0.07, 0.3 * Math.pow(0.88, countIdx)), 2.8 / Math.max(1, countList.length));
+  } else if (!countDone) {
+    countDone = true; countT = 1.0;
+    for (const b of countList) b.pd.glow = 1;
+    if (score > puzzleBest) { confetti(); sfx.milestone(); haptic('success'); } else tone(784, 0.3, 'triangle', 0.1);
+  } else gameOver();
+}
+function skipCounting() {
+  if (state !== 'counting') return;
+  while (countIdx < countList.length) { const b = countList[countIdx++]; countLabels.push({ x: b.position.x, y: b.position.y, n: countIdx, t: 1 }); }
+  setCount(countList.length); gameOver();
+}
 function fail(reason, b) {
   if (state !== 'play') return;
-  state = 'dying'; overTimer = 1.6; active = null; result = { reason };
+  state = 'dying'; overTimer = mode === 'puzzle' ? 0.9 : 1.6; active = null; result = { reason };
+  padEl.hidden = true; hint.classList.add('off');
   laserFail = 1; addShake(7); hurtA = 0.8; haptic('error');
   tone(1400, 0.35, 'sawtooth', 0.07, 180); noise(0.3, 0.12, 'highpass', 2500);
   if (b) sparkle(b.position.x, laserY, '#ff5d8f', 18);
@@ -1481,7 +1525,7 @@ function showResult() {
 function clearScene() {
   clearPieces(); contactEvents.length = 0;
   active = null; queue = []; laserY = null; countdown = 0; raceRunning = false; holdT = 0;
-  particles.length = rings.length = floaters.length = 0;
+  particles.length = rings.length = floaters.length = 0; countLabels.length = 0;
   hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; hint.classList.add('off');
 }
 function goHome() {
@@ -1610,7 +1654,8 @@ function update(dt) {
       updateHeightHud();
     }
   }
-  if (state === 'dying' && !paused) { overTimer -= dt; if (overTimer <= 0) gameOver(); }
+  if (state === 'dying' && !paused) { overTimer -= dt; if (overTimer <= 0) { if (mode === 'puzzle' && result && result.reason === 'laser') startCounting(); else gameOver(); } }
+  if (state === 'counting') updateCounting(dt);
 
   // camera
   if (mode === 'puzzle' && laserY !== null) laserY += (laserTarget - laserY) * (1 - Math.exp(-dt * 3));
@@ -1820,6 +1865,12 @@ function render(t) {
       ctx.strokeStyle = INK; ctx.lineWidth = 0.8; ctx.strokeRect(-q.size / 2, -q.size / (q.t === 'conf' ? 3 : 2), q.size, q.t === 'conf' ? q.size / 1.5 : q.size);
       ctx.restore(); ctx.globalAlpha = 1;
     }
+  }
+  // tel-cijfertjes boven de blokken
+  for (const l of countLabels) {
+    const k = Math.min(1, l.t / 0.25), pop = easeOutBack(k);
+    ctx.save(); ctx.translate(l.x, l.y - 4 * k); ctx.scale(pop, pop);
+    outlinedText(String(l.n), 0, 0, 22, '#ffffff', 'center'); ctx.restore();
   }
   for (const f of floaters) {
     const k = f.life / f.max, pop = k < 0.2 ? easeOutBack(k / 0.2) : 1;
