@@ -15,9 +15,10 @@ const head = fs.readFileSync(path.join(dir, 'site_head.html'), 'utf8');
 
 // 1. inline <script> (zonder src) verdoezelen
 let scripts = 0;
+const guard = fs.readFileSync(path.join(dir, 'site_guard.js'), 'utf8');   // rechtsklik + devtools-sneltoetsen uit
 html = html.replace(/<script>([\s\S]*?)<\/script>/g, (m, code) => {
   scripts++;
-  const out = JavaScriptObfuscator.obfuscate(code, {
+  const out = JavaScriptObfuscator.obfuscate(guard + '\n' + code, {
     compact: true,
     identifierNamesGenerator: 'hexadecimal',
     renameGlobals: false,             // de code zit al in een eigen functie; globale namen (window, document…) blijven heel
@@ -32,7 +33,9 @@ html = html.replace(/<script>([\s\S]*?)<\/script>/g, (m, code) => {
     controlFlowFlattening: false,     // uit: dat maakt de game-loop en physics merkbaar trager
     deadCodeInjection: false,
     selfDefending: false,
-    debugProtection: false,
+    debugProtection: true,            // ontwikkelaarstools open = de pagina blijft telkens pauzeren op 'debugger'
+    debugProtectionInterval: 2000,
+    disableConsoleOutput: true,       // geen meldingen in de console
     numbersToExpressions: false,
     simplify: true,
     unicodeEscapeSequence: false,
