@@ -596,7 +596,7 @@ function fits(p, x, y, a) {
   Body.setPosition(p.body, { x, y }); Body.setAngle(p.body, a);
   const others = Composite.allBodies(world);
   for (let i = 1; i < p.body.parts.length; i++) {
-    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > 0.5) return false;   // net-aanraken telt niet als botsing
+    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > 2.5) return false;   // een paar pixels schuren mag: blokken glijden makkelijker langs elkaar
   }
   return true;
 }
@@ -723,7 +723,7 @@ Events.on(engine, 'collisionStart', e => {
     const sup = pair.collision && pair.collision.supports;
     const pt = sup && sup[0] && isFinite(sup[0].x) ? { x: sup[0].x, y: sup[0].y } : { x: (A.position.x + B.position.x) / 2, y: (A.position.y + B.position.y) / 2 };
     let first = null;
-    for (const X of [A, B]) if (X.pd && X.pd.dropped && !X.pd.landed) { X.pd.landed = true; first = X; }
+    for (const X of [A, B]) if (X.pd && X.pd.dropped && !X.pd.landed) { X.pd.landed = true; X.pd.landT = now; X.pd.maxErr = 0; first = X; }
     const k = clamp(rv / 7, 0, 1);
     if (first) {
       const other = first === A ? B : A;
@@ -742,9 +742,24 @@ Events.on(engine, 'collisionStart', e => {
   }
 });
 
+/* magnetisch raster: een blok dat bijna recht tot rust komt, wordt in de eerste seconde na de landing
+   zachtjes op het raster getrokken (hoek en x). Daarna is het gewoon vrij en kan het nog bewegen of omvallen. */
+function gridSnap(b, d) {
+  const age = now - (d.landT || 0);
+  if (age > 1.1) return;
+  const q = Math.PI / 2, ta = Math.round(b.angle / q) * q, aErr = ta - b.angle;
+  d.maxErr = Math.max(d.maxErr || 0, Math.abs(aErr));
+  if (Math.abs(aErr) > 0.13) return;                                   // echt aan het kantelen: niet ingrijpen
+  if (b.speed * V60 > 1.2 || Math.abs(b.angularVelocity) * V60 > 0.06) return;
+  const tx = snapX(d.offs, b.position.x, ta), dx = tx - b.position.x;
+  if (Math.abs(dx) > 9) return;
+  const k = 0.22;
+  if (Math.abs(aErr) > 0.0005) { Body.setAngle(b, b.angle + aErr * k); Body.setAngularVelocity(b, b.angularVelocity * 0.5); }
+  if (Math.abs(dx) > 0.05) Body.setPosition(b, { x: b.position.x + dx * k, y: b.position.y });
+}
 function onSettle(b) {
   const quarter = Math.PI / 2;
-  const err = Math.abs(b.angle - Math.round(b.angle / quarter) * quarter);
+  const err = Math.max(b.pd.maxErr || 0, Math.abs(b.angle - Math.round(b.angle / quarter) * quarter));
   const perfect = err < 0.035;
   placed++;
   if (perfect) { streak++; perfects++; } else streak = 0;
@@ -1066,6 +1081,7 @@ function update(dt) {
       if (!d.lost && b.position.y > SEA_Y) { if (state === 'play') loseLife(b); else d.lost = true; }
       if (b.position.y > SEA_Y + 600) { Composite.remove(world, b); continue; }
       if (!d.landed || d.lost) continue;
+      gridSnap(b, d);
       if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
       else { d.still = 0; if (d.settled && b.speed * V60 > 1.6) d.settled = false; }
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
