@@ -274,6 +274,48 @@ function drawCellRaw(c, x, y, s, color) {
   c.beginPath(); c.arc(x + s*0.82, y + s*0.2, s*0.045, 0, 7); c.fillStyle = 'rgba(255,255,255,.7)'; c.fill();
 }
 
+/* heel stuk tekenen als één massief blok: één omlijning, strakke hoeken, per vakje een gebevelde tegel */
+function pieceBox(type) {
+  const cells = SHAPES[type];
+  return { w: Math.max(...cells.map(c => c[0])) + 1, h: Math.max(...cells.map(c => c[1])) + 1 };
+}
+function drawPieceRaw(c, type, s, ox, oy, mode) {
+  const cells = SHAPES[type], set = new Set(cells.map(([x, y]) => x + ',' + y));
+  const has = (x, y) => set.has(x + ',' + y);
+  if (mode === 'white' || mode === 'shadow') {
+    c.fillStyle = mode === 'white' ? '#ffffff' : '#05081a';
+    for (const [x, y] of cells) c.fillRect(ox + x * s, oy + y * s, s, s);
+    return;
+  }
+  const color = COLORS[type], b = Math.max(1, s * 0.075);
+  c.fillStyle = shade(color, -0.55);
+  for (const [x, y] of cells) c.fillRect(ox + x * s, oy + y * s, s, s);
+  for (const [x, y] of cells) {
+    const l = has(x - 1, y) ? 0 : b, r = has(x + 1, y) ? 0 : b, t = has(x, y - 1) ? 0 : b, bt = has(x, y + 1) ? 0 : b * 2.4;
+    const X = ox + x * s, Y = oy + y * s;
+    const g = c.createLinearGradient(0, Y, 0, Y + s);
+    g.addColorStop(0, shade(color, 0.12)); g.addColorStop(1, shade(color, -0.12));
+    c.fillStyle = g; c.fillRect(X + l, Y + t, s - l - r, s - t - bt);
+    if (!has(x, y - 1)) { c.fillStyle = 'rgba(255,255,255,.38)'; c.fillRect(X + l, Y + t, s - l - r, s * 0.07); }
+    if (!has(x - 1, y)) { c.fillStyle = 'rgba(255,255,255,.16)'; c.fillRect(X + l, Y + t, s * 0.06, s - t - bt); }
+    if (!has(x + 1, y)) { c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(X + s - r - s * 0.06, Y + t, s * 0.06, s - t - bt); }
+  }
+  // naden tussen vakjes binnen het stuk
+  c.fillStyle = shade(color, -0.3);
+  const sw = Math.max(1, s * 0.035);
+  for (const [x, y] of cells) {
+    if (has(x + 1, y)) c.fillRect(ox + (x + 1) * s - sw / 2, oy + y * s + b, sw, s - b * 2.4);
+    if (has(x, y + 1)) c.fillRect(ox + x * s + b, oy + (y + 1) * s - sw / 2, s - b * 2, sw);
+  }
+  // gebevelde tegel per vakje
+  for (const [x, y] of cells) {
+    const X = ox + x * s + s * 0.24, Y = oy + y * s + s * 0.22, w = s * 0.52, e = Math.max(1, s * 0.05);
+    c.fillStyle = shade(color, 0.32); c.fillRect(X, Y, w, w);
+    c.fillStyle = shade(color, -0.22); c.fillRect(X + e, Y + e, w - e, w - e);
+    c.fillStyle = shade(color, 0.06); c.fillRect(X + e, Y + e, w - e * 2, w - e * 2);
+  }
+}
+
 /* ---------- DOM ---------- */
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
@@ -356,20 +398,32 @@ const sfx = {
 };
 
 /* ---------- physics ---------- */
-const engine = Engine.create({ enableSleeping: true, positionIterations: 12, velocityIterations: 10 });
+const HZ = 120, STEP = 1000 / HZ, V60 = HZ / 60;   // substeps voor stabiel stapelen; V60 rekent snelheid om naar px per 1/60 s
+const engine = Engine.create({ enableSleeping: true, positionIterations: 24, velocityIterations: 18 });
 engine.gravity.y = 1;
 const world = engine.world;
-const platform = Bodies.rectangle(0, CELL/2, PLATFORM_CELLS*CELL, CELL, { isStatic: true, friction: 1, frictionStatic: 1.2, restitution: 0, label: 'platform' });
+const platform = Bodies.rectangle(0, CELL/2, PLATFORM_CELLS*CELL, CELL, { isStatic: true, friction: 1, frictionStatic: 3, restitution: 0, label: 'platform' });
 Composite.add(world, platform);
+// rotatiedemping: blokken kantelen traag en komen snel tot rust, zodat de toren als één stevig geheel voelt
+Events.on(engine, 'beforeUpdate', () => {
+  for (const b of world.bodies) {
+    if (!b.pd || b.isSleeping || !b.pd.landed) continue;
+    Body.setAngularVelocity(b, b.angularVelocity * 0.93);
+  }
+});
 
 function makePiece(type) {
   const cells = SHAPES[type];
   const mx = cells.reduce((a, c) => a + c[0], 0) / cells.length;
   const my = cells.reduce((a, c) => a + c[1], 0) / cells.length;
   const offs = cells.map(([cx, cy]) => ({ x: (cx - mx) * CELL, y: (cy - my) * CELL }));
-  const parts = offs.map(o => Bodies.rectangle(o.x, o.y, CELL - 1, CELL - 1));
-  const body = Body.create({ parts, friction: 0.85, frictionStatic: 1.1, restitution: 0, density: 0.0015, slop: 0.03, frictionAir: 0.008 });
-  body.pd = { type, offs, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
+  const parts = offs.map(o => Bodies.rectangle(o.x, o.y, CELL, CELL));
+  // zwaar, stroef en traag in rotatie: blokken grijpen in elkaar in plaats van te glijden
+  const body = Body.create({ parts, friction: 1, frictionStatic: 3, restitution: 0, density: 0.003, slop: 0.008, frictionAir: 0.012 });
+  Body.setInertia(body, body.inertia * 1.8);
+  for (const p of body.parts) { p.friction = 1; p.frictionStatic = 3; p.restitution = 0; p.slop = 0.008; }
+  const box = pieceBox(type);
+  body.pd = { type, offs, box, sx: -(mx + 0.5) * CELL, sy: -(my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
               sq: 0, sqv: 0, flash: 0, glow: 0, lastClack: 0 };
   return body;
 }
@@ -393,7 +447,9 @@ function drawFromBag() {
 function fits(p, x, y, a) {
   Body.setPosition(p.body, { x, y }); Body.setAngle(p.body, a);
   const others = Composite.allBodies(world);
-  for (let i = 1; i < p.body.parts.length; i++) if (Query.collides(p.body.parts[i], others).length) return false;
+  for (let i = 1; i < p.body.parts.length; i++) {
+    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > 0.5) return false;   // net-aanraken telt niet als botsing
+  }
   return true;
 }
 
@@ -452,7 +508,8 @@ function noteAction() { if (++actionsDone === 4) hint.classList.add('off'); }
 function dropActive() {
   const p = active;
   Body.setPosition(p.body, { x: p.x, y: p.y }); Body.setAngle(p.body, p.angle);
-  Body.setVelocity(p.body, { x: 0, y: (p.fast ? 18 * CELL : fallSpeed()) / 60 });
+  // landingssnelheid begrensd: ook na snel laten vallen landt een blok stevig maar beheerst
+  Body.setVelocity(p.body, { x: 0, y: Math.min(p.fast ? 18 * CELL : fallSpeed(), 6 * CELL) / HZ });
   Body.setAngularVelocity(p.body, 0);
   p.body.pd.dropped = true;
   Composite.add(world, p.body);
@@ -495,7 +552,7 @@ Events.on(engine, 'collisionStart', e => {
   if (state === 'menu') return;
   for (const pair of e.pairs) {
     const A = pair.bodyA.parent, B = pair.bodyB.parent;
-    const rv = Math.hypot(A.velocity.x - B.velocity.x, A.velocity.y - B.velocity.y);
+    const rv = Math.hypot(A.velocity.x - B.velocity.x, A.velocity.y - B.velocity.y) * V60;
     const sup = pair.collision && pair.collision.supports;
     const pt = sup && sup[0] && isFinite(sup[0].x) ? { x: sup[0].x, y: sup[0].y } : { x: (A.position.x + B.position.x) / 2, y: (A.position.y + B.position.y) / 2 };
     let first = null;
@@ -503,15 +560,15 @@ Events.on(engine, 'collisionStart', e => {
     const k = clamp(rv / 7, 0, 1);
     if (first) {
       const other = first === A ? B : A;
-      first.pd.sq = 0.07 + 0.13 * k; first.pd.sqv = 0; first.pd.flash = 1;
-      if (other.pd) { other.pd.sq = Math.max(other.pd.sq, 0.04 + 0.05 * k); other.pd.flash = Math.max(other.pd.flash, 0.35); }
+      first.pd.sq = 0.04 + 0.07 * k; first.pd.sqv = 0; first.pd.flash = 1;
+      if (other.pd) { other.pd.sq = Math.max(other.pd.sq, 0.02 + 0.03 * k); other.pd.flash = Math.max(other.pd.flash, 0.35); }
       puff(pt.x, pt.y, k); chips(pt.x, pt.y, COLORS[first.pd.type], k);
       addShake(1.5 + 7 * k); sfx.land(k);
       if (rv > 5) rings.push({ x: pt.x, y: pt.y, r: 4, life: 0, max: 0.35, color: '255,255,255', w: 3 });
     } else if (rv > 1.4) {
       for (const X of [A, B]) {
         if (!X.pd || now - X.pd.lastClack < 0.14) continue;
-        X.pd.lastClack = now; X.pd.sq = Math.max(X.pd.sq, 0.03 + 0.06 * k); X.pd.flash = Math.max(X.pd.flash, 0.25);
+        X.pd.lastClack = now; X.pd.sq = Math.max(X.pd.sq, 0.02 + 0.03 * k); X.pd.flash = Math.max(X.pd.flash, 0.25);
       }
       if (rv > 2) { puff(pt.x, pt.y, k * 0.5); sfx.clack(k); addShake(1 + 3 * k); }
     }
@@ -568,7 +625,7 @@ function drawNext() {
   const cells = SHAPES[t]; const s = 20;
   const maxX = Math.max(...cells.map(c => c[0])) + 1, maxY = Math.max(...cells.map(c => c[1])) + 1;
   const ox = (d.width - maxX * s) / 2, oy = (d.height - maxY * s) / 2;
-  for (const [cx, cy] of cells) drawCellRaw(nctx, ox + cx * s + 0.5, oy + cy * s + 0.5, s - 1, COLORS[t]);
+  drawPieceRaw(nctx, t, s, Math.round(ox), Math.round(oy), 'color');
 }
 
 /* ---------- input ---------- */
@@ -657,11 +714,14 @@ function resize() {
   SCALE = Math.min(W / (CELL * 12.5), H / (CELL * 21));
   K = SCALE * DPR;
   const s = Math.max(8, Math.ceil(CELL * K));
-  for (const t of TYPES) { const c = document.createElement('canvas'); c.width = c.height = s; drawCellRaw(c.getContext('2d'), 0, 0, s, COLORS[t]); sprites[t] = c; }
-  whiteSprite = document.createElement('canvas'); whiteSprite.width = whiteSprite.height = s;
-  { const c = whiteSprite.getContext('2d'); rr(c, 0, 0, s, s, s*0.22); c.fillStyle = '#fff'; c.fill(); }
-  shadowSprite = document.createElement('canvas'); shadowSprite.width = shadowSprite.height = s;
-  { const c = shadowSprite.getContext('2d'); rr(c, 0, 0, s, s, s*0.22); c.fillStyle = '#05081a'; c.fill(); }
+  for (const t of TYPES) {
+    const bx = pieceBox(t);
+    sprites[t] = {};
+    for (const mode of ['color', 'white', 'shadow']) {
+      const c = document.createElement('canvas'); c.width = bx.w * s; c.height = bx.h * s;
+      drawPieceRaw(c.getContext('2d'), t, s, 0, 0, mode); sprites[t][mode] = c;
+    }
+  }
   skyGrad = ctx.createLinearGradient(0, 0, 0, cv.height);
   skyGrad.addColorStop(0, '#12172e'); skyGrad.addColorStop(0.55, '#2b3866'); skyGrad.addColorStop(0.86, '#6a5a7e'); skyGrad.addColorStop(1, '#d9805f');
   cloudSprites = [0, 1, 2].map(i => {
@@ -717,8 +777,8 @@ function update(dt) {
 
   if (simulate) {
     acc += dt * 1000; let n = 0;
-    while (acc >= 1000 / 60 && n < 4) { Engine.update(engine, 1000 / 60); acc -= 1000 / 60; n++; }
-    if (n === 4) acc = 0;
+    while (acc >= STEP && n < 8) { Engine.update(engine, STEP); acc -= STEP; n++; }
+    if (n === 8) acc = 0;
     for (const b of Composite.allBodies(world)) {
       const d = b.pd; if (!d) continue;
       // jelly-veer voor squash
@@ -727,8 +787,8 @@ function update(dt) {
       if (!d.lost && b.position.y > SEA_Y) { if (state === 'play') loseLife(b); else d.lost = true; }
       if (b.position.y > SEA_Y + 600) { Composite.remove(world, b); continue; }
       if (!d.landed || d.lost) continue;
-      if (b.isSleeping || (b.speed < 0.12 && Math.abs(b.angularVelocity) < 0.004)) d.still++;
-      else { d.still = 0; if (d.settled && b.speed > 1.6) d.settled = false; }
+      if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
+      else { d.still = 0; if (d.settled && b.speed * V60 > 1.6) d.settled = false; }
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
     }
     if (state === 'play') {
@@ -790,25 +850,22 @@ function updateWind(dt) {
 }
 
 /* ---------- render ---------- */
-function drawBody(b, alphaShadow) {
-  const d = b.pd, x = b.position.x, y = b.position.y, h = (CELL - 1) / 2;
-  ctx.save(); ctx.translate(x, y);
-  if (d.sq) ctx.scale(1 + d.sq * 0.75, 1 - d.sq);
+function blit(d, mode) { ctx.drawImage(sprites[d.type][mode], d.sx, d.sy, d.box.w * CELL, d.box.h * CELL); }
+function drawBody(b) {
+  const d = b.pd;
+  ctx.save(); ctx.translate(b.position.x, b.position.y);
+  if (d.sq) ctx.scale(1 + d.sq * 0.6, 1 - d.sq);
   ctx.rotate(b.angle);
-  const spr = sprites[d.type];
-  for (const o of d.offs) ctx.drawImage(spr, o.x - h, o.y - h, CELL - 1, CELL - 1);
+  blit(d, 'color');
   if (d.flash > 0.01 || d.glow > 0.01) {
-    ctx.globalAlpha = Math.min(1, d.flash * 0.75 + d.glow * 0.35);
-    for (const o of d.offs) ctx.drawImage(whiteSprite, o.x - h, o.y - h, CELL - 1, CELL - 1);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = Math.min(1, d.flash * 0.7 + d.glow * 0.3);
+    blit(d, 'white'); ctx.globalAlpha = 1;
   }
   ctx.restore();
 }
 function drawShadow(b) {
-  const d = b.pd, h = (CELL - 1) / 2;
   ctx.save(); ctx.translate(b.position.x + 3, b.position.y + 4); ctx.rotate(b.angle);
-  for (const o of d.offs) ctx.drawImage(shadowSprite, o.x - h, o.y - h, CELL - 1, CELL - 1);
-  ctx.restore();
+  blit(b.pd, 'shadow'); ctx.restore();
 }
 
 function render(t) {
@@ -847,13 +904,12 @@ function render(t) {
   for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(cliffL[i].x + 8, cliffL[i].y); ctx.lineTo(cliffL[i].x + 30 + i * 4, cliffL[i].y + 12); ctx.stroke(); }
   // platform
   const pw = PLATFORM_CELLS * CELL, px = -pw / 2;
-  rr(ctx, px - 4, 0, pw + 8, CELL + 6, 8); ctx.fillStyle = '#1d2448'; ctx.fill();
-  rr(ctx, px - 4, 0, pw + 8, CELL, 8);
+  // vlakke stenen plaat, strakke hoeken, precies even breed als de physics
+  ctx.fillStyle = '#1d2448'; ctx.fillRect(px, 0, pw, CELL + 5);
   const pg = ctx.createLinearGradient(0, 0, 0, CELL); pg.addColorStop(0, '#8d97c4'); pg.addColorStop(1, '#5a6596');
-  ctx.fillStyle = pg; ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.35)'; rr(ctx, px + 4, 3, pw - 8, 4, 2); ctx.fill();
-  ctx.fillStyle = 'rgba(20,26,60,.25)';
-  for (let i = 1; i < PLATFORM_CELLS; i++) ctx.fillRect(px + i * CELL - 1, 10, 2, CELL - 14);
+  ctx.fillStyle = pg; ctx.fillRect(px, 0, pw, CELL);
+  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillRect(px, 0, pw, 3);
+  ctx.fillStyle = 'rgba(20,26,60,.3)'; ctx.fillRect(px, CELL - 4, pw, 4);
 
   // recordlijn
   if (best > 0) drawLine(-best / M_PER_CELL * CELL, left, right, '255,209,102', `RECORD ${best.toFixed(1)} m`, 0.75);
@@ -886,12 +942,12 @@ function render(t) {
 
   // actief blok
   if (active) {
-    const p = active, sc = easeOutBack(p.pop) * (1 + p.bump * 0.1), h = (CELL - 1) / 2;
+    const p = active, d = p.body.pd, sc = easeOutBack(p.pop) * (1 + p.bump * 0.1);
     ctx.save(); ctx.translate(p.visX, p.y); ctx.scale(sc, sc); ctx.rotate(p.visAngle + p.tilt);
     ctx.shadowColor = COLORS[p.type]; ctx.shadowBlur = 18 * K * (0.6 + 0.4 * Math.sin(t * 0.006));
-    for (const o of p.offs) ctx.drawImage(sprites[p.type], o.x - h, o.y - h, CELL - 1, CELL - 1);
+    blit(d, 'color');
     ctx.shadowBlur = 0;
-    if (p.fast) { ctx.globalAlpha = 0.18; for (const o of p.offs) ctx.drawImage(whiteSprite, o.x - h, o.y - h, CELL - 1, CELL - 1); ctx.globalAlpha = 1; }
+    if (p.fast) { ctx.globalAlpha = 0.18; blit(d, 'white'); ctx.globalAlpha = 1; }
     ctx.restore();
     if (p.fast) {
       ctx.strokeStyle = 'rgba(214,226,255,.35)'; ctx.lineWidth = 1.5;
@@ -994,6 +1050,7 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
+window.__storm = () => ({ state, lives, placed, bodies: world.bodies.filter(b => b.pd).map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
 </script>
