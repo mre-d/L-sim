@@ -2420,6 +2420,63 @@ function partySync() {
   party.nr.presence({ g: { ts: Math.round(performance.now()), p, a, o: +groundOff().toFixed(2), s: score, d: done ? 1 : 0, c: done ? countList.map(b => b.pd.id) : 0, r: rises } }).catch(() => {});
 }
 
+/* breed scherm: één gedeelde wereld (lucht, heuvels, zee, laser), met alle torens naast elkaar.
+   Iedereen ziet dezelfde volgorde (gesorteerd op het peer-label, dat voor iedereen gelijk is). */
+const TOWER_GAP = 12 * CELL;
+function drawSharedScene(t, opps) {
+  const peers = party.nr.peers();
+  let list = peers.filter(p => p.kind === 'viewer' && (p.sameTab || opps.some(o => o.peer === p.peer)))
+    .map(p => p.peer).sort()
+    .map(id => { const p = peers.find(q => q.peer === id); return p.sameTab ? { self: true, peer: id } : opps.find(o => o.peer === id); })
+    .filter(Boolean).slice(0, 4);
+  if (!list.some(o => o.self)) list = [{ self: true }].concat(list).slice(0, 4);
+  const n = list.length;
+  const k = Math.min(W / (n * TOWER_GAP + 2 * CELL), H / (CELL * 20)) * DPR;
+  const cam = (laserTarget - 4 * CELL) / 2, cw = cv.width, ch = cv.height, ox = cw / 2, oy = ch / 2 - cam * k;
+  const left = -ox / k - 20, right = (cw - ox) / k + 20, bottom = (ch - oy) / k + 20;
+  ctx.setTransform(k, 0, 0, k, ox, oy);
+  drawHills(t, left, right, bottom);
+  drawSea(t, left, right, bottom, 0);
+  const full = { x: 0, y: 0, w: W, h: H, k };
+  list.forEach((o, i) => { o.offX = (i - (n - 1) / 2) * TOWER_GAP; });
+  // namen eerst (achter de blokken), zodat een vallend blok er gewoon voorlangs gaat
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const reveal = ['groupcount', 'over'].includes(state);
+  for (const o of list) {
+    const x = (ox + o.offX * k) / DPR, y = 26;
+    const name = o.self ? 'Jij' : o.name, txt = reveal ? `${name} · ${shownScore(o)}` : name;
+    ctx.save(); ctx.translate(x, y); outlinedText(txt, 0, 0, 17, o.self ? '#ffcf3a' : '#ffffff', 'center'); ctx.restore();
+    if (o.self) {
+      ctx.fillStyle = '#ffcf3a'; ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(x - 7, y + 15); ctx.lineTo(x + 7, y + 15); ctx.lineTo(x, y + 24); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.lineJoin = 'miter';
+    }
+  }
+  for (const o of list) {
+    if (o.self) drawOwnWorld(t, full, { offX: o.offX, cam, shared: true }); else drawOppWorld(t, full, o, { offX: o.offX, shared: true });
+  }
+  ctx.setTransform(k, 0, 0, k, ox, oy);
+  drawSharedLaser(t, left, right);
+  drawSea(t, left, right, bottom, 1);
+  // trofee boven de winnaar (voor alles langs)
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  for (const o of list) if (isWinner(o)) drawTrophy((ox + o.offX * k) / DPR, 26 + 64, 42);
+}
+/* één laser over de hele breedte, met zenders aan de schermranden */
+function drawSharedLaser(t, left, right) {
+  const hot = Math.max(laserHot, laserFail), y = laserTarget, x0 = left + 34, x1 = right - 34;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = `rgba(255,92,138,${(0.25 + 0.35 * hot).toFixed(3)})`; ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  ctx.strokeStyle = hot > 0.3 ? '#ffffff' : '#ff5c8a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  ctx.strokeStyle = '#ffd1e0'; ctx.lineWidth = 2; ctx.setLineDash([2, 12]); ctx.lineDashOffset = -t * 0.03;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = 'butt';
+  for (const x of [x0, x1]) {
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
+    rr(ctx, x - 9, y - 11, 18, 22, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ff5c8a'; ctx.beginPath(); ctx.arc(x, y, 4.5, 0, 7); ctx.fill(); ctx.stroke();
+  }
+}
 function drawViews(t) {
   const full = { x: 0, y: 0, w: W, h: H, k: K };
   const pv = partyView();
@@ -2430,13 +2487,7 @@ function drawViews(t) {
   if (!pv) { drawOwnWorld(t, full); return; }
   const opps = updateOpponents();
   if (landscape) {
-    const all = [{ self: true }].concat(opps).slice(0, 4), n = all.length, cwid = W / n;
-    const k = Math.min(cwid / (CELL * 10), H / (CELL * 20)) * DPR;
-    all.forEach((o, i) => {
-      const vp = { x: i * cwid, y: 0, w: cwid, h: H, k };
-      if (o.self) drawOwnWorld(t, vp); else drawOppWorld(t, vp, o);
-      drawColumnFrame(vp, o, i);
-    });
+    drawSharedScene(t, opps);
   } else {
     drawOwnWorld(t, full);
     const mw = Math.min(96, W * 0.24), mh = mw * 1.7;
@@ -2449,14 +2500,14 @@ function drawViews(t) {
 }
 
 /* jouw eigen wereld, in een willekeurig kader (heel scherm, of een kolom) */
-function drawOwnWorld(t, vp) {
+function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeelde scène (geen eigen lucht/zee/laser); opt.offX: plek in die scène
   const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
   const sx = shake > 0.05 ? rand(-shake, shake) * DPR : 0, sy = shake > 0.05 ? rand(-shake, shake) * DPR : 0;
-  const ox = vx + vw / 2 + sx, oy = vy + vh * 0.5 - camY * K + sy;
+  const ox = vx + vw / 2 + (opt.offX || 0) * K + sx, oy = vy + vh * 0.5 - (opt.cam !== undefined ? opt.cam : camY) * K + sy;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20, top = (vy - oy) / K - 20;
-  drawHills(t, left, right, bottom);
+  if (!opt.shared) drawHills(t, left, right, bottom);
   // subtiel raster boven het platform
   {
     const gTop = Math.max(top, Math.min(landedTop(), 0) - 16 * CELL);
@@ -2465,7 +2516,7 @@ function drawOwnWorld(t, vp) {
     ctx.fillStyle = gg;
     for (let k = -3; k <= PLATFORM_CELLS + 3; k++) ctx.fillRect(GRID0 + k * CELL - 0.6, gTop, 1.2, -gTop);
   }
-  drawSea(t, left, right, bottom, 0);
+  if (!opt.shared) drawSea(t, left, right, bottom, 0);
   drawIslands();
   drawStatic();
 
@@ -2514,7 +2565,7 @@ function drawOwnWorld(t, vp) {
   }
 
   // laser: dikke ronde streep met inktrand en bewegende witte stippen
-  if (mode === 'puzzle' && laserY !== null) {
+  if (mode === 'puzzle' && laserY !== null && !opt.shared) {
     const hot = Math.max(laserHot, laserFail);
     const ex = Math.max(6, Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL;
     ctx.lineCap = 'round';
@@ -2582,26 +2633,28 @@ function drawOwnWorld(t, vp) {
     ctx.restore();
   }
 
-  drawSea(t, left, right, bottom, 1);
+  if (!opt.shared) drawSea(t, left, right, bottom, 1);
   ctx.restore();
 }
 
 /* andermans toren, getekend uit wat hij doorstuurt */
-function drawOppWorld(t, vp, o) {
+function drawOppWorld(t, vp, o, opt = {}) {
   const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
   const cam = (laserTarget - 4 * CELL) / 2;
-  const ox = vx + vw / 2, oy = vy + vh * 0.5 - cam * K;
+  const ox = vx + vw / 2 + (opt.offX || 0) * K, oy = vy + vh * 0.5 - cam * K;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20;
-  drawHills(t, left, right, bottom);
-  drawSea(t, left, right, bottom, 0);
+  if (!opt.shared) drawHills(t, left, right, bottom);
+  if (!opt.shared) drawSea(t, left, right, bottom, 0);
   drawOff = o.c.off; drawIslands(); drawStatic(); drawOff = null;
-  // laser
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
-  ctx.strokeStyle = '#ff5c8a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
-  ctx.lineCap = 'butt';
+  // laser (in de gedeelde scène tekenen we één laser voor iedereen)
+  if (!opt.shared) {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
+    ctx.strokeStyle = '#ff5c8a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
   // blokken
   const drawP = (q, alpha) => {
     const d = TYPE_PD[q.t]; if (!d) return;
@@ -2617,7 +2670,7 @@ function drawOppWorld(t, vp, o) {
   }
   if (o.act) drawP(o.act, 0.85);
   drawOppCountLabels(o);
-  drawSea(t, left, right, bottom, 1);
+  if (!opt.shared) drawSea(t, left, right, bottom, 1);
   ctx.restore();
 }
 
