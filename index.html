@@ -518,7 +518,8 @@ const sfx = {
 
 /* ---------- physics ---------- */
 const HZ = 120, STEP = 1000 / HZ, V60 = HZ / 60;   // substeps voor stabiel stapelen; V60 rekent snelheid om naar px per 1/60 s
-const engine = Engine.create({ enableSleeping: true, positionIterations: 24, velocityIterations: 18 });
+// geen slaapmodus: slapende blokken werden niet gewekt bij een zachte landing en bleven dan scheef 'bevroren' staan
+const engine = Engine.create({ enableSleeping: false, positionIterations: 24, velocityIterations: 18 });
 engine.gravity.y = 1;
 const world = engine.world;
 /* platforms: runs = stenen platen (kolom van t/m), blocks = vaste stenen [kolom, rij boven de plaat] */
@@ -539,7 +540,7 @@ buildPlatform(SURVIVAL_DEF);
 Events.on(engine, 'beforeUpdate', () => {
   for (const b of world.bodies) {
     if (!b.pd || b.isSleeping || !b.pd.landed) continue;
-    Body.setAngularVelocity(b, b.angularVelocity * 0.93);
+    Body.setAngularVelocity(b, b.angularVelocity * 0.99);
   }
 });
 
