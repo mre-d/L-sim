@@ -892,7 +892,73 @@ const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
 /* puzzel: elke ronde een nieuwe pilaar. Een houten stam van één vakje breed in het midden,
    met links en rechts willekeurige klontjes steen (1-3 hoog) en open gaten (1-2) ertussen. */
 const PILLAR_ROWS = 9;
+/* puzzel-platform: elk potje een van vier soorten, en binnen die soort weer een willekeurige vorm.
+   De hoogste paal is altijd PILLAR_ROWS hoog, zodat de laser en de bouwruimte overal gelijk zijn. */
+const PLATFORM_KINDS = ['stam', 'palen', 'breed', 'blokken'];
 function generatePillar() {
+  const k = Math.floor(gameRandom() * PLATFORM_KINDS.length);
+  const def = [genTrunk, genPoles, genWideThin, genBlocks][k]();
+  def.kind = PLATFORM_KINDS[k];
+  return def;
+}
+const rInt = (a, b) => a + Math.floor(gameRandom() * (b - a + 1));
+function shuffled(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(gameRandom() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* kolommen → platform. cols: per kolom { p: paal-id (null = gat), h: hoogte }.
+   Een gat van 1 breed is nooit dieper dan 4 (precies een staand I-blok); anders komt er een stompje in. */
+function colsDef(cols) {
+  if (gameRandom() < 0.5) cols = cols.slice().reverse();
+  const W = cols.length, x0 = -Math.floor(W / 2), poleAt = {};
+  cols.forEach((c, i) => {
+    if (c.p !== null) return;
+    const l = cols[i - 1], r = cols[i + 1];
+    c.h = l && r && l.p !== null && r.p !== null ? Math.max(0, Math.min(l.h, r.h) - 4) : 0;
+    c.p = 'stomp' + i;
+  });
+  const blocks = [];
+  cols.forEach((c, i) => { poleAt[x0 + i] = c.p; for (let r = 0; r < c.h; r++) blocks.push([x0 + i, r]); });
+  // inkepingen (een vakje uit de buitenkant van een brede paal), in kolom-index vóór het spiegelen omgerekend
+  return { runs: [[x0, x0 + W - 1]], blocks, pillar: true, wood: true, poleAt };
+}
+/* 1. losse dunne palen van verschillende hoogte */
+function genPoles() {
+  const pat = [['a', 'b', null, 'c', 'd'], ['a', null, 'b', 'c', null], ['a', null, 'b', null, 'c'], ['a', 'b', null, 'c', null]][rInt(0, 3)];
+  const ids = [...new Set(pat.filter(Boolean))], tall = ids[rInt(0, ids.length - 1)], H = {};
+  for (const id of ids) H[id] = id === tall ? PILLAR_ROWS : rInt(4, 7);
+  return colsDef(pat.map(p => ({ p, h: p ? H[p] : 0 })));
+}
+/* 2. één brede paal met inkepingen, en twee dunne hoge palen */
+function genWideThin() {
+  const hw = rInt(5, 7), [h1, h2] = shuffled([PILLAR_ROWS - 1, PILLAR_ROWS]);
+  const cols = [{ p: 'w', h: hw }, { p: 'w', h: hw }, { p: null, h: 0 }, { p: 'b', h: h1 }, { p: 'c', h: h2 }];
+  if (gameRandom() < 0.5) cols[0].h = hw - 1;                      // getrapte bovenkant
+  const def = colsDef(cols);
+  return notch(def, 'w', [2, hw - 3], gameRandom() < 0.5 ? 2 : 1);
+}
+/* 3. brede blokken van verschillende hoogte tegen elkaar aan, met getrapte grasranden */
+function genBlocks() {
+  const [ha, hb, hc] = shuffled([PILLAR_ROWS, rInt(5, 7), rInt(3, 5)]);
+  const cols = [{ p: 'a', h: ha }, { p: 'a', h: ha }, { p: 'b', h: hb }, { p: 'c', h: hc }, { p: 'c', h: hc }];
+  for (const [i, j] of [[0, 1], [3, 4]]) if (gameRandom() < 0.6 && cols[i].h > 3) cols[gameRandom() < 0.5 ? i : j].h--;   // trapje bovenop
+  const def = colsDef(cols);
+  const big = ha >= hc ? 'a' : 'c';
+  return notch(def, big, [2, Math.max(ha, hc) - 3], 1);
+}
+/* n inkepingen van 1 hoog in de buitenkant van paal `pole` (rij binnen [r0, r1], nooit twee vlak boven elkaar) */
+function notch(def, pole, [r0, r1], n) {
+  const xs = Object.keys(def.poleAt).map(Number).filter(x => def.poleAt[x] === pole).sort((a, b) => a - b);
+  if (xs.length < 2) return def;
+  const outer = def.poleAt[xs[0] - 1] === undefined ? xs[0] : xs[xs.length - 1];
+  const used = [];
+  for (let k = 0; k < n; k++) {
+    let r = rInt(r0, Math.max(r0, r1));
+    if (used.some(u => Math.abs(u - r) < 2)) continue;
+    const top = Math.max(...def.blocks.filter(b => b[0] === outer).map(b => b[1]));
+    if (r >= top - 1) continue;                                        // er moet steen boven blijven
+    def.blocks = def.blocks.filter(b => !(b[0] === outer && b[1] === r)); used.push(r);
+  }
+  return def;
+}
+function genTrunk() {
   const blocks = [];
   for (let r = 0; r < PILLAR_ROWS; r++) blocks.push([0, r]);          // de stam
   for (const side of [-1, 1]) {
@@ -2899,10 +2965,11 @@ function drawStatic() {
       ctx.fillStyle = '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
       ctx.fillStyle = 'rgba(43,33,64,.25)';
       ctx.beginPath(); ctx.arc(x + CELL * (0.3 + ((sx * 7) % 3) * 0.2), y + CELL * 0.55, 2.2, 0, 7); ctx.fill();
-    } else if (curDef.trunk !== undefined && Math.abs(sx - (curDef.trunk - 0.5)) < 0.01) {   // houten stam
+    } else if (curDef.wood || (curDef.trunk !== undefined && Math.abs(sx - (curDef.trunk - 0.5)) < 0.01)) {   // houten stam / palen
+      const col = Math.round(sx + 0.5), same = d => curDef.poleAt && curDef.poleAt[col + d] === curDef.poleAt[col] && has(sx + d, sy);
       ctx.fillStyle = '#8b5a3a'; ctx.fillRect(x, y, CELL, CELL);
-      ctx.fillStyle = '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL);
-      ctx.fillStyle = '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL);
+      if (!same(1)) { ctx.fillStyle = '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL); }   // schaduwkant alleen rechts van de paal
+      if (!same(-1)) { ctx.fillStyle = '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL); }
       ctx.strokeStyle = 'rgba(43,33,64,.45)'; ctx.lineWidth = 2; ctx.lineCap = 'round';          // houtnerf en ringen
       ctx.beginPath(); ctx.moveTo(x + 4, y + CELL * 0.35); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.22, x + CELL - 4, y + CELL * 0.4);
       ctx.moveTo(x + 4, y + CELL * 0.82); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.7, x + CELL - 4, y + CELL * 0.88); ctx.stroke(); ctx.lineCap = 'butt';
@@ -2915,6 +2982,15 @@ function drawStatic() {
       const r = Math.round(-sy + off / CELL);
       if (r % 2) ctx.fillRect(x + CELL / 2 - 1, y, 2, CELL - 2); else ctx.fillRect(x - 1, y, 2, CELL - 2);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x + 5, y + 5, 7, 3);
+    }
+  }
+  // naden tussen twee palen die tegen elkaar staan
+  if (curDef.poleAt) {
+    ctx.fillStyle = INK;
+    for (const [sx, sy] of cells) {
+      const col = Math.round(sx + 0.5);
+      if (!has(sx + 1, sy) || curDef.poleAt[col + 1] === curDef.poleAt[col] || Math.abs(sy * CELL - off) < 0.5) continue;
+      ctx.fillRect(sx * CELL + CELL - 1.5, sy * CELL, 3, CELL);
     }
   }
   // inktrand om het hele silhouet
@@ -3006,7 +3082,7 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
-window.__storm = () => ({ pillarSig: curDef.blocks.map(b => b.join(',')).join(';'), firstQ: queue.slice(0, 2).join(''), state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
+window.__storm = () => ({ kind: curDef.kind, pillarSig: curDef.blocks.map(b => b.join(',')).join(';'), firstQ: queue.slice(0, 2).join(''), state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
 </script>
