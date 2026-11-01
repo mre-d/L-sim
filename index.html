@@ -524,8 +524,11 @@ engine.gravity.y = 1;
 const world = engine.world;
 /* platforms: runs = stenen platen (kolom van t/m), blocks = vaste stenen [kolom, rij boven de plaat] */
 const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
-const PUZZLE_DEF = { runs: [[-3, 3]], blocks: [] };
-const PUZZLE_START_ROWS = 7, RISE_EVERY = 10, RISE_ROWS = 3;
+// puzzel: een hoge, smalle rotspilaar (2 breed) die bijna tot aan de laser reikt; je bouwt eromheen
+const PILLAR_ROWS = 8;
+const PUZZLE_DEF = { runs: [[-1, 0]], blocks: [], pillar: true };
+for (let r = 0; r < PILLAR_ROWS; r++) PUZZLE_DEF.blocks.push([-1, r], [0, r]);
+const PUZZLE_START_ROWS = PILLAR_ROWS + 2, RISE_EVERY = 10, RISE_ROWS = 3;
 let curDef = SURVIVAL_DEF, platformBodies = [];
 function buildPlatform(def) {
   for (const b of platformBodies) Composite.remove(world, b);
@@ -1175,7 +1178,8 @@ function render(t) {
     ctx.fillStyle = 'rgba(20,26,60,.3)'; ctx.fillRect(px, CELL - 4, pw, 4);
   }
   // vaste stenen blokken op het platform
-  for (const [c, r] of curDef.blocks) {
+  if (curDef.pillar) drawPillar();
+  else for (const [c, r] of curDef.blocks) {
     const x = (c - 0.5) * CELL, y = -(r + 1) * CELL;
     ctx.fillStyle = '#3e4878'; ctx.fillRect(x, y, CELL, CELL);
     const sg = ctx.createLinearGradient(0, y, 0, y + CELL); sg.addColorStop(0, '#8f99c6'); sg.addColorStop(1, '#5f6a9c');
@@ -1239,10 +1243,11 @@ function render(t) {
 
   // laser
   if (mode === 'puzzle' && laserY !== null) {
+    // (breedte van de laser loopt over het hele speelveld)
     const pulse = 0.55 + 0.45 * Math.sin(t * 0.011), hot = Math.max(laserHot, laserFail);
     const gl = ctx.createLinearGradient(0, laserY - 10, 0, laserY + 10);
     gl.addColorStop(0, 'rgba(255,70,120,0)'); gl.addColorStop(0.5, `rgba(255,70,120,${(0.22 + 0.25 * hot + 0.08 * pulse).toFixed(3)})`); gl.addColorStop(1, 'rgba(255,70,120,0)');
-    const ex = (Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL;
+    const ex = Math.max(6, Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL;
     ctx.fillStyle = gl; ctx.fillRect(-ex, laserY - 10, ex * 2, 20);
     ctx.fillStyle = hot > 0.3 ? '#ffffff' : '#ff5d8f'; ctx.fillRect(-ex, laserY - 1, ex * 2, 2);
     ctx.fillStyle = `rgba(255,220,230,${(0.5 + 0.5 * pulse).toFixed(3)})`; ctx.fillRect(-ex, laserY - 0.4, ex * 2, 0.8);
@@ -1319,6 +1324,39 @@ function render(t) {
   }
 }
 
+function drawPillar() {
+  const cols = [...new Set(curDef.blocks.map(b => b[0]))].sort((a, b) => a - b);
+  const top = Math.max(...curDef.blocks.map(b => b[1])) + 1;
+  const x0 = (cols[0] - 0.5) * CELL, w = cols.length * CELL, yTop = -top * CELL;
+  // massieve rotskolom
+  const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+  g.addColorStop(0, '#4b5687'); g.addColorStop(0.45, '#6d78ab'); g.addColorStop(1, '#3d4774');
+  ctx.fillStyle = g; ctx.fillRect(x0, yTop, w, top * CELL);
+  // metselwerk: verspringende voegen
+  ctx.fillStyle = 'rgba(20,26,58,.45)';
+  for (let r = 0; r < top; r++) {
+    const y = -(r + 1) * CELL;
+    ctx.fillRect(x0, y + CELL - 2, w, 2);
+    const off = r % 2 ? CELL * 0.5 : CELL;
+    for (let x = x0 + off; x < x0 + w - 2; x += CELL) ctx.fillRect(x - 1, y, 2, CELL - 2);
+  }
+  // lichte bovenkant van elke steen
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  for (let r = 0; r < top; r++) ctx.fillRect(x0, -(r + 1) * CELL, w, 2);
+  // randen
+  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(x0, yTop, 2, top * CELL);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x0 + w - 3, yTop, 3, top * CELL);
+  // mos op de top met druppels langs de zijkant
+  ctx.fillStyle = '#3ddc97'; ctx.fillRect(x0, yTop, w, 5);
+  ctx.fillStyle = '#2bb37a'; ctx.fillRect(x0, yTop + 5, w, 2);
+  const drips = [[0.08, 11], [0.3, 7], [0.55, 13], [0.8, 8], [0.95, 10]];
+  ctx.fillStyle = '#2bb37a';
+  for (const [f, h] of drips) ctx.fillRect(x0 + f * w - 2, yTop + 5, 4, h);
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x0, yTop, w, 1.5);
+  // een paar mosplekjes lager op de pilaar
+  ctx.fillStyle = 'rgba(61,220,151,.55)';
+  for (const [f, r] of [[0.15, 3], [0.7, 5], [0.4, 1]]) if (r < top) ctx.fillRect(x0 + f * w, -(r + 1) * CELL + 1, 9, 3);
+}
 function drawSea(t, left, right, bottom, layer) {
   if (SEA_Y - 30 > bottom) return;
   const base = SEA_Y + (layer ? 10 : -4), amp = layer ? 5 : 4, sp = layer ? 0.0016 : -0.0011;
