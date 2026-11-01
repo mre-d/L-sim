@@ -769,6 +769,32 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   #partyBtn b { font-size: 24px; }
   #startControls { display: none; }
 }
+
+/* account + ranglijst */
+.acct { display: flex; flex-direction: column; gap: 8px; }
+.acct > b, .lb-h { font-family: var(--display); font-weight: 400; font-size: 21px; }
+.ac-sub { font-weight: 700; font-size: 13px; color: var(--muted); }
+.acct input { box-sizing: border-box; width: 100%; font: 700 16px var(--body); color: var(--ink); background: #f4f2fb; border: 2.5px solid var(--ink); border-radius: 12px; padding: 9px 12px; }
+.acct input:focus { outline: 3px solid var(--gold); outline-offset: 1px; }
+.ac-btns { display: flex; gap: 8px; }
+.ac-btns .btn { flex: 1; font-size: 18px; padding: 9px 12px 11px; }
+.acct .btn.small { font-size: 18px; padding: 8px 16px 10px; }
+.ac-msg { margin: 0; min-height: 1em; font-weight: 800; font-size: 13px; color: #2f9e44; }
+.ac-msg.err { color: #e03a6a; }
+.lb { display: flex; flex-direction: column; gap: 10px; }
+.lb-tabs { padding-bottom: 2px; }
+.lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lb-list li { display: grid; grid-template-columns: 26px 34px 1fr auto; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: #f4f2fb; }
+.lb-list li.me { background: #fff3c4; box-shadow: inset 0 0 0 2.5px var(--ink); }
+.lb-list li em { font-style: normal; font-family: var(--display); font-size: 18px; text-align: center; }
+.lb-list li:nth-child(1) em { color: #e0a800; } .lb-list li:nth-child(2) em { color: #8a93a8; } .lb-list li:nth-child(3) em { color: #c27a3a; }
+.lb-list .av { width: 34px; height: 34px; border-radius: 10px; } .lb-list .av.ringed { padding: 2px; }
+.lb-name { font-weight: 800; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-list li b { font-family: var(--display); font-weight: 400; font-size: 17px; }
+.lb-list .lb-wait { display: block; text-align: center; font-weight: 700; color: var(--muted); background: none; }
+.rw-wait { text-align: center; font-weight: 800; color: var(--muted); padding: 6px 0; }
+.rw-wait.err { color: #e03a6a; }
+.rw-note { text-align: center; font-weight: 700; font-size: 12px; color: var(--muted); }
 </style>
 
 <div id="app">
@@ -870,7 +896,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
     <section class="hpanel" id="hpRank" hidden>
       <div class="hp-title">Ranglijst</div>
       <ul class="rank-mine" id="rankMine"></ul>
-      <div class="card soon"><b>Wereldranglijst komt eraan</b><span>Zodra je een account hebt, zie je hier de beste spelers per modus.</span></div>
+      <div class="card lb" id="lbBox"></div>
     </section>
     <section class="hpanel" id="hpProfile" hidden>
       <div class="hp-title">Profiel</div>
@@ -880,7 +906,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
       </div>
       <div class="hp-title">Prestaties</div>
       <ul class="ach" id="prfAch"></ul>
-      <div class="card soon"><b>Account</b><span>Je voortgang staat nu op dit apparaat. Binnenkort maak je een account met gebruikersnaam en wachtwoord, zodat je overal verder kunt spelen.</span></div>
+      <div class="card acct" id="acctBox"></div>
     </section>
     </div>
     <nav class="tabbar" aria-label="Menu">
@@ -1800,6 +1826,7 @@ $('setIntro').onclick = () => { for (const m of ['puzzle', 'race', 'survival']) 
 let resetArmed = 0;
 $('setReset').onclick = () => {
   const lbl = $('setResetLabel');
+  if (profile.cloud) { lbl.textContent = 'Log eerst uit om je gastvoortgang te wissen'; setTimeout(() => { lbl.textContent = 'Voortgang wissen'; }, 3000); return; }
   if (performance.now() - resetArmed > 3000) { resetArmed = performance.now(); lbl.textContent = 'Tik nog een keer om te wissen'; setTimeout(() => { lbl.textContent = 'Voortgang wissen'; }, 3000); return; }
   for (const k of ['st_best', 'st_puzbest', 'st_racebest']) store(k, '0');
   best = 0; puzzleBest = 0; raceBest = 0; resetArmed = 0;
@@ -2315,8 +2342,8 @@ function showResult() {
   $('resBarLbl').textContent = bar.label;
   const md = $('resMedal');
   md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
-  const rw = grantRewards({ mode, party: false, score, height: maxH, medal: medal ? medal[0] : null, placed, perfects, record: isRec });
-  renderReward($('resReward'), rw);
+  const run = { mode, party: false, score, height: maxH, medal: medal ? medal[0] : null, placed, perfects, record: isRec, time: mode === 'race' ? (result && result.time || raceT + penalty) : 0 };
+  if (profile.cloud) finishRunCloud($('resReward'), run); else renderReward($('resReward'), grantRewards(run));
   $('resMain').textContent = party ? 'Terug naar lobby' : 'Nog een keer';
   $('resMenu').textContent = party ? 'Party verlaten' : 'Naar het menu';
   $('resOv').hidden = false; $('resMain').focus(); renderRank();
@@ -2354,6 +2381,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 let SYNC_DT = 0.05;   // zo vaak sturen we onze spelstand (s); via Supabase rustiger, om binnen het gratis tegoed te blijven
 (async () => {
+  await null;   // eerst het hele script laten opstarten
   try { roomNS = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch (e) { roomNS = null; }
   if (!roomNS && SUPABASE_URL && SUPABASE_KEY) {
     try { roomNS = await supabaseRooms(); SYNC_DT = 0.1; OPP_DELAY = 170; } catch (e) { roomNS = null; }
@@ -2367,8 +2395,7 @@ function loadScript(src) {
    Lobby-gegevens (naam, klaar, host…) gaan via Supabase-presence; de spelstand (g) gaat als losse broadcast,
    want die verandert 10× per seconde en presence is daar te zwaar voor. */
 async function supabaseRooms() {
-  if (!window.supabase) await loadScript(SUPABASE_JS);
-  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 30 } } });
+  const client = await sbClient();   // dezelfde verbinding als voor accounts
   const me = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
   return {
     async join(name) {
@@ -2433,7 +2460,7 @@ function renderPartyAvail() {
 }
 const defaultName = 'Bouwer ' + (10 + Math.floor(Math.random() * 90));
 $('pName').value = store('st_name') || defaultName;
-$('pName').addEventListener('change', () => { const v = $('pName').value.trim().slice(0, 14); store('st_name', v); if (v && typeof profile === 'object') { profile.name = v; saveProfile(); renderProfileBar(); } });
+$('pName').addEventListener('change', () => { const v = $('pName').value.trim().slice(0, 14); store('st_name', v); if (v && typeof profile === 'object') { if (profile.cloud) { rpc('set_name', { p_name: v }).then(res => useCloudProfile(res.profile)).catch(() => {}); return; } profile.name = v; saveProfile(); renderProfileBar(); } });
 const myNick = () => ($('pName').value.trim() || defaultName).slice(0, 14);
 // elke speler in de party een eigen kleur: op volgorde van de (voor iedereen gelijke) peer-labels
 const peerColor = p => {
@@ -2610,7 +2637,8 @@ function showPartyResult() {
   rest.hidden = rows.length <= 3;
   $('prMe').textContent = `Jouw potje: ${score} ${score === 1 ? 'blok' : 'blokken'} · platform +${rises} · ${perfects} strak`;
   const iWin = rows.length >= 2 && winners.some(w => w.me);   // alleen tegen echte tegenstanders
-  renderReward($('prReward'), grantRewards({ mode: 'puzzle', party: true, win: iWin, score, height: 0, medal: null, placed, perfects, record: false }));
+  const prun = { mode: 'puzzle', party: true, win: iWin, score, height: 0, medal: null, placed, perfects, record: false, players: rows.length };
+  if (profile.cloud) finishRunCloud($('prReward'), prun); else renderReward($('prReward'), grantRewards(prun));
   $('prOv').hidden = false; renderPartyResult();
   if (winners.some(w => w.me)) haptic('success');
 }
@@ -3685,7 +3713,7 @@ function freshProfile() {
     stats: { games: 0, puzzle: 0, race: 0, survival: 0, party: 0, partyWins: 0, blocks: 0, perfects: 0, bestStreak: 0, bestPuzzle: 0, bestSurvival: 0, raceGold: 0 },
     ach: {}, daily: { last: '', streak: 0 }, quests: { date: '', list: [] } };
 }
-let profile = (() => {
+function loadLocalProfile() {   // het gastprofiel op dit apparaat
   let p = null; try { p = JSON.parse(store(PROFILE_KEY) || 'null'); } catch (e) { p = null; }
   const f = freshProfile();
   if (!p || typeof p !== 'object') return f;
@@ -3696,9 +3724,11 @@ let profile = (() => {
   for (const k of ['xp', 'level', 'coins']) p[k] = Math.max(k === 'level' ? 1 : 0, Math.floor(+p[k] || 0));
   if (typeof p.name !== 'string' || !p.name.trim()) p.name = f.name;
   for (const c of Object.keys(DEFAULT_EQ)) if (!ITEM[p.eq[c]] || !p.owned.includes(p.eq[c])) p.eq[c] = DEFAULT_EQ[c];
+  delete p.cloud;
   return p;
-})();
-function saveProfile() { store(PROFILE_KEY, JSON.stringify(profile)); }
+}
+let profile = loadLocalProfile();
+function saveProfile() { if (!profile.cloud) store(PROFILE_KEY, JSON.stringify(profile)); }   // een account-profiel staat op de server
 saveProfile();
 
 /* ---- levels ---- */
@@ -3843,6 +3873,7 @@ const QUEST_POOL = [
   { k: 'party', n: [1, 2], txt: n => n > 1 ? `Speel ${n} party-potjes` : 'Speel een party-potje' },
 ];
 function ensureQuests() {
+  if (profile.cloud) return;   // met een account maakt de server de opdrachten
   const t = todayStr(); if (profile.quests.date === t && profile.quests.list.length) return;
   const r = seededRandom([...t].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 17));
   const pool = QUEST_POOL.slice(), list = [];
@@ -4020,10 +4051,19 @@ function shopClick(i, card) {
   if (!own) {
     if (profile.coins < i.price) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast('Te weinig munten', `Nog ${i.price - profile.coins} nodig`); return; }
     if (card.dataset.arm !== '1') { card.dataset.arm = '1'; card.querySelector('.sh-act').innerHTML = `Kopen? ${COIN_SVG}${i.price}`; card.classList.add('arm'); setTimeout(() => { if (card.isConnected) { card.dataset.arm = ''; renderShop(); } }, 2500); return; }
+    if (profile.cloud) {   // met een account koopt de server (die controleert wins en munten)
+      card.querySelector('.sh-act').textContent = 'Kopen…';
+      rpc('buy_item', { p_id: i.id }).then(res => { useCloudProfile(res.profile); toastAchs(res.achs); sfx.milestone(); haptic('success'); })
+        .catch(e => { toast('Kopen lukt niet', niceErr(e)); renderShop(); });
+      return;
+    }
     profile.coins -= i.price; profile.owned.push(i.id);
     sfx.milestone(); haptic('success');
     const got = checkAchievements(); for (const a of got) toast('Prestatie: ' + a.name, `+${a.coins} munten`, 'ach');
-  } else { tone(660, 0.08, 'triangle', 0.08); haptic('light'); }
+  } else {
+    tone(660, 0.08, 'triangle', 0.08); haptic('light');
+    if (profile.cloud) { rpc('equip_item', { p_id: i.id }).then(res => useCloudProfile(res.profile)).catch(e => toast('Kiezen lukt niet', niceErr(e))); return; }
+  }
   profile.eq[i.cat] = i.id; saveProfile();
   if (party) party.nr.presence({ sk: mySk() }).catch(() => {});
   if (['blocks', 'world', 'fx'].includes(i.cat)) applySkins(true);
@@ -4033,6 +4073,9 @@ function shopClick(i, card) {
 /* opdrachten + dagelijkse beloning */
 function renderQuests() {
   ensureQuests();
+  if (profile.cloud && profile.quests.date !== todayStr() && !renderQuests.fetching) {   // nieuwe dag: nieuwe opdrachten van de server
+    renderQuests.fetching = true; rpc('get_profile').then(useCloudProfile).catch(() => {}).finally(() => { renderQuests.fetching = false; });
+  }
   renderDaily($('dailyBox'), () => renderQuests());
   renderQuestList();
 }
@@ -4044,7 +4087,15 @@ function renderDaily(box, after) {
       return `<span class="dl-day${got ? ' got' : ''}${cur ? ' cur' : ''}"><em>${d}</em>${COIN_SVG}<b>${a}</b></span>`; }).join('') + '</div>'
     + (ds.claimed ? '' : `<button class="btn dl-claim">Ophalen · ${DAILY[ds.day - 1]}</button>`);
   const btn = box.querySelector('.dl-claim');
-  if (btn) btn.onclick = () => { const amt = claimDaily(); if (amt) { coinBurst(btn); sfx.milestone(); haptic('success'); toast('Opgehaald!', `+${amt} munten`); } renderProfileBar(); after(); };
+  if (btn) btn.onclick = () => {
+    if (profile.cloud) {
+      btn.disabled = true;
+      rpc('claim_daily').then(res => { coinBurst(btn); useCloudProfile(res.profile); sfx.milestone(); haptic('success'); toast('Opgehaald!', `+${res.amount} munten`); after(); })
+        .catch(e => { toast('Ophalen lukt niet', niceErr(e)); btn.disabled = false; });
+      return;
+    }
+    const amt = claimDaily(); if (amt) { coinBurst(btn); sfx.milestone(); haptic('success'); toast('Opgehaald!', `+${amt} munten`); } renderProfileBar(); after();
+  };
 }
 function renderQuestList() {
   const list = $('questList'); list.textContent = '';
@@ -4054,7 +4105,9 @@ function renderQuestList() {
       + (q.claimed ? '<span class="q-btn got">✓</span>' : `<button class="q-btn" ${done ? '' : 'disabled'}>${COIN_SVG}${q.coins}</button>`);
     li.querySelector('b').textContent = questText(q);
     const btn = li.querySelector('button');
-    if (btn) btn.onclick = () => { if (q.claimed || q.prog < q.n) return; q.claimed = true; profile.coins += q.coins; const ups = addXP(q.xp); for (const u of ups) toast(`Level ${u.level}!`, `+${u.coins} munten`); checkAchievements(); saveProfile(); coinBurst(btn); sfx.milestone(); haptic('success'); renderProfileBar(); renderQuests(); };
+    if (btn) btn.onclick = () => { if (q.claimed || q.prog < q.n) return;
+      if (profile.cloud) { btn.disabled = true; rpc('claim_quest', { p_idx: profile.quests.list.indexOf(q) }).then(res => { coinBurst(btn); useCloudProfile(res.profile); for (const u of res.ups || []) toast(`Level ${u.level}!`, `+${u.coins} munten`); sfx.milestone(); haptic('success'); }).catch(e => { toast('Ophalen lukt niet', niceErr(e)); btn.disabled = false; }); return; }
+      q.claimed = true; profile.coins += q.coins; const ups = addXP(q.xp); for (const u of ups) toast(`Level ${u.level}!`, `+${u.coins} munten`); checkAchievements(); saveProfile(); coinBurst(btn); sfx.milestone(); haptic('success'); renderProfileBar(); renderQuests(); };
     list.append(li);
   }
   const ms = new Date(); ms.setHours(24, 0, 0, 0); const h = Math.floor((ms - Date.now()) / 36e5), m = Math.floor((ms - Date.now()) / 6e4) % 60;
@@ -4076,14 +4129,17 @@ function coinBurst(el) {   // muntjes vliegen van de knop naar je munten-teller
 /* ranglijst (stap 1: je eigen records; de wereldranglijst komt met accounts) */
 function renderRankTab() {
   const s = profile.stats;
+  renderLeaderboard();
+  const bp = profile.cloud ? +s.bestPuzzle || 0 : puzzleBest, br = profile.cloud ? +s.bestRace || 0 : raceBest, bs = profile.cloud ? +s.bestSurvival || 0 : best;   // met een account: records van de server
   $('rankMine').innerHTML = [
-    ['Puzzel', puzzleBest ? `${puzzleBest} blokken` : '—', '#c77dff'], ['Race', raceBest ? fmtTime(raceBest) : '—', '#4cc9f0'],
-    ['Overleven', best ? `${best.toFixed(1)} m` : '—', '#ff5d8f'], ['Party-wins', String(s.partyWins), '#ffd23f'],
+    ['Puzzel', bp ? `${bp} ${bp === 1 ? 'blok' : 'blokken'}` : '—', '#c77dff'], ['Race', br ? fmtTime(br) : '—', '#4cc9f0'],
+    ['Overleven', bs ? `${bs.toFixed(1)} m` : '—', '#ff5d8f'], ['Party-wins', String(s.partyWins), '#ffd23f'],
   ].map(([l, v, c]) => `<li style="--mc:${c}"><span>${l}</span><b>${v}</b></li>`).join('');
 }
 /* profiel */
 function renderProfileTab() {
   const s = profile.stats;
+  renderAccount();
   $('prfAv').innerHTML = avatarHTML(profile.eq.avatar, profile.eq.frame, 'big');
   $('prfName').value = profile.name;
   $('prfLvl').textContent = `Level ${profile.level} · ${profile.xp}/${xpNeed(profile.level)} XP · 🏆 ${myWins()} ${myWins() === 1 ? 'win' : 'wins'}`;
@@ -4093,6 +4149,7 @@ function renderProfileTab() {
 }
 $('prfName').addEventListener('change', () => {
   const v = $('prfName').value.trim().slice(0, 14); if (!v) { $('prfName').value = profile.name; return; }
+  if (profile.cloud) { rpc('set_name', { p_name: v }).then(res => useCloudProfile(res.profile)).catch(e => { toast('Naam aanpassen lukt niet', niceErr(e)); $('prfName').value = profile.name; }); return; }
   profile.name = v; saveProfile(); store('st_name', v); $('pName').value = v; renderProfileBar();
 });
 
@@ -4107,8 +4164,201 @@ function maybeShowDaily() {
   $('dailyOv').hidden = false;
 }
 
+/* ---------- accounts (stap 2): gebruikersnaam + wachtwoord via Supabase ----------
+   Ingelogd = je profiel staat op de server. Munten, XP, wins, skins, opdrachten en de dagelijkse beloning worden
+   daar uitgerekend en gecontroleerd (zie supabase/schema.sql); het spel toont alleen wat de server teruggeeft.
+   Als gast werkt alles zoals eerst, op dit apparaat. Accounts werken alleen op de eigen site (niet in de claude.ai-versie). */
+const ACCOUNTS_OK = !(window.claude && window.claude.use) && !!SUPABASE_URL && !!SUPABASE_KEY;
+const USER_DOMAIN = 'spelers.stormtoren.cordain.nl';   // Supabase wil een e-mailadres; dit nep-adres wordt nooit gebruikt om te mailen
+let sbPromise = null, acctBusy = false;
+function sbClient() {
+  if (!sbPromise) sbPromise = (async () => {
+    if (!window.supabase) await loadScript(SUPABASE_JS);
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 30 } }, auth: { persistSession: true, autoRefreshToken: true, storageKey: 'st_auth' } });
+  })();
+  sbPromise.catch(() => { sbPromise = null; });
+  return sbPromise;
+}
+const SERVER_MSG = {
+  'te snel': 'Dit potje was te snel na het vorige en telt niet mee',
+  'te weinig wins': 'Je hebt nog niet genoeg wins', 'te weinig munten': 'Je hebt niet genoeg munten', 'al gekocht': 'Die skin heb je al',
+  'al opgehaald': 'Al opgehaald', 'nog niet klaar': 'Deze opdracht is nog niet af', 'gebruikersnaam bezet': 'Deze gebruikersnaam is al bezet',
+  'ongeldige gebruikersnaam': 'Gebruik 3–16 tekens: letters, cijfers of _', 'niet ingelogd': 'Je bent uitgelogd, log opnieuw in',
+};
+function niceErr(e) {
+  const m = String((e && e.message) || e || '');
+  for (const [k, v] of Object.entries(SERVER_MSG)) if (m.includes(k)) return v;
+  if (/already registered|already been registered|User already/i.test(m)) return 'Deze gebruikersnaam is al bezet';
+  if (/Invalid login credentials/i.test(m)) return 'Gebruikersnaam of wachtwoord klopt niet';
+  if (/Password should be at least|password.*characters/i.test(m)) return 'Je wachtwoord moet minstens 6 tekens hebben';
+  if (/rate limit|too many/i.test(m)) return 'Even te veel pogingen, probeer het zo opnieuw';
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Geen verbinding met de server';
+  if (/Email not confirmed/i.test(m)) return 'Account nog niet actief (zet "Confirm email" uit in Supabase)';
+  return 'Er ging iets mis: ' + m.slice(0, 80);
+}
+async function rpc(fn, args) {
+  const sb = await sbClient();
+  const { data, error } = await sb.rpc(fn, args || {});
+  if (error) throw new Error(error.message || 'serverfout');
+  return data;
+}
+/* profiel van de server overnemen (en skins bijwerken als die veranderd zijn) */
+function useCloudProfile(p) {
+  if (!p) return;
+  const f = freshProfile(), oldEq = profile.eq || {};
+  profile = { ...f, ...p, cloud: true, stats: { ...f.stats, ...(p.stats || {}) }, eq: { ...f.eq, ...(p.eq || {}) },
+    owned: Array.isArray(p.owned) ? p.owned : f.owned, ach: p.ach || {}, daily: p.daily || f.daily, quests: p.quests || f.quests };
+  if (['blocks', 'world', 'fx'].some(k => oldEq[k] !== profile.eq[k])) applySkins(true);
+  $('pName').value = profile.name;
+  renderProfileBar();
+  if (party) party.nr.presence({ sk: mySk(), nick: myNick() }).catch(() => {});
+  if (!$('homeOv').hidden) { if (homeTab === 'shop') renderShop(); else if (homeTab === 'quests') renderQuests(); else if (homeTab === 'profile') renderProfileTab(); }
+}
+function questsDoneBetween(before, after) {
+  const b = (before && before.list) || [];
+  return ((after && after.list) || []).filter((q, i) => q.prog >= q.n && !(b[i] && b[i].k === q.k && b[i].prog >= b[i].n));
+}
+function toastAchs(list) { for (const a of list || []) { const d = ACHS.find(x => x.id === a.id); toast('Prestatie: ' + (d ? d.name : a.id), `+${a.coins} munten`, 'ach'); } }
+
+/* ---- einde van een potje (ingelogd) ---- */
+function finishRunCloud(el, r) {
+  el.hidden = false; el.innerHTML = '<div class="rw-wait">Opslaan…</div>';
+  const qBefore = profile.quests;
+  const call = r.party
+    ? rpc('finish_party', { p_code: party ? party.code : '', p_seed: party ? party.seed : 0, p: { score: r.score, placed: r.placed, perfects: r.perfects, streak: runBestStreak } })
+    : rpc('finish_game', { p: { mode: r.mode, score: r.score, height: +(+r.height || 0).toFixed(2), placed: r.placed, perfects: r.perfects, streak: runBestStreak, time: +(+r.time || 0).toFixed(2) } });
+  return call.then(res => {
+    useCloudProfile(res.profile);
+    const rw = { ...res.reward, win: false, unlocked: [] };
+    renderReward(el, rw);
+    for (const q of questsDoneBetween(qBefore, profile.quests)) toast('Opdracht klaar!', questText(q), 'quest');
+    toastAchs(rw.achs);
+    if (r.party && r.players >= 2) claimWinLoop(el, party.code, party.seed);
+    else if (r.party) appendNote(el, 'Een party in je eentje telt niet als win.');
+  }).catch(e => { el.innerHTML = `<div class="rw-wait err">Niet opgeslagen: ${niceErr(e)}</div>`; });
+}
+function appendNote(el, txt) { const d = document.createElement('div'); d.className = 'rw-note'; d.textContent = txt; el.append(d); }
+/* win ophalen: de server wacht tot minstens 2 spelers met een account hun score hebben ingestuurd */
+function claimWinLoop(el, code, seed) {
+  const waits = [1800, 3500, 6000, 10000, 15000];
+  let i = 0;
+  const tryOnce = () => rpc('claim_party_win', { p_code: code, p_seed: seed }).then(w => {
+    if (w.status === 'win') {
+      useCloudProfile(w.profile);
+      const names = (w.unlocked || []).map(id => ITEM[id] ? ITEM[id].name : id);
+      const d = document.createElement('div'); d.className = 'rw-win';
+      d.innerHTML = `🏆 +1 win <span>${myWins()} in totaal</span>` + (names.length ? `<b>Nu te koop: ${names.join(', ')}</b>` : '');
+      if (el.isConnected) el.append(d);
+      for (const u of w.ups || []) toast(`Level ${u.level}!`, `+${u.coins} munten`);
+      toastAchs(w.achs); confetti(); sfx.milestone(); haptic('success');
+    } else if (w.status === 'pending') {
+      if (i < waits.length) setTimeout(tryOnce, waits[i++]);
+      else appendNote(el, 'Wins tellen alleen als je tegenstanders ook een account hebben.');
+    }
+  }).catch(e => { if (i < 2) setTimeout(tryOnce, waits[i++]); });
+  setTimeout(tryOnce, waits[i++]);
+}
+
+/* ---- inloggen, registreren, uitloggen ---- */
+function guestImport(nameAs) {
+  const g = loadLocalProfile();
+  return { coins: g.coins, level: g.level, name: nameAs || g.name, owned: g.owned, eq: g.eq };
+}
+async function acctSubmit(kind) {
+  if (acctBusy) return;
+  const typed = ($('acUser').value || '').trim(), u = typed.toLowerCase(), pw = $('acPass').value || '', msg = $('acMsg');
+  msg.className = 'ac-msg';
+  if (!/^[a-z0-9_]{3,16}$/.test(u)) { msg.textContent = 'Gebruikersnaam: 3–16 tekens, alleen letters, cijfers of _'; msg.classList.add('err'); return; }
+  if (pw.length < 6) { msg.textContent = 'Je wachtwoord moet minstens 6 tekens hebben'; msg.classList.add('err'); return; }
+  acctBusy = true; msg.textContent = kind === 'up' ? 'Account maken…' : 'Inloggen…';
+  for (const b of document.querySelectorAll('#acctBox button')) b.disabled = true;
+  try {
+    const sb = await sbClient(), email = `${u}@${USER_DOMAIN}`;
+    if (kind === 'up') {
+      const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { username: u } } });
+      if (error) throw error;
+      if (!data.session) throw new Error('Email not confirmed');
+      useCloudProfile(await rpc('create_profile', { p_username: u, p_import: guestImport(typed) }));   // weergavenaam = zoals je hem typte
+      toast('Welkom, ' + typed + '!', 'Je account is klaar'); sfx.milestone();
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if (error) throw error;
+      let p = await rpc('get_profile');
+      if (!p) p = await rpc('create_profile', { p_username: u, p_import: guestImport(typed) });
+      useCloudProfile(p);
+      toast('Ingelogd', 'Welkom terug, ' + profile.name + '!');
+    }
+    haptic('success');
+    acctBusy = false; renderAccount();
+  } catch (e) {   // formulier laten staan (met wat je typte) en de fout tonen
+    acctBusy = false;
+    for (const b of document.querySelectorAll('#acctBox button')) b.disabled = false;
+    if ($('acMsg')) { $('acMsg').textContent = niceErr(e); $('acMsg').className = 'ac-msg err'; }
+    haptic('error');
+  }
+}
+async function acctLogout() {
+  try { const sb = await sbClient(); await sb.auth.signOut(); } catch (e) {}
+  profile = loadLocalProfile(); applySkins(true); $('pName').value = profile.name;
+  renderProfileBar(); renderProfileTab(); toast('Uitgelogd', 'Je speelt nu als gast');
+}
+function renderAccount() {
+  const box = $('acctBox'); if (!box) return;
+  if (!ACCOUNTS_OK) { box.innerHTML = '<b>Account</b><span class="ac-sub">Accounts werken op stormtoren.cordain.nl. Hier staat je voortgang op dit apparaat.</span>'; return; }
+  if (profile.cloud) {
+    box.innerHTML = `<b>Account</b><span class="ac-sub">Ingelogd als <strong></strong>. Je voortgang staat veilig op de server.</span><button class="btn ghost small" id="acOut">Uitloggen</button>`;
+    box.querySelector('strong').textContent = profile.username || profile.name;
+    $('acOut').onclick = acctLogout; return;
+  }
+  box.innerHTML = `<b>Account</b><span class="ac-sub">Log in om overal verder te spelen. Een nieuw account neemt je munten (max 1500), level (max 10) en gratis skins mee.</span>
+    <input id="acUser" maxlength="16" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Gebruikersnaam">
+    <input id="acPass" type="password" maxlength="72" autocomplete="current-password" placeholder="Wachtwoord (min. 6 tekens)">
+    <div class="ac-btns"><button class="btn small" id="acIn">Inloggen</button><button class="btn ghost small" id="acUp">Account maken</button></div>
+    <p class="ac-msg" id="acMsg"></p>`;
+  $('acIn').onclick = () => acctSubmit('in'); $('acUp').onclick = () => acctSubmit('up');
+  $('acPass').addEventListener('keydown', e => { if (e.key === 'Enter') acctSubmit('in'); });
+}
+/* bij het openen: was je al ingelogd? */
+async function restoreSession(tries = 0) {
+  if (!ACCOUNTS_OK || profile.cloud) return;
+  try {
+    const sb = await sbClient(); const { data } = await sb.auth.getSession();
+    if (!data || !data.session) return;
+    let p = await rpc('get_profile');
+    if (!p) { const meta = data.session.user && data.session.user.user_metadata; if (meta && meta.username) p = await rpc('create_profile', { p_username: meta.username, p_import: guestImport() }); }
+    if (p) useCloudProfile(p);
+  } catch (e) { if (tries < 2) setTimeout(() => restoreSession(tries + 1), 3000); }   // haperende verbinding: nog even opnieuw, anders als gast verder
+}
+
+/* ---- ranglijst ---- */
+let lbMode = 'puzzle';
+async function renderLeaderboard() {
+  const box = $('lbBox'); if (!box) return;
+  if (!ACCOUNTS_OK) { box.innerHTML = '<b class="lb-h">Wereldranglijst</b><span class="ac-sub">De wereldranglijst zie je op stormtoren.cordain.nl.</span>'; return; }
+  const tabs = [['puzzle', 'Puzzel'], ['race', 'Race'], ['survival', 'Overleven'], ['wins', 'Wins']];
+  box.innerHTML = '<b class="lb-h">Wereldranglijst</b><div class="shop-cats lb-tabs">' + tabs.map(([k, l]) => `<button data-lb="${k}" class="${k === lbMode ? 'on' : ''}">${l}</button>`).join('') + '</div><ol class="lb-list"><li class="lb-wait">Laden…</li></ol>';
+  for (const b of box.querySelectorAll('[data-lb]')) b.onclick = () => { lbMode = b.dataset.lb; renderLeaderboard(); };
+  const want = lbMode;
+  try {
+    const rows = await rpc('leaderboard', { p_mode: want });
+    if (want !== lbMode || !box.isConnected) return;
+    const list = box.querySelector('.lb-list'); list.textContent = '';
+    if (!rows || !rows.length) { list.innerHTML = '<li class="lb-wait">Nog niemand. Wordt jij de eerste?</li>'; return; }
+    rows.forEach((r, i) => {
+      const li = document.createElement('li'); if (r.me) li.className = 'me';
+      const v = Number(r.value), val = want === 'race' ? fmtTime(v) : want === 'survival' ? `${v.toFixed(1)} m` : want === 'wins' ? `${v} 🏆` : `${v} ${v === 1 ? 'blok' : 'blokken'}`;
+      const av = ITEM[r.avatar] ? r.avatar : 'a_happy', fr = ITEM[r.frame] ? r.frame : 'r_none', nc = ITEM[r.namecol] ? r.namecol : 'n_white';
+      li.innerHTML = `<em>${i + 1}</em>${avatarHTML(av, fr)}<span class="lb-name"></span><b></b>`;
+      const nm = li.querySelector('.lb-name'); nm.textContent = r.name; if (nc !== 'n_white') { nm.classList.add('nm-col'); nm.setAttribute('style', nameStyle(nc)); }
+      li.querySelector('b').textContent = val;
+      list.append(li);
+    });
+  } catch (e) { const list = box.querySelector('.lb-list'); if (list) list.innerHTML = `<li class="lb-wait">${niceErr(e)}</li>`; }
+}
+
 applySkins(false);
 $('pName').value = profile.name;
+restoreSession();
 ensureQuests(); renderProfileBar(); showTab('play'); setTimeout(maybeShowDaily, 600);
 resize();
 renderHearts(false);
