@@ -901,29 +901,27 @@ function generatePillar() {
   def.kind = PLATFORM_KINDS[k];
   return def;
 }
-const rInt = (a, b) => a + Math.floor(gameRandom() * (b - a + 1));
-/* kolommen → platform. cols: per kolom { p: paal-id (null = gat), h: hoogte }.
-   Een gat van 1 breed is nooit dieper dan 4 (precies een staand I-blok); anders komt er een stompje in. */
-function colsDef(cols) {
-  if (gameRandom() < 0.5) cols = cols.slice().reverse();
-  const W = cols.length, x0 = -Math.floor(W / 2), poleAt = {};
+/* kolommen → platform. cols: per kolom { p: paal-id (null = gat), h: hoogte }; notches: [kolom, rij] vakjes die eruit gaan.
+   Wordt willekeurig gespiegeld, zodat dezelfde vorm er niet altijd hetzelfde uitziet. */
+function colsDef(cols, notches = []) {
+  const W = cols.length, mirror = gameRandom() < 0.5, x0 = -Math.floor(W / 2), poleAt = {}, blocks = [];
   cols.forEach((c, i) => {
-    if (c.p !== null) return;
-    const l = cols[i - 1], r = cols[i + 1];
-    c.h = l && r && l.p !== null && r.p !== null ? Math.max(0, Math.min(l.h, r.h) - 4) : 0;
-    c.p = 'stomp' + i;
+    const x = x0 + (mirror ? W - 1 - i : i);
+    if (!c.p) return;
+    poleAt[x] = c.p;
+    for (let r = 0; r < c.h; r++) if (!notches.some(([ni, nr]) => ni === i && nr === r)) blocks.push([x, r]);
   });
-  const blocks = [];
-  cols.forEach((c, i) => { poleAt[x0 + i] = c.p; for (let r = 0; r < c.h; r++) blocks.push([x0 + i, r]); });
-  // inkepingen (een vakje uit de buitenkant van een brede paal), in kolom-index vóór het spiegelen omgerekend
   return { runs: [[x0, x0 + W - 1]], blocks, pillar: true, wood: true, poleAt };
 }
-/* 1. losse dunne palen van verschillende hoogte */
+/* palen: een van drie vaste ontwerpen (hoogste paal = PILLAR_ROWS) */
+const POLE_LAYOUTS = [
+  { cols: [['a', 6], ['a', 5], [null, 0], ['b', 4], ['c', 8], ['c', 9]], notches: [[1, 2], [4, 5]] },   // breed blok · dun paaltje · breed hoog blok
+  { cols: [['a', 6], ['a', 5], ['b', 8], [null, 0], ['c', 9]], notches: [[0, 3]] },                  // breed blok · twee dunne hoge palen
+  { cols: [['a', 5], ['b', 9], [null, 0], ['c', 5], [null, 0], ['d', 5]], notches: [] },             // losse dunne palen
+];
 function genPoles() {
-  const pat = [['a', 'b', null, 'c', 'd'], ['a', null, 'b', 'c', null], ['a', null, 'b', null, 'c'], ['a', 'b', null, 'c', null]][rInt(0, 3)];
-  const ids = [...new Set(pat.filter(Boolean))], tall = ids[rInt(0, ids.length - 1)], H = {};
-  for (const id of ids) H[id] = id === tall ? PILLAR_ROWS : rInt(4, 7);
-  return colsDef(pat.map(p => ({ p, h: p ? H[p] : 0 })));
+  const L = POLE_LAYOUTS[Math.floor(gameRandom() * POLE_LAYOUTS.length)];
+  return colsDef(L.cols.map(([p, h]) => ({ p, h })), L.notches);
 }
 function genTrunk() {
   const blocks = [];
