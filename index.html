@@ -1996,13 +1996,88 @@ renderHomeRecords();
 const PARTY_COLORS = ['#ff5c8a', '#3fc4f5', '#ffd23f', '#56d364', '#b46cff', '#ff8c42'];
 const CODE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
 let roomNS = null, party = null;
+/* Eigen site (bijv. stormtoren.cordain.nl): party loopt via Supabase Realtime. Vul hier je project in.
+   De anon/publishable key is bedoeld om in een website te staan; zet hier NOOIT de service_role/secret key. */
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+let SYNC_DT = 0.05;   // zo vaak sturen we onze spelstand (s); via Supabase rustiger, om binnen het gratis tegoed te blijven
 (async () => {
   try { roomNS = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch (e) { roomNS = null; }
+  if (!roomNS && SUPABASE_URL && SUPABASE_KEY) {
+    try { roomNS = await supabaseRooms(); SYNC_DT = 0.1; OPP_DELAY = 170; } catch (e) { roomNS = null; }
+  }
   renderPartyAvail();
 })();
+function loadScript(src) {
+  return new Promise((ok, fail) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = fail; document.head.append(el); });
+}
+/* Supabase-kamer met dezelfde vorm als de ingebouwde room: presence(), peers(), onPeers(), on(), emit(), leave().
+   Lobby-gegevens (naam, klaar, host…) gaan via Supabase-presence; de spelstand (g) gaat als losse broadcast,
+   want die verandert 10× per seconde en presence is daar te zwaar voor. */
+async function supabaseRooms() {
+  if (!window.supabase) await loadScript(SUPABASE_JS);
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 30 } } });
+  const me = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  return {
+    async join(name) {
+      const ch = client.channel(name, { config: { presence: { key: me }, broadcast: { self: false, ack: false } } });
+      const lobby = new Map(), games = new Map(), peerL = new Set(), topicL = {};
+      let mine = {}, myG = null, gTimer = null, lastG = 0;
+      const notify = () => { for (const f of [...peerL]) try { f(); } catch (e) {} };
+      const readPresence = () => {
+        lobby.clear();
+        for (const [key, metas] of Object.entries(ch.presenceState())) if (metas && metas.length) lobby.set(key, metas[metas.length - 1]);
+        for (const key of [...games.keys()]) if (!lobby.has(key) && key !== me) games.delete(key);
+      };
+      ch.on('presence', { event: 'sync' }, () => { readPresence(); notify(); });
+      ch.on('broadcast', { event: 'g' }, ({ payload }) => { if (payload && payload.peer && payload.peer !== me) games.set(payload.peer, payload.g); });
+      ch.on('broadcast', { event: 'ev' }, ({ payload }) => {
+        if (!payload || payload.peer === me) return;
+        for (const f of topicL[payload.topic] || []) try { f({ topic: payload.topic, data: payload.data, peer: payload.peer, isMe: false, sameTab: false, kind: 'viewer' }); } catch (e) {}
+      });
+      await new Promise((ok, fail) => {
+        const t = setTimeout(() => fail(new Error('timeout')), 9000);
+        ch.subscribe(st => { if (st === 'SUBSCRIBED') { clearTimeout(t); ok(); } else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { clearTimeout(t); fail(new Error(st)); } });
+      });
+      const sendG = () => { gTimer = null; lastG = performance.now(); ch.send({ type: 'broadcast', event: 'g', payload: { peer: me, g: myG } }).catch(() => {}); };
+      const lobbyKeys = obj => { const o = { ...obj }; delete o.g; return o; };
+      return {
+        name,
+        async presence(p) {
+          if ('g' in p) {   // spelstand: losse broadcast, hooguit ~10× per seconde
+            myG = p.g;
+            if (!gTimer) { const wait = Math.max(0, 95 - (performance.now() - lastG)); gTimer = setTimeout(sendG, wait); }
+          }
+          const rest = lobbyKeys(p);
+          if (Object.keys(rest).length) { mine = { ...mine, ...rest }; await ch.track(mine); }
+        },
+        peers() {
+          const out = [];
+          const keys = new Set([...lobby.keys(), me]);
+          for (const key of keys) {
+            const base = key === me ? mine : lobby.get(key) || {};
+            const pres = { ...base }; delete pres.presence_ref;
+            pres.g = key === me ? myG : (games.get(key) || null);
+            out.push({ peer: key, presence: pres, isMe: key === me, sameTab: key === me, kind: 'viewer' });
+          }
+          return out;
+        },
+        onPeers(f) { peerL.add(f); setTimeout(() => f(), 0); return () => peerL.delete(f); },
+        on(topic, f) { (topicL[topic] = topicL[topic] || []).push(f); return () => { topicL[topic] = topicL[topic].filter(x => x !== f); }; },
+        async emit(topic, data) {
+          await ch.send({ type: 'broadcast', event: 'ev', payload: { topic, data, peer: me } });
+          for (const f of topicL[topic] || []) try { f({ topic, data, peer: me, isMe: true, sameTab: true, kind: 'viewer' }); } catch (e) {}
+        },
+        async leave() { clearTimeout(gTimer); try { await ch.untrack(); } catch (e) {} await client.removeChannel(ch); },
+        connected: () => true,
+      };
+    },
+  };
+}
 function renderPartyAvail() {
   const ok = !!roomNS;
-  $('pAvail').textContent = ok ? '' : 'Samen spelen werkt alleen op de gedeelde Stormtoren-pagina, als je bent ingelogd.';
+  $('pAvail').textContent = ok ? '' : 'Samen spelen is hier niet beschikbaar (geen verbinding met de partyserver).';
   $('pCreate').disabled = !ok; $('pJoinOpen').disabled = !ok;
 }
 const defaultName = 'Bouwer ' + (10 + Math.floor(Math.random() * 90));
@@ -2474,7 +2549,7 @@ const oppCache = new Map();
 function partyView() { return !!party && mode === 'puzzle' && ['play', 'dying', 'counting', 'waiting', 'groupcount', 'over'].includes(state); }
 /* vloeiend meekijken: elke update draagt de tijd van de afzender. We tekenen de ander ~0,11 s "in het verleden"
    en rekenen tussen de twee omringende standen door, zodat het op 60 beelden per seconde loopt, ook met wat haperend netwerk. */
-const OPP_DELAY = 110;
+let OPP_DELAY = 110;
 function lerpAngle(a, b, k) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * k; }
 function oppPopBurst(c, q) {   // zelfde floep als bij jezelf, maar in de wereld van de tegenstander en wat zachter
   fxOut = c.parts;
@@ -2536,7 +2611,7 @@ function updateOpponents() {
 let lastSync = -1;
 function partySync() {
   if (!party || mode !== 'puzzle' || !['play', 'dying', 'counting', 'waiting', 'groupcount', 'over'].includes(state)) return;
-  if (now - lastSync < 0.05) return; lastSync = now;   // 20 updates per seconde
+  if (now - lastSync < SYNC_DT) return; lastSync = now;   // 20 (of via Supabase 10) updates per seconde
   const p = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y).slice(0, 70)
     .map(b => [b.pd.id, b.pd.type, Math.round(b.position.x), Math.round(b.position.y), +b.angle.toFixed(2), b.pd.popping !== undefined ? 1 : 0]);
   const a = active ? [active.type, Math.round(active.visX), Math.round(active.y), +(active.visAngle + active.tilt).toFixed(2)] : 0;
