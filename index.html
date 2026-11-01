@@ -416,6 +416,48 @@ body { background: var(--sky); color: var(--ink); }
 .wait-pill { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); max-width: calc(100% - 32px);
   padding: 10px 18px; border-radius: 999px; background: #fff; color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink);
   font-weight: 800; font-size: 16px; text-align: center; pointer-events: none; animation: cardin .4s cubic-bezier(.2,1.4,.4,1) both; }
+
+/* party-eindscherm: podium + rematch */
+.pr-card { box-sizing: border-box; width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px;
+  background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 26px; padding: 18px 16px 14px; box-shadow: 0 8px 0 var(--ink);
+  animation: cardin .45s cubic-bezier(.2,1.4,.4,1) both; }
+.pr-title { font-size: 36px; }
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; min-height: 200px; padding-top: 6px;
+  border-bottom: 3px solid var(--ink); }
+.pod { flex: 1 1 0; max-width: 104px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+.pod-cup { width: 46px; height: 50px; animation: cupin .6s cubic-bezier(.3,1.8,.5,1) calc(var(--d) + .45s) both; }
+.pod-cup svg { width: 100%; height: 100%; display: block; overflow: visible; }
+@keyframes cupin { from { transform: scale(0) rotate(-30deg); opacity: 0; } }
+.pod-name { font-family: var(--display); font-size: 17px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  animation: fadein .3s ease calc(var(--d) + .35s) both; }
+.pod.me .pod-name { color: #d08a00; }
+.pod-score { font-size: 13px; font-weight: 800; color: var(--muted); animation: fadein .3s ease calc(var(--d) + .4s) both; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } }
+.pod-block { box-sizing: border-box; width: 100%; height: var(--h); border: 3px solid var(--ink); border-bottom: 0; border-radius: 14px 14px 0 0;
+  background: var(--pc); display: grid; place-items: start center; padding-top: 6px; transform-origin: bottom;
+  box-shadow: inset 0 6px 0 rgba(255,255,255,.4), inset -6px 0 0 rgba(0,0,0,.12); animation: podrise .55s cubic-bezier(.3,1.5,.5,1) var(--d) both; }
+.pod-block b { font-family: var(--display); font-weight: 400; font-size: 34px; color: #fff; text-shadow: var(--outline), 0 3px 0 var(--ink); }
+@keyframes podrise { from { transform: scaleY(0); } }
+.pr-rest { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 5px; }
+.pr-rest li { display: grid; grid-template-columns: 22px 14px 1fr auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; background: #f4f2fb; }
+.pr-rest li.me { background: #fff3c4; }
+.pr-rest b { font-family: var(--display); font-weight: 400; font-size: 17px; }
+.pr-rest i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); }
+.pr-rest span { font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-rest em { font-style: normal; font-weight: 800; font-size: 13px; color: var(--muted); }
+.pr-me { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); text-align: center; }
+.btn.rematch { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.btn.rematch .cnt { font-family: var(--body); font-weight: 800; font-size: 16px; background: #fff; border: 2.5px solid var(--ink); border-radius: 999px; padding: 2px 10px; }
+.btn.rematch.on { background: #56d364; }
+.pr-voters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.voter { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #f4f2fb; border: 2px solid rgba(43,33,64,.15);
+  font-weight: 800; font-size: 13px; color: var(--muted); }
+.voter i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); }
+.voter.yes { background: #e3f9e0; border-color: #56d364; color: #2f9e44; }
+.pr-links { display: flex; justify-content: center; gap: 18px; }
+.link-btn.soft { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .pod-block, .pod-cup, .pod-name, .pod-score, .pr-card { animation-duration: .01s !important; animation-delay: 0s !important; } }
+@media (max-height: 520px) { .podium { min-height: 150px; } .pr-title { font-size: 28px; } .pr-card { gap: 8px; padding: 12px; } }
 </style>
 
 <div id="app">
@@ -584,6 +626,22 @@ body { background: var(--sky); color: var(--ink); }
       <button class="btn ghost" id="pReady" hidden>Klaar!</button>
       <p class="fine" id="pHint"></p>
       <button class="link-btn" id="pLeave">Party verlaten</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="prOv" hidden>
+    <div class="pr-card">
+      <div class="over-h pr-title" id="prTitle">Jij wint!</div>
+      <div class="podium" id="prPodium"></div>
+      <ol class="pr-rest" id="prRest" hidden></ol>
+      <p class="pr-me" id="prMe"></p>
+      <button class="btn rematch" id="prRematch"><span id="prRematchLbl">Rematch</span><span class="cnt" id="prCount">0/1</span></button>
+      <div class="pr-voters" id="prVoters"></div>
+      <button class="btn ghost small" id="prForce" hidden>Start zonder…</button>
+      <div class="pr-links">
+        <button class="link-btn soft" id="prLobby">Terug naar lobby</button>
+        <button class="link-btn" id="prLeave">Party verlaten</button>
+      </div>
     </div>
   </div>
 
@@ -1457,7 +1515,7 @@ function resetRun(def) {
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
   state = 'play'; paused = false; shownH = -1; laserY = null; raceRunning = false; holdT = 0;
-  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv', 'prOv']) $(id).hidden = true;
   hud.classList.add('on'); padEl.hidden = false;
   actionsDone = 0; hint.classList.remove('off');
   clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 9000);
@@ -1728,7 +1786,7 @@ function raceFinish() {
 }
 
 /* ---------- einde van een run ---------- */
-function gameOver() { showResult(); }
+function gameOver() { if (party && mode === 'puzzle') showPartyResult(); else showResult(); }
 function showResult() {
   state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; raceRunning = false;
   let title, big, unit, stats, isRec = false, medal = null;
@@ -1770,7 +1828,7 @@ function clearScene() {
 }
 function goHome() {
   clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
-  for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv']) $(id).hidden = true;
+  for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv', 'prOv']) $(id).hidden = true;
   $('homeOv').hidden = false; renderHomeRecords();
 }
 function renderHomeRecords() {
@@ -1800,7 +1858,12 @@ const defaultName = 'Bouwer ' + (10 + Math.floor(Math.random() * 90));
 $('pName').value = store('st_name') || defaultName;
 $('pName').addEventListener('change', () => store('st_name', $('pName').value.trim()));
 const myNick = () => ($('pName').value.trim() || defaultName).slice(0, 14);
-const peerColor = p => PARTY_COLORS[[...p.peer].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7) % PARTY_COLORS.length];
+// elke speler in de party een eigen kleur: op volgorde van de (voor iedereen gelijke) peer-labels
+const peerColor = p => {
+  const ids = party ? party.nr.peers().map(q => q.peer).sort() : [];
+  const i = ids.indexOf(p.peer);
+  return PARTY_COLORS[(i >= 0 ? i : [...p.peer].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7)) % PARTY_COLORS.length];
+};
 
 function showPartyStep(id) { for (const s of ['pStart', 'pMode', 'pJoin', 'pLobby']) $(s).hidden = s !== id; }
 function openParty() {
@@ -1837,7 +1900,7 @@ async function enterParty(code, isHost, mode) {
   catch (e) { (isHost ? $('pAvail') : $('pJoinErr')).textContent = 'Verbinden lukt niet. Probeer het zo nog eens.'; return; }
   party = { code, nr, host: isHost, mode, ready: isHost, unsubs: [] };
   await nr.presence({ nick: myNick(), host: isHost, mode: isHost ? mode : null, ready: isHost, st: 'lobby' }).catch(() => {});
-  party.unsubs.push(nr.onPeers(() => { renderLobby(); renderRank(); }), nr.on('start', onPartyStart));
+  party.unsubs.push(nr.onPeers(() => { renderLobby(); renderRank(); renderPartyResult(); }), nr.on('start', onPartyStart));
   showPartyStep('pLobby'); renderLobby();
   sfx.spawn();
   if (!isHost) {
@@ -1904,17 +1967,116 @@ function onPartyStart(msg) {
   if (!d || typeof d.seed !== 'number' || d.mode !== 'puzzle') return;   // alleen Puzzel kan nu
   const host = hostPeer();
   if (host && msg.peer !== host.peer) return;                             // alleen de host start
-  party.nr.presence({ st: 'playing' }).catch(() => {});
-  $('partyOv').hidden = true;
+  if (d.rematch && state === 'over' && !party.vote) { $('prOv').hidden = true; backToLobby(); return; }   // niet gestemd: terug naar de lobby
+  if (d.rematch && state !== 'over' && state !== 'menu') return;          // nog midden in een potje
+  party.seed = d.seed; party.vote = false; party.rmSent = false;
+  party.nr.presence({ st: 'playing', rm: null }).catch(() => {});
+  for (const id of ['partyOv', 'prOv', 'resOv']) $(id).hidden = true;
+  if (d.rematch) showBanner('Rematch!', 'Nieuwe pilaar, zelfde vrienden');
   startPuzzle(d.seed);
 }
 function backToLobby() {
   if (!party) { goHome(); return; }
   clearScene(); state = 'menu'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
-  for (const id of ['resOv', 'pauseOv']) $(id).hidden = true;
-  party.ready = party.host; party.nr.presence({ st: 'lobby', ready: party.host, g: null }).catch(() => {}); oppCache.clear(); $('resRank').hidden = true;
+  for (const id of ['resOv', 'pauseOv', 'prOv']) $(id).hidden = true;
+  party.ready = party.host; party.nr.presence({ st: 'lobby', ready: party.host, g: null, rm: null }).catch(() => {}); oppCache.clear(); $('resRank').hidden = true;
   $('partyOv').hidden = false; showPartyStep('pLobby'); renderLobby();
 }
+
+/* ---------- party-eindscherm: podium + rematch-stemming ----------
+   Stemmen gaat via presence: rm = het zaadje van het potje waarvoor je een rematch wilt (zo tellen oude stemmen nooit mee).
+   Wie nog op het eindscherm staat (st 'playing'), mag stemmen. Heeft iedereen gestemd, dan start de host een nieuw potje.
+   Na 10 s kan de host starten zonder wie niet stemde; die gaan dan terug naar de lobby. */
+let prShownAt = 0;
+function rematchEligible() { return party ? party.nr.peers().filter(p => p.kind === 'viewer' && p.presence && p.presence.st === 'playing') : []; }
+const votedFor = p => party && party.seed != null && p.presence && p.presence.rm === party.seed;
+function showPartyResult() {
+  state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true;
+  if (score > puzzleBest) { puzzleBest = score; store('st_puzbest', String(score)); }
+  party.vote = false; party.rmSent = false; prShownAt = now;
+  party.nr.presence({ rm: null }).catch(() => {});
+  // eindstand: uit het samen tellen, anders uit wat iedereen doorstuurde
+  const colorOf = peer => { const p = party.nr.peers().find(q => q.peer === peer); return p ? peerColor(p) : '#ffcf3a'; };
+  const me = party.nr.peers().find(p => p.sameTab);
+  let rows = gc ? gc.parts.map(p => ({ me: !!p.self, name: p.self ? 'Jij' : p.name, n: p.n, color: p.self ? (me ? peerColor(me) : '#ffcf3a') : colorOf(p.peer) }))
+                : [{ me: true, name: 'Jij', n: score, color: me ? peerColor(me) : '#ffcf3a' }];
+  rows.sort((a, b) => b.n - a.n);
+  const best = rows.length ? rows[0].n : 0, winners = rows.filter(r => r.n === best);
+  $('prTitle').textContent = winners.length > 1 ? 'Gelijkspel!' : winners[0].me ? 'Jij wint!' : `${winners[0].name} wint!`;
+  // podium: 2e links, 1e midden, 3e rechts
+  const pod = $('prPodium'); pod.textContent = '';
+  const order = [1, 0, 2].filter(i => rows[i]);
+  const H = [118, 82, 58], DL = [0.55, 0.3, 0.1];
+  for (const i of order) {
+    const r = rows[i], rank = rows.findIndex(q => q.n === r.n) + 1;   // gelijke scores = zelfde plek
+    const col = document.createElement('div'); col.className = 'pod' + (r.me ? ' me' : '') + (rank === 1 ? ' first' : '');
+    col.style.setProperty('--pc', r.color); col.style.setProperty('--h', H[Math.min(rank, 3) - 1] + 'px'); col.style.setProperty('--d', DL[Math.min(rank, 3) - 1] + 's');
+    const nm = document.createElement('div'); nm.className = 'pod-name'; nm.textContent = r.name;
+    const sc = document.createElement('div'); sc.className = 'pod-score'; sc.textContent = `${r.n} ${r.n === 1 ? 'blok' : 'blokken'}`;
+    const bl = document.createElement('div'); bl.className = 'pod-block'; const rb = document.createElement('b'); rb.textContent = rank; bl.append(rb);
+    if (rank === 1) { const cup = document.createElement('div'); cup.className = 'pod-cup'; cup.innerHTML = TROPHY_SVG; col.append(cup); }
+    col.append(nm, sc, bl); pod.append(col);
+  }
+  const rest = $('prRest'); rest.textContent = '';
+  rows.slice(3).forEach((r, k) => {
+    const li = document.createElement('li'); if (r.me) li.className = 'me';
+    const b = document.createElement('b'); b.textContent = k + 4;
+    const i = document.createElement('i'); i.style.background = r.color;
+    const s = document.createElement('span'); s.textContent = r.name;
+    const e = document.createElement('em'); e.textContent = `${r.n} blokken`;
+    li.append(b, i, s, e); rest.append(li);
+  });
+  rest.hidden = rows.length <= 3;
+  $('prMe').textContent = `Jouw potje: ${score} ${score === 1 ? 'blok' : 'blokken'} · platform +${rises} · ${perfects} strak`;
+  $('prOv').hidden = false; renderPartyResult();
+  if (winners.some(w => w.me)) haptic('success');
+}
+function renderPartyResult() {
+  if (!party || $('prOv').hidden) return;
+  const elig = rematchEligible(), voted = elig.filter(votedFor);
+  $('prCount').textContent = `${voted.length}/${Math.max(1, elig.length)}`;
+  $('prRematch').classList.toggle('on', !!party.vote);
+  $('prRematchLbl').textContent = party.vote ? 'Je doet mee!' : 'Rematch';
+  const box = $('prVoters'); box.textContent = '';
+  for (const p of elig) {
+    const chip = document.createElement('span'); chip.className = 'voter' + (votedFor(p) ? ' yes' : '');
+    const i = document.createElement('i'); i.style.background = peerColor(p);
+    const t = document.createElement('span'); t.textContent = (p.sameTab ? 'Jij' : (typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler')) + (votedFor(p) ? ' ✓' : '');
+    chip.append(i, t); box.append(chip);
+  }
+  const missing = elig.filter(p => !votedFor(p));
+  const canForce = party.host && party.vote && voted.length > 0 && missing.length > 0 && now - prShownAt > 10;
+  $('prForce').hidden = !canForce;
+  if (canForce) $('prForce').textContent = 'Start zonder ' + (missing.length > 1 ? missing.length + ' spelers' : (typeof missing[0].presence.nick === 'string' && missing[0].presence.nick ? missing[0].presence.nick.slice(0, 14) : 'speler'));
+}
+function rematchTick() {   // elk frame op het eindscherm: de host start zodra iedereen heeft gestemd
+  if (!party || state !== 'over' || $('prOv').hidden) return;
+  renderPartyResult();
+  if (!party.host || party.rmSent) return;
+  const elig = rematchEligible();
+  if (elig.length && elig.every(votedFor)) startRematch();
+}
+function startRematch() {
+  if (!party || !party.host || party.rmSent) return;
+  party.rmSent = true;
+  const seed = 1 + Math.floor(Math.random() * 2147483646);
+  party.nr.emit('start', { seed, mode: party.mode, rematch: true }).catch(() => { party.rmSent = false; });
+}
+$('prRematch').onclick = () => {
+  if (!party) return;
+  party.vote = !party.vote;
+  party.nr.presence({ rm: party.vote ? party.seed : null }).catch(() => {});
+  if (party.vote) { tone(660, 0.1, 'triangle', 0.1); tone(990, 0.14, 'triangle', 0.08, null, 0.08); haptic('medium'); } else haptic('light');
+  renderPartyResult();
+};
+$('prForce').onclick = () => startRematch();
+$('prLobby').onclick = () => { $('prOv').hidden = true; backToLobby(); };
+$('prLeave').onclick = () => { $('prOv').hidden = true; leaveParty(); goHome(); };
+const TROPHY_SVG = '<svg viewBox="-24 -26 48 52" aria-hidden="true"><g stroke="#2b2140" stroke-width="3" stroke-linejoin="round" fill="none"><path d="M-15 -14 a8 8 0 0 0 0 16"/><path d="M15 -14 a8 8 0 0 1 0 16"/></g>'
+  + '<path d="M-16 -18 H16 Q15 6 0 9 Q-15 6 -16 -18Z" fill="#ffcf3a" stroke="#2b2140" stroke-width="3" stroke-linejoin="round"/>'
+  + '<path d="M-11 -15 H-6 Q-7 0 -2 5 Q-10 2 -11 -15Z" fill="#ffe58a"/>'
+  + '<rect x="-3" y="9" width="6" height="7" fill="#e0a800" stroke="#2b2140" stroke-width="3"/><rect x="-11" y="16" width="22" height="6" rx="2" fill="#ffcf3a" stroke="#2b2140" stroke-width="3"/>'
+  + '<path d="M0 -12 L1.5 -8 L5.5 -8 L2.3 -5.5 L3.5 -1.5 L0 -4 L-3.5 -1.5 L-2.3 -5.5 L-5.5 -8 L-1.5 -8Z" fill="#fff"/></svg>';
 
 /* ---------- canvas / sprites ---------- */
 let W = 0, H = 0, DPR = 1, SCALE = 1, K = 1;
@@ -2628,7 +2790,7 @@ function drawLine(y, left, right, color, label) {
 function frame(t) {
   const dt = Math.min(0.05, (t - last) / 1000); last = t; now += dt;
   update(paused ? 0 : dt);
-  partySync();
+  partySync(); rematchTick();
   render(t);
   requestAnimationFrame(frame);
 }
