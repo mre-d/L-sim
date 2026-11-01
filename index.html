@@ -745,12 +745,12 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   .rank-mine b { font-size: 30px; }
 
   /* profiel: kaart links, prestaties rechts */
-  #hpProfile { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; column-gap: 22px; }
+  #hpProfile { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: auto auto auto 1fr; align-items: start; column-gap: 22px; }
   #hpProfile > .hp-title:first-child { grid-column: 1; grid-row: 1; }
-  #hpProfile > .card:not(.soon) { grid-column: 1; grid-row: 2; }
-  #hpProfile > .soon { grid-column: 1; grid-row: 3; }
+  #hpProfile > .card:not(.soon):not(.acct) { grid-column: 1; grid-row: 2; }
+  #hpProfile > .soon, #hpProfile > .acct { grid-column: 1; grid-row: 3; }
   #hpProfile > .hp-title:nth-of-type(2) { grid-column: 2; grid-row: 1; }
-  #hpProfile > .ach { grid-column: 2; grid-row: 2 / span 2; }
+  #hpProfile > .ach { grid-column: 2; grid-row: 2 / 5; }   /* de lange lijst rekt alleen de laatste (lege) rij op */
   .av.big { width: 120px; height: 120px; }
 }
 @media (min-width: 960px) and (min-height: 560px) and (hover: hover) {
