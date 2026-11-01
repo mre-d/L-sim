@@ -592,11 +592,11 @@ function drawFromBag() {
   return bag.pop();
 }
 
-function fits(p, x, y, a) {
+function fits(p, x, y, a, tol = 2.5) {
   Body.setPosition(p.body, { x, y }); Body.setAngle(p.body, a);
   const others = Composite.allBodies(world);
   for (let i = 1; i < p.body.parts.length; i++) {
-    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > 2.5) return false;   // een paar pixels schuren mag: blokken glijden makkelijker langs elkaar
+    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > tol) return false;   // een paar pixels schuren mag: blokken glijden makkelijker langs elkaar
   }
   return true;
 }
@@ -674,6 +674,12 @@ function noteAction() { if (++actionsDone === 4) hint.classList.add('off'); }
 
 function dropActive() {
   const p = active;
+  // losduwen: zoek de dichtstbijzijnde plek waar het blok nergens in steekt (eerst omhoog, dan opzij)
+  let fx = p.x, fy = p.y;
+  search: for (const dy of [0, -1, -2, -3, -4]) for (const dx of [0, -1, 1, -2, 2, -3, 3]) {
+    if (fits(p, p.x + dx, p.y + dy, p.angle, 0.3)) { fx = p.x + dx; fy = p.y + dy; break search; }
+  }
+  p.x = fx; p.y = fy;
   Body.setPosition(p.body, { x: p.x, y: p.y }); Body.setAngle(p.body, p.angle);
   // landingssnelheid begrensd: ook na snel laten vallen landt een blok stevig maar beheerst
   Body.setVelocity(p.body, { x: 0, y: Math.min(p.fast ? 18 * CELL : fallSpeed(), 6 * CELL) / HZ });
@@ -748,6 +754,17 @@ Events.on(engine, 'collisionStart', e => {
 /* rustanker: Matter laat blokken die stil op een helling liggen heel langzaam wegkruipen.
    Ligt een blok echt stil, dan zetten we zijn positie vast (snelheid op nul, niets wordt opgespaard).
    Draaien blijft vrij: begint het blok te kantelen, of botst er iets tegenaan, dan laat het anker los. */
+/* ligt dit blok ergens óp (contact met iets eronder)? Alleen schuren langs een zijkant telt niet. */
+function supportedFromBelow(b) {
+  for (const pair of engine.pairs.list) {
+    if (!pair.isActive) continue;
+    const A = pair.bodyA.parent, B = pair.bodyB.parent;
+    if (A !== b && B !== b) continue;
+    const ny = A === b ? -pair.collision.normal.y : pair.collision.normal.y;   // Matter: normaal wijst van B naar A
+    if (ny > 0.5) return true;
+  }
+  return false;
+}
 function wakeIfNeighbourMoves(b, d) {
   for (const pair of engine.pairs.list) {
     if (!pair.isActive) continue;
@@ -760,7 +777,7 @@ function wakeIfNeighbourMoves(b, d) {
 function restAnchor(b, d) {
   if (d.anchor) {
     const A = d.anchor;
-    if (d.wake || Math.abs(b.angle - A.a) > 0.015) { d.anchor = null; d.restN = 0; d.wake = false; return; }
+    if (d.wake || Math.abs(b.angle - A.a) > 0.015 || !supportedFromBelow(b)) { d.anchor = null; d.restN = 0; d.wake = false; return; }
     Body.setPosition(b, { x: A.x, y: A.y }); Body.setVelocity(b, { x: 0, y: 0 });
     return;
   }
@@ -768,7 +785,7 @@ function restAnchor(b, d) {
   const q = Math.PI / 2, tilted = Math.abs(b.angle - Math.round(b.angle / q) * q) > 0.02;
   if (!tilted && now - (d.landT || 0) < 1.15) { d.restN = 0; return; }     // rechte blokken: eerst rasteren
   const slow = b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004;
-  if (!slow) { d.restN = 0; return; }
+  if (!slow || !supportedFromBelow(b)) { d.restN = 0; return; }
   if (++d.restN > (tilted ? 10 : 30)) d.anchor = { x: b.position.x, y: b.position.y, a: b.angle };
 }
 function gridSnap(b, d) {
@@ -780,8 +797,14 @@ function gridSnap(b, d) {
   if (Math.abs(aErr) > 0.02) return;
   if (b.speed * V60 > 1.2 || Math.abs(b.angularVelocity) * V60 > 0.02) return;
   const tx = snapX(d.offs, b.position.x, ta), dx = tx - b.position.x;
-  if (Math.abs(dx) > 9 || Math.abs(dx) < 0.05) return;
-  Body.setPosition(b, { x: b.position.x + dx * 0.22, y: b.position.y });
+  if (Math.abs(dx) > 9 || Math.abs(dx) < 0.05 || !supportedFromBelow(b)) return;
+  // niet rasteren als het blok daardoor in een buur zou schuiven
+  const ox = b.position.x;
+  Body.setPosition(b, { x: ox + dx * 0.22, y: b.position.y });
+  const others = Composite.allBodies(world).filter(o => o !== b);
+  for (let i = 1; i < b.parts.length; i++) for (const c of Query.collides(b.parts[i], others)) {
+    if (c.depth > 0.6 && Math.abs(c.normal.x) > 0.7) { Body.setPosition(b, { x: ox, y: b.position.y }); return; }
+  }
 }
 function onSettle(b) {
   const quarter = Math.PI / 2;
