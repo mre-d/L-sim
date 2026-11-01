@@ -366,6 +366,40 @@ body { background: var(--sky); color: var(--ink); }
   3.5px 3.5px 0 var(--ink), -3.5px 3.5px 0 var(--ink), 3.5px -3.5px 0 var(--ink), -3.5px -3.5px 0 var(--ink), 0 10px 0 var(--ink); }
 #count.go { color: var(--gold); }
 .intro-card .btn { font-size: 22px; white-space: nowrap; padding: 13px 28px 15px; }
+
+/* party */
+.party-card { box-sizing: border-box; width: min(360px, 100%); display: flex; flex-direction: column; gap: 12px; align-items: stretch;
+  background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 22px; padding: 18px; box-shadow: 0 6px 0 var(--ink); text-align: left; }
+.party-card .btn { width: 100%; }
+.party-card .tag { margin: 0; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld span { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.fld input { box-sizing: border-box; width: 100%; font: 700 20px var(--body); color: var(--ink); background: #f4f2fb;
+  border: 3px solid var(--ink); border-radius: 14px; padding: 10px 12px; outline: none; }
+.fld input:focus { background: #fff; box-shadow: 0 0 0 3px #ffe58a; }
+.code-in { font-family: var(--display) !important; font-size: 30px !important; letter-spacing: 8px; text-transform: uppercase; text-align: center; }
+.err { margin: 0; min-height: 1em; color: var(--danger); font-weight: 800; font-size: 14px; }
+.pm-grid { display: flex; flex-direction: column; gap: 10px; }
+.pm { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 16px; cursor: pointer;
+  background: color-mix(in srgb, var(--mc) 18%, #fff); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); font-family: var(--body); touch-action: manipulation; }
+.pm b { font-family: var(--display); font-weight: 400; font-size: 22px; }
+.pm span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.pm:active:not([disabled]) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.pm[disabled] { opacity: .5; cursor: default; box-shadow: none; }
+.code-box { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; }
+.code-box span { grid-column: 1 / -1; font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.code-box b { font-family: var(--display); font-weight: 400; font-size: 42px; letter-spacing: 6px; line-height: 1.1; -webkit-user-select: all; user-select: all; }
+.btn.small { width: auto !important; font-size: 16px; padding: 8px 14px 10px; box-shadow: 0 4px 0 var(--ink); }
+.mode-chip { align-self: flex-start; }
+.plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.plist li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #f4f2fb; border: 2px solid rgba(43,33,64,.15); }
+.plist li i { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--ink); }
+.plist .nm { font-weight: 800; font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plist em { font-style: normal; font-size: 13px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.plist em.ok { color: #2f9e44; }
+.link-btn { background: none; border: 0; color: var(--danger); font: 800 15px var(--body); cursor: pointer; padding: 6px; }
+.btn[disabled] { opacity: .5; cursor: default; }
+.mode.party { --mc: #ffcf3a; }
 </style>
 
 <div id="app">
@@ -438,6 +472,11 @@ body { background: var(--sky); color: var(--ink); }
         <span class="go">Spelen</span>
       </button>
     </div>
+    <button class="mode party" id="partyBtn">
+      <span class="ico"><svg viewBox="0 0 40 40"><rect x="5" y="20" width="8" height="14" fill="#ff5c8a"/><rect x="16" y="12" width="8" height="22" fill="#ffd23f"/><rect x="27" y="17" width="8" height="17" fill="#3fc4f5"/><circle cx="9" cy="13" r="3.5" fill="#2b2140"/><circle cx="20" cy="5.5" r="3.5" fill="#2b2140"/><circle cx="31" cy="10" r="3.5" fill="#2b2140"/></svg></span>
+      <span><b>Party</b><span>Speel samen met vrienden via een code</span></span>
+      <span class="go">Samen</span>
+    </button>
     <div class="controls" id="startControls"></div>
   </div>
 
@@ -484,6 +523,49 @@ body { background: var(--sky); color: var(--ink); }
     <div class="stack">
       <button class="btn" id="resMain">Nog een keer</button>
       <button class="btn ghost" id="resMenu">Naar het menu</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="partyOv" hidden>
+    <div class="lv-head">
+      <button class="icon-btn" id="partyBack" aria-label="Terug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="over-h">Party</div>
+    </div>
+
+    <div class="party-card" id="pStart">
+      <label class="fld" for="pName"><span>Jouw naam</span><input id="pName" maxlength="14" autocomplete="off" spellcheck="false"></label>
+      <button class="btn" id="pCreate">Party maken</button>
+      <button class="btn ghost" id="pJoinOpen">Party joinen</button>
+      <p class="fine" id="pAvail"></p>
+    </div>
+
+    <div class="party-card" id="pMode" hidden>
+      <p class="tag">Kies de spelmodus voor je party</p>
+      <div class="pm-grid">
+        <button class="pm" data-pm="puzzle" style="--mc:#b46cff"><b>Puzzel</b><span>Zoveel mogelijk onder de laser</span></button>
+        <button class="pm" data-pm="race" style="--mc:#3fc4f5" disabled><b>Race</b><span>🔒 Binnenkort</span></button>
+        <button class="pm" data-pm="survival" style="--mc:#ff5c8a" disabled><b>Overleven</b><span>🔒 Binnenkort</span></button>
+      </div>
+    </div>
+
+    <div class="party-card" id="pJoin" hidden>
+      <label class="fld" for="pCode"><span>Partycode</span><input id="pCode" class="code-in" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7Q2M"></label>
+      <button class="btn" id="pJoinGo">Joinen</button>
+      <p class="err" id="pJoinErr"></p>
+    </div>
+
+    <div class="party-card" id="pLobby" hidden>
+      <div class="code-box">
+        <span>Partycode</span>
+        <b id="pCodeShow">-----</b>
+        <button class="btn ghost small" id="pCopy">Kopieer</button>
+      </div>
+      <div class="chip mode-chip" id="pModeChip">Modus: Puzzel</div>
+      <ul class="plist" id="pList"></ul>
+      <button class="btn" id="pStartBtn">Start</button>
+      <button class="btn ghost" id="pReady" hidden>Klaar!</button>
+      <p class="fine" id="pHint"></p>
+      <button class="link-btn" id="pLeave">Party verlaten</button>
     </div>
   </div>
 
@@ -714,13 +796,13 @@ function generatePillar() {
   for (let r = 0; r < PILLAR_ROWS; r++) blocks.push([0, r]);          // de stam
   for (const side of [-1, 1]) {
     let r = 0;
-    if (Math.random() < 0.85) {                                        // fundering onderaan
-      const len = Math.random() < 0.4 ? 2 : 1;
+    if (gameRandom() < 0.85) {                                        // fundering onderaan
+      const len = gameRandom() < 0.4 ? 2 : 1;
       for (let i = 0; i < len; i++) blocks.push([side, r++]);
     }
     while (r < PILLAR_ROWS) {
-      r += 1 + (Math.random() < 0.45 ? 1 : 0);                         // open gat van 1 of 2
-      const len = 1 + Math.floor(Math.random() * 3);                   // klontje van 1 tot 3
+      r += 1 + (gameRandom() < 0.45 ? 1 : 0);                         // open gat van 1 of 2
+      const len = 1 + Math.floor(gameRandom() * 3);                   // klontje van 1 tot 3
       for (let i = 0; i < len && r < PILLAR_ROWS; i++) blocks.push([side, r++]);
     }
   }
@@ -877,8 +959,11 @@ let mode = 'survival', laserY = null, laserTarget = 0, laserRows = 0, laserHot =
 let score = 0, dropped = 0, puzzleBest = parseInt(store('st_puzbest') || '0', 10) || 0;
 const particles = [], rings = [], floaters = [];
 
+/* spel-toeval: normaal Math.random; in een party een gedeeld zaadje, zodat iedereen dezelfde pilaar en blokken krijgt */
+let gameRandom = Math.random;
+function seededRandom(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function drawFromBag() {
-  if (!bag.length) { bag = TYPES.slice(); for (let i = bag.length - 1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [bag[i], bag[j]] = [bag[j], bag[i]]; } }
+  if (!bag.length) { bag = TYPES.slice(); for (let i = bag.length - 1; i > 0; i--) { const j = (gameRandom()*(i+1))|0; [bag[i], bag[j]] = [bag[j], bag[i]]; } }
   return bag.pop();
 }
 
@@ -1200,7 +1285,7 @@ function setPaused(v) {
 $('pauseBtn').onclick = () => { initAudio(); setPaused(true); };
 $('resumeBtn').onclick = () => setPaused(false);
 $('restartBtn').onclick = () => { setPaused(false); restartCurrent(); };
-$('menuBtn').onclick = () => { setPaused(false); goHome(); };
+$('menuBtn').onclick = () => { setPaused(false); if (party) leaveParty(); goHome(); };
 /* ---------- instellingen ---------- */
 function renderMute() { $('muteWaves').style.opacity = settings.sfx ? 1 : 0.15; }
 $('muteBtn').onclick = () => { initAudio(); setSetting('sfx', !settings.sfx); };
@@ -1322,8 +1407,8 @@ function launch(m) {
 }
 $('introGo').onclick = () => { if (introThen) introThen(); };
 for (const card of document.querySelectorAll('.mode[data-mode]')) card.onclick = () => { haptic('light'); launch(card.dataset.mode); };
-$('resMain').onclick = () => { initAudio(); restartCurrent(); };
-$('resMenu').onclick = () => goHome();
+$('resMain').onclick = () => { initAudio(); if (party) backToLobby(); else restartCurrent(); };
+$('resMenu').onclick = () => { if (party) leaveParty(); goHome(); };
 function restartCurrent() { mode === 'puzzle' ? startPuzzle() : mode === 'race' ? startRace() : startGame(); }
 
 /* ---------- aftellen ---------- */
@@ -1353,7 +1438,7 @@ function resetRun(def) {
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
   state = 'play'; paused = false; shownH = -1; laserY = null; raceRunning = false; holdT = 0;
-  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv']) $(id).hidden = true;
   hud.classList.add('on'); padEl.hidden = false;
   actionsDone = 0; hint.classList.remove('off');
   clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 9000);
@@ -1361,6 +1446,7 @@ function resetRun(def) {
   beginCountdown();
 }
 function startGame() {
+  gameRandom = Math.random;
   mode = 'survival';
   resetRun(SURVIVAL_DEF);
   camY = -4 * CELL;
@@ -1371,8 +1457,9 @@ function setCount(n) {
   const v = String(n);
   if (hval.textContent !== v) { hval.textContent = v; hval.classList.remove('bump'); void hval.offsetWidth; hval.classList.add('bump'); }
 }
-function startPuzzle() {
+function startPuzzle(seed) {
   mode = 'puzzle';
+  gameRandom = typeof seed === 'number' ? seededRandom(seed) : Math.random;
   resetRun(generatePillar());
   laserRows = PUZZLE_START_ROWS; laserTarget = -laserRows * CELL; laserY = laserTarget;
   score = 0; dropped = 0; rises = 0;
@@ -1483,6 +1570,7 @@ let raceBest = parseFloat(store('st_racebest') || '0') || 0;
 const finishY = -RACE_ROWS * CELL;
 const fmtTime = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
 function startRace() {
+  gameRandom = Math.random;
   mode = 'race';
   resetRun(SURVIVAL_DEF);
   raceT = 0; penalty = 0; holdT = 0; camY = -4 * CELL;
@@ -1542,6 +1630,8 @@ function showResult() {
   $('resRec').hidden = !isRec;
   const md = $('resMedal');
   md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
+  $('resMain').textContent = party ? 'Terug naar lobby' : 'Nog een keer';
+  $('resMenu').textContent = party ? 'Party verlaten' : 'Naar het menu';
   $('resOv').hidden = false; $('resMain').focus();
   if (mode === 'race' || isRec) { sfx.milestone(); haptic('success'); } else sfx.over();
 }
@@ -1553,7 +1643,7 @@ function clearScene() {
 }
 function goHome() {
   clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
-  for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv']) $(id).hidden = true;
+  for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv', 'partyOv']) $(id).hidden = true;
   $('homeOv').hidden = false; renderHomeRecords();
 }
 function renderHomeRecords() {
@@ -1562,6 +1652,142 @@ function renderHomeRecords() {
   $('recSurvival').textContent = best ? `Record: ${best.toFixed(1)} m` : '';
 }
 renderHomeRecords();
+
+/* ---------- party (multiplayer-lobby) ----------
+   Gebruikt de 'room'-functie van de gedeelde pagina: elke party is een eigen room met de code als naam.
+   Presence = wie je bent (naam, host, klaar, status). De host stuurt 'start' met een gedeeld toevalsgetal,
+   zodat iedereen exact dezelfde pilaar en blokvolgorde krijgt. Later kan deze laag naar een eigen server. */
+const PARTY_COLORS = ['#ff5c8a', '#3fc4f5', '#ffd23f', '#56d364', '#b46cff', '#ff8c42'];
+const CODE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
+let roomNS = null, party = null;
+(async () => {
+  try { roomNS = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch (e) { roomNS = null; }
+  renderPartyAvail();
+})();
+function renderPartyAvail() {
+  const ok = !!roomNS;
+  $('pAvail').textContent = ok ? '' : 'Samen spelen werkt alleen op de gedeelde Stormtoren-pagina, als je bent ingelogd.';
+  $('pCreate').disabled = !ok; $('pJoinOpen').disabled = !ok;
+}
+const defaultName = 'Bouwer ' + (10 + Math.floor(Math.random() * 90));
+$('pName').value = store('st_name') || defaultName;
+$('pName').addEventListener('change', () => store('st_name', $('pName').value.trim()));
+const myNick = () => ($('pName').value.trim() || defaultName).slice(0, 14);
+const peerColor = p => PARTY_COLORS[[...p.peer].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7) % PARTY_COLORS.length];
+
+function showPartyStep(id) { for (const s of ['pStart', 'pMode', 'pJoin', 'pLobby']) $(s).hidden = s !== id; }
+function openParty() {
+  initAudio(); clearScene(); state = 'menu';
+  for (const id of ['homeOv', 'resOv', 'pauseOv', 'introOv', 'setOv']) $(id).hidden = true;
+  $('partyOv').hidden = false;
+  showPartyStep(party ? 'pLobby' : 'pStart');
+  if (party) renderLobby();
+}
+$('partyBtn').onclick = () => { haptic('light'); openParty(); };
+$('partyBack').onclick = () => {
+  if (!$('pMode').hidden || !$('pJoin').hidden) { showPartyStep('pStart'); return; }
+  if (!$('pLobby').hidden) leaveParty();
+  $('partyOv').hidden = true; goHome();
+};
+$('pCreate').onclick = () => { store('st_name', myNick()); showPartyStep('pMode'); };
+$('pJoinOpen').onclick = () => { store('st_name', myNick()); $('pJoinErr').textContent = ''; showPartyStep('pJoin'); $('pCode').focus(); };
+for (const b of document.querySelectorAll('.pm[data-pm]')) b.onclick = () => { if (!b.disabled) createParty(b.dataset.pm); };
+$('pCode').addEventListener('input', () => { $('pCode').value = $('pCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); });
+$('pJoinGo').onclick = () => {
+  const code = $('pCode').value.trim().toLowerCase();
+  if (!/^[a-z0-9]{5}$/.test(code)) { $('pJoinErr').textContent = 'Een partycode heeft 5 tekens.'; return; }
+  enterParty(code, false, null);
+};
+
+function createParty(mode) {
+  let code = ''; for (let i = 0; i < 5; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  enterParty(code, true, mode);
+}
+async function enterParty(code, isHost, mode) {
+  if (!roomNS) { renderPartyAvail(); return; }
+  let nr;
+  try { nr = await roomNS.join('party-' + code); }
+  catch (e) { (isHost ? $('pAvail') : $('pJoinErr')).textContent = 'Verbinden lukt niet. Probeer het zo nog eens.'; return; }
+  party = { code, nr, host: isHost, mode, ready: isHost, unsubs: [] };
+  await nr.presence({ nick: myNick(), host: isHost, mode: isHost ? mode : null, ready: isHost, st: 'lobby' }).catch(() => {});
+  party.unsubs.push(nr.onPeers(() => renderLobby()), nr.on('start', onPartyStart));
+  showPartyStep('pLobby'); renderLobby();
+  sfx.spawn();
+  if (!isHost) {
+    // bestaat deze party wel? zonder host na een paar seconden terug naar het invoerveld
+    setTimeout(() => {
+      if (party && party.nr === nr && !hostPeer()) {
+        leaveParty(); showPartyStep('pJoin');
+        $('pJoinErr').textContent = 'Geen party gevonden met code ' + code.toUpperCase() + '.';
+      }
+    }, 4500);
+  }
+}
+function hostPeer() { return party ? party.nr.peers().find(p => p.presence && p.presence.host) : null; }
+function leaveParty() {
+  if (!party) return;
+  for (const u of party.unsubs) try { u(); } catch (e) {}
+  party.nr.leave().catch(() => {});
+  party = null;
+}
+function renderLobby() {
+  if (!party) return;
+  const peers = party.nr.peers().filter(p => p.kind === 'viewer');
+  const host = hostPeer();
+  if (!party.host && host && host.presence.mode) party.mode = host.presence.mode;
+  $('pCodeShow').textContent = party.code.toUpperCase();
+  $('pModeChip').textContent = 'Modus: ' + ({ puzzle: 'Puzzel', race: 'Race', survival: 'Overleven' }[party.mode] || '…');
+  const list = $('pList'); list.textContent = '';
+  const sorted = peers.slice().sort((a, b) => (b.presence.host ? 1 : 0) - (a.presence.host ? 1 : 0));
+  for (const p of sorted) {
+    const li = document.createElement('li');
+    const dot = document.createElement('i'); dot.style.background = peerColor(p);
+    const nm = document.createElement('span'); nm.className = 'nm';
+    nm.textContent = (typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler') + (p.sameTab ? ' (jij)' : '');
+    const st = document.createElement('em');
+    st.textContent = p.presence.host ? '👑 Host' : p.presence.st === 'playing' ? 'Speelt' : p.presence.ready ? '✓ Klaar' : 'Wacht…';
+    if (p.presence.ready || p.presence.host) st.className = 'ok';
+    li.append(dot, nm, st); list.append(li);
+  }
+  const n = peers.length;
+  $('pStartBtn').hidden = !party.host; $('pReady').hidden = party.host;
+  $('pStartBtn').textContent = `Start (${n} ${n === 1 ? 'speler' : 'spelers'})`;
+  $('pReady').textContent = party.ready ? 'Toch niet klaar' : 'Klaar!';
+  $('pHint').textContent = party.host ? 'Deel de code met je vrienden. Jij start het potje.' : 'Wachten tot de host start…';
+}
+$('pReady').onclick = () => { if (!party) return; party.ready = !party.ready; party.nr.presence({ ready: party.ready }).catch(() => {}); renderLobby(); haptic('light'); };
+$('pLeave').onclick = () => { leaveParty(); showPartyStep('pStart'); };
+$('pCopy').onclick = () => {
+  if (!party) return;
+  const txt = party.code.toUpperCase();
+  const done = () => { $('pCopy').textContent = 'Gekopieerd!'; setTimeout(() => { $('pCopy').textContent = 'Kopieer'; }, 1500); };
+  try { navigator.clipboard.writeText(txt).then(done, () => selectCode()); } catch (e) { selectCode(); }
+};
+function selectCode() { const r = document.createRange(); r.selectNodeContents($('pCodeShow')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+$('pStartBtn').onclick = () => {
+  if (!party || !party.host) return;
+  const seed = 1 + Math.floor(Math.random() * 2147483646);
+  party.nr.emit('start', { seed, mode: party.mode }).catch(e => {
+    $('pHint').textContent = e && e.code === 'not_permitted' ? 'Starten mag niet: vraag de eigenaar om je bewerkrecht op deze pagina te geven.' : 'Starten lukt niet. Probeer het nog eens.';
+  });
+};
+function onPartyStart(msg) {
+  if (!party) return;
+  const d = msg && msg.data;
+  if (!d || typeof d.seed !== 'number' || d.mode !== 'puzzle') return;   // alleen Puzzel kan nu
+  const host = hostPeer();
+  if (host && msg.peer !== host.peer) return;                             // alleen de host start
+  party.nr.presence({ st: 'playing' }).catch(() => {});
+  $('partyOv').hidden = true;
+  startPuzzle(d.seed);
+}
+function backToLobby() {
+  if (!party) { goHome(); return; }
+  clearScene(); state = 'menu'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
+  for (const id of ['resOv', 'pauseOv']) $(id).hidden = true;
+  party.ready = party.host; party.nr.presence({ st: 'lobby', ready: party.host }).catch(() => {});
+  $('partyOv').hidden = false; showPartyStep('pLobby'); renderLobby();
+}
 
 /* ---------- canvas / sprites ---------- */
 let W = 0, H = 0, DPR = 1, SCALE = 1, K = 1;
@@ -2100,7 +2326,7 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
-window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
+window.__storm = () => ({ pillarSig: curDef.blocks.map(b => b.join(',')).join(';'), firstQ: queue.slice(0, 2).join(''), state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
 </script>
