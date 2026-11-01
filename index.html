@@ -1991,36 +1991,57 @@ let drawOff = null;                 // tekent de pilaar met een andermans platfo
 const TYPE_PD = {}; for (const t of TYPES) TYPE_PD[t] = makePiece(t).pd;
 const oppCache = new Map();
 function partyView() { return !!party && mode === 'puzzle' && ['play', 'dying', 'counting', 'over'].includes(state); }
+/* vloeiend meekijken: elke update draagt de tijd van de afzender. We tekenen de ander ~0,11 s "in het verleden"
+   en rekenen tussen de twee omringende standen door, zodat het op 60 beelden per seconde loopt, ook met wat haperend netwerk. */
+const OPP_DELAY = 110;
+function lerpAngle(a, b, k) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * k; }
 function updateOpponents() {
   if (!party) return [];
-  const out = [];
+  const out = [], nowMs = performance.now();
   for (const p of party.nr.peers()) {
     if (p.sameTab || p.kind !== 'viewer') continue;
     const g = p.presence && p.presence.g; if (!g || typeof g !== 'object') continue;
-    let c = oppCache.get(p.peer); if (!c) { c = { pieces: new Map(), off: +g.o || 0 }; oppCache.set(p.peer, c); }
-    const seen = new Set();
-    for (const it of (Array.isArray(g.p) ? g.p : []).slice(0, 80)) {
-      if (!Array.isArray(it) || it.length < 5 || !SHAPES[it[1]]) continue;
-      const id = String(it[0]); seen.add(id);
-      const tx = +it[2] || 0, ty = +it[3] || 0, ta = +it[4] || 0;
-      let q = c.pieces.get(id); if (!q) { q = { t: it[1], x: tx, y: ty, a: ta }; c.pieces.set(id, q); }
-      q.x += (tx - q.x) * 0.3; q.y += (ty - q.y) * 0.3; q.a += (ta - q.a) * 0.3;   // vloeiend naar de nieuwste stand
+    let c = oppCache.get(p.peer); if (!c) { c = { snaps: [], offset: Infinity, lastG: null }; oppCache.set(p.peer, c); }
+    if (g !== c.lastG) {   // nieuwe stand ontvangen
+      c.lastG = g;
+      const ts = typeof g.ts === 'number' ? g.ts : nowMs;
+      c.offset = Math.min(c.offset + 0.5, nowMs - ts);   // klokverschil (laagste waarde, kruipt langzaam mee bij drift)
+      const map = new Map();
+      for (const it of (Array.isArray(g.p) ? g.p : []).slice(0, 80)) {
+        if (!Array.isArray(it) || it.length < 5 || !SHAPES[it[1]]) continue;
+        map.set(String(it[0]), { t: it[1], x: +it[2] || 0, y: +it[3] || 0, a: +it[4] || 0 });
+      }
+      const a = Array.isArray(g.a) && SHAPES[g.a[0]] ? { t: g.a[0], x: +g.a[1] || 0, y: +g.a[2] || 0, a: +g.a[3] || 0 } : null;
+      c.snaps.push({ ts, pieces: map, act: a, o: +g.o || 0 });
+      if (c.snaps.length > 8) c.snaps.shift();
     }
-    for (const id of [...c.pieces.keys()]) if (!seen.has(id)) c.pieces.delete(id);
-    c.off += ((+g.o || 0) - c.off) * 0.15;
+    // standen rond de weergavetijd zoeken en ertussen rekenen
+    const rt = nowMs - c.offset - OPP_DELAY, S = c.snaps;
+    let s0 = S[0], s1 = S[0];
+    for (let i = 0; i < S.length; i++) { if (S[i].ts <= rt) s0 = S[i]; if (S[i].ts >= rt) { s1 = S[i]; break; } s1 = S[i]; }
+    const k = s1.ts > s0.ts ? clamp((rt - s0.ts) / (s1.ts - s0.ts), 0, 1) : 1;
+    const piecesNow = [];
+    for (const [id, q1] of s1.pieces) {
+      const q0 = s0.pieces.get(id);
+      piecesNow.push(q0 ? { t: q1.t, x: q0.x + (q1.x - q0.x) * k, y: q0.y + (q1.y - q0.y) * k, a: lerpAngle(q0.a, q1.a, k) } : q1);
+    }
+    let act = s1.act;
+    if (act && s0.act && s0.act.t === act.t && Math.hypot(act.x - s0.act.x, act.y - s0.act.y) < 3 * CELL)
+      act = { t: act.t, x: s0.act.x + (act.x - s0.act.x) * k, y: s0.act.y + (act.y - s0.act.y) * k, a: lerpAngle(s0.act.a, act.a, k) };
+    c.off = s0.o + (s1.o - s0.o) * k;
     const nick = typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler';
-    out.push({ peer: p.peer, name: nick, color: peerColor(p), g, c, pieces: [...c.pieces.values()] });
+    out.push({ peer: p.peer, name: nick, color: peerColor(p), g, c, pieces: piecesNow, act });
   }
   return out;
 }
 let lastSync = -1;
 function partySync() {
   if (!party || mode !== 'puzzle' || !['play', 'dying', 'counting', 'over'].includes(state)) return;
-  if (now - lastSync < 0.1) return; lastSync = now;
+  if (now - lastSync < 0.05) return; lastSync = now;   // 20 updates per seconde
   const p = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y).slice(0, 70)
     .map(b => [b.pd.id, b.pd.type, Math.round(b.position.x), Math.round(b.position.y), +b.angle.toFixed(2)]);
   const a = active ? [active.type, Math.round(active.visX), Math.round(active.y), +(active.visAngle + active.tilt).toFixed(2)] : 0;
-  party.nr.presence({ g: { p, a, o: +groundOff().toFixed(2), s: score, d: state === 'counting' || state === 'over' ? 1 : 0, r: rises } }).catch(() => {});
+  party.nr.presence({ g: { ts: Math.round(performance.now()), p, a, o: +groundOff().toFixed(2), s: score, d: state === 'counting' || state === 'over' ? 1 : 0, r: rises } }).catch(() => {});
 }
 
 function drawViews(t) {
@@ -2205,8 +2226,7 @@ function drawOppWorld(t, vp, o) {
   for (const q of o.pieces) { const d = TYPE_PD[q.t]; ctx.save(); ctx.translate(q.x + 3, q.y + 4); ctx.rotate(q.a); blit(d, 'shadow'); ctx.restore(); }
   ctx.globalAlpha = 1;
   for (const q of o.pieces) drawP(q, 1);
-  const a = Array.isArray(o.g.a) ? o.g.a : null;
-  if (a && SHAPES[a[0]]) drawP({ t: a[0], x: +a[1] || 0, y: +a[2] || 0, a: +a[3] || 0 }, 0.85);
+  if (o.act) drawP(o.act, 0.85);
   drawSea(t, left, right, bottom, 1);
   ctx.restore();
 }
