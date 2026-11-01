@@ -709,80 +709,22 @@ const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
 /* puzzel: elke ronde een nieuwe pilaar. Een houten stam van één vakje breed in het midden,
    met links en rechts willekeurige klontjes steen (1-3 hoog) en open gaten (1-2) ertussen. */
 const PILLAR_ROWS = 9;
-/* zeven pilaarvarianten. Elke variant heeft eigen toeval; het spel kiest er per ronde één (nooit twee keer dezelfde
-   achter elkaar) en spiegelt hem soms. Elke variant geeft stenen ([kolom, rij]) en houten vakjes (de stam). */
-const chance = p => Math.random() < p;
-const pickInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-const PILLAR_KINDS = [
-  { name: 'Stam & stenen', gen(B, Wd) {
-      for (let r = 0; r < PILLAR_ROWS; r++) Wd(0, r);
-      for (const side of [-1, 1]) {
-        let r = 0;
-        if (chance(0.85)) { const len = chance(0.4) ? 2 : 1; for (let i = 0; i < len; i++) B(side, r++); }
-        while (r < PILLAR_ROWS) { r += chance(0.45) ? 2 : 1; const len = pickInt(1, 3); for (let i = 0; i < len && r < PILLAR_ROWS; i++) B(side, r++); }
-      }
-      return [[-1, 1]];
-  } },
-  { name: 'Tweeling', gen(B, Wd) {          // twee stammen met een schacht ertussen
-      for (let r = 0; r < PILLAR_ROWS; r++) { Wd(-1, r); Wd(1, r); }
-      B(0, 0); if (chance(0.5)) B(0, 1);
-      let r = pickInt(3, 5); B(0, r); if (chance(0.4)) B(0, r + 1);
-      if (chance(0.6)) B(0, PILLAR_ROWS - 1);
-      for (const side of [-2, 2]) { B(side, 0); if (chance(0.6)) B(side, pickInt(3, 6)); }
-      return [[-2, 2]];
-  } },
-  { name: 'Wenteltrap', gen(B, Wd) {        // stenen om en om links en rechts, soms een extra traptree naar buiten
-      for (let r = 0; r < PILLAR_ROWS; r++) Wd(0, r);
-      const start = chance(0.5) ? 1 : -1;
-      for (let r = 0; r < PILLAR_ROWS; r++) {
-        const side = Math.floor(r / 2) % 2 ? -start : start;
-        if (r % 2 === 0 || chance(0.6)) B(side, r);
-        if (r % 2 === 0 && r > 0 && chance(0.35)) B(side * 2, r);
-      }
-      B(-1, 0); B(1, 0);
-      return [[-1, 1]];
-  } },
-  { name: 'Piramide', gen(B, Wd) {          // breed onderin, smal bovenin, met inkepingen
-      for (let r = 0; r < PILLAR_ROWS; r++) Wd(0, r);
-      for (let r = 0; r < 2; r++) for (const c of [-2, -1, 1, 2]) B(c, r);
-      for (let r = 2; r < 5; r++) for (const c of [-1, 1]) if (!(r === 3 && chance(0.5))) B(c, r);
-      for (let r = 5; r < PILLAR_ROWS; r++) if (chance(0.3)) B(chance(0.5) ? -1 : 1, r);
-      return [[-2, 2]];
-  } },
-  { name: 'Paddenstoel', gen(B, Wd) {       // dunne stam, brede hoed bovenop: blokken opzij eronder schuiven
-      for (let r = 0; r < PILLAR_ROWS; r++) Wd(0, r);
-      for (const c of [-2, -1, 1, 2]) B(c, PILLAR_ROWS - 2);
-      B(-1, PILLAR_ROWS - 1); B(1, PILLAR_ROWS - 1);
-      if (chance(0.7)) B(-1, 0); if (chance(0.7)) B(1, 0);
-      if (chance(0.4)) B(chance(0.5) ? -1 : 1, pickInt(2, 4));
-      return [[-1, 1]];
-  } },
-  { name: 'Kam', gen(B, Wd) {               // om de 3 rijen een plankje aan beide kanten
-      for (let r = 0; r < PILLAR_ROWS; r++) Wd(0, r);
-      const off = pickInt(0, 1);
-      for (let r = off; r < PILLAR_ROWS; r += 3) { B(-1, r); B(1, r); if (chance(0.3)) B(chance(0.5) ? -2 : 2, r); }
-      return [[-1, 1]];
-  } },
-  { name: 'Knik', gen(B, Wd) {              // stam verspringt halverwege een vakje opzij
-      const k = pickInt(3, 5);
-      for (let r = 0; r <= k; r++) Wd(0, r);
-      for (let r = k; r < PILLAR_ROWS; r++) Wd(1, r);
-      for (let r = 0; r < k; r++) if (r === 0 || chance(0.4)) B(-1, r);
-      for (let r = 0; r < k - 1; r++) if (chance(0.3)) B(1, r);
-      for (let r = k + 1; r < PILLAR_ROWS; r++) if (chance(0.35)) B(chance(0.5) ? 0 : 2, r);
-      return [[-1, 1]];
-  } },
-];
-let lastKind = -1;
 function generatePillar() {
-  let kind; do { kind = Math.floor(Math.random() * PILLAR_KINDS.length); } while (kind === lastKind);
-  lastKind = kind;
-  const K = PILLAR_KINDS[kind], mirror = chance(0.5) ? -1 : 1;
-  const map = new Map(), wood = new Set();
-  const B = (c, r) => { if (r >= 0 && r < PILLAR_ROWS && !map.has(c * mirror + ',' + r)) map.set(c * mirror + ',' + r, [c * mirror, r]); };
-  const Wd = (c, r) => { B(c, r); wood.add(c * mirror + ',' + r); };
-  const runs = K.gen(B, Wd).map(([a, b]) => mirror < 0 ? [-b, -a] : [a, b]);
-  return { runs, blocks: [...map.values()], wood, pillar: true, name: K.name };
+  const blocks = [];
+  for (let r = 0; r < PILLAR_ROWS; r++) blocks.push([0, r]);          // de stam
+  for (const side of [-1, 1]) {
+    let r = 0;
+    if (Math.random() < 0.85) {                                        // fundering onderaan
+      const len = Math.random() < 0.4 ? 2 : 1;
+      for (let i = 0; i < len; i++) blocks.push([side, r++]);
+    }
+    while (r < PILLAR_ROWS) {
+      r += 1 + (Math.random() < 0.45 ? 1 : 0);                         // open gat van 1 of 2
+      const len = 1 + Math.floor(Math.random() * 3);                   // klontje van 1 tot 3
+      for (let i = 0; i < len && r < PILLAR_ROWS; i++) blocks.push([side, r++]);
+    }
+  }
+  return { runs: [[-1, 1]], blocks, pillar: true, trunk: 0 };
 }
 const PUZZLE_START_ROWS = PILLAR_ROWS + 4;   // laser staat vast, 4 vakjes boven de stam
 const RISE_TIME = 0.7;                        // duur van de platform-animatie (s)
@@ -1788,10 +1730,6 @@ function render(t) {
   if (mode === 'survival' && best > 0) drawLine(-best / M_PER_CELL * CELL, left, right, '#ffcf3a', `RECORD ${best.toFixed(1)} m`);
   if (mode === 'survival' && (state === 'play' || state === 'dying')) drawLine(-nextMilestone / M_PER_CELL * CELL, left, right, '#ffffff', `${nextMilestone} m`);
   if (mode === 'race' && state !== 'menu') drawFinish(t, left, right);
-  if (mode === 'puzzle' && curDef.name && countdown > 0 && state === 'play') {
-    const a = Math.min(1, countdown);
-    ctx.globalAlpha = a; outlinedText(curDef.name, 0, -(PILLAR_ROWS + 1.3) * CELL + groundOff() * CELL, 17, '#ffcf3a', 'center'); ctx.globalAlpha = 1;
-  }
 
   // geleidestraal van het actieve blok
   if (active && state === 'play' && settings.guide) {
@@ -1981,7 +1919,7 @@ function drawStatic() {
       ctx.fillStyle = '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
       ctx.fillStyle = 'rgba(43,33,64,.25)';
       ctx.beginPath(); ctx.arc(x + CELL * (0.3 + ((sx * 7) % 3) * 0.2), y + CELL * 0.55, 2.2, 0, 7); ctx.fill();
-    } else if (curDef.wood && curDef.wood.has(Math.round(sx + 0.5) + ',' + (Math.round(-(sy * CELL - off) / CELL) - 1))) {   // houten stam
+    } else if (curDef.trunk !== undefined && Math.abs(sx - (curDef.trunk - 0.5)) < 0.01) {   // houten stam
       ctx.fillStyle = '#8b5a3a'; ctx.fillRect(x, y, CELL, CELL);
       ctx.fillStyle = '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL);
       ctx.fillStyle = '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL);
@@ -2087,7 +2025,6 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
-window.__pillarName = () => curDef.name;
 window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
