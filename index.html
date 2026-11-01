@@ -412,6 +412,10 @@ body { background: var(--sky); color: var(--ink); }
 .rank i { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--ink); }
 .rank span { font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank em { font-style: normal; font-weight: 800; font-size: 14px; color: var(--muted); }
+
+.wait-pill { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); max-width: calc(100% - 32px);
+  padding: 10px 18px; border-radius: 999px; background: #fff; color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink);
+  font-weight: 800; font-size: 16px; text-align: center; pointer-events: none; animation: cardin .4s cubic-bezier(.2,1.4,.4,1) both; }
 </style>
 
 <div id="app">
@@ -443,6 +447,7 @@ body { background: var(--sky); color: var(--ink); }
 
   <div id="banner"><b id="bannerBig"></b><span id="bannerSub"></span></div>
   <div id="count" aria-live="polite"></div>
+  <div id="waitPill" class="wait-pill" hidden></div>
 
   <div id="pad" hidden>
     <div class="pad-group">
@@ -1447,7 +1452,7 @@ function updateCountdown(dt) {
 function resetRun(def) {
   clearPieces(); contactEvents.length = 0;
   buildPlatform(def);
-  particles.length = rings.length = floaters.length = 0; countLabels.length = 0;
+  particles.length = rings.length = floaters.length = 0; countLabels.length = 0; gc = null; oppCountLabels.clear(); $('waitPill').hidden = true;
   active = null; bag = []; queue = []; result = null; winT = 0; laserHot = 0; laserFail = 0;
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
@@ -1547,7 +1552,7 @@ function updateCounting(dt) {
   if (countT > 0) return;
   if (popPhase) {
     if (popIdx < popList.length) { popList[popIdx++].pd.popping = 0; tone(300, 0.05, 'triangle', 0.05, 380); countT = POP_GAP; }
-    else { popPhase = false; countT = 0.45; }   // even ademhalen voor het tellen
+    else { popPhase = false; if (party) { enterWaiting(); return; } countT = 0.45; }   // in een party: wachten op de rest; anders even ademhalen voor het tellen
     return;
   }
   if (countIdx < countList.length) {
@@ -1564,8 +1569,116 @@ function skipCounting() {
   if (state !== 'counting') return;
   for (const b of popList) if (b.body) removePiece(b);
   popPhase = false;
+  if (party) { enterWaiting(); return; }
   while (countIdx < countList.length) { const b = countList[countIdx++]; countLabels.push({ x: b.position.x, y: b.position.y, n: countIdx, t: 1 }); }
   setCount(countList.length); gameOver();
+}
+/* ---------- party-einde: wachten en samen tellen ----------
+   Wie de laser raakt, laat eerst zijn te hoge blokken floepen en wacht ('waiting') tot iedereen klaar is.
+   Daarna tellen alle torens tegelijk ('groupcount'): elke tik krijgt elke toren met blokken over zijn volgende cijfer.
+   Wie het meest heeft, telt als laatste alleen door en krijgt de trofee. */
+let gc = null, waitT = 0;                       // { tick, max, t, done, parts, winners, endT }
+const oppCountLabels = new Map();    // peer -> [{ id, n, t }]
+function enterWaiting() {
+  state = 'waiting'; waitT = 0;
+  setCount(countList.length);
+  updateWaitPill();
+}
+function othersStillPlaying() {
+  if (!party) return [];
+  return party.nr.peers().filter(p => !p.sameTab && p.kind === 'viewer' && p.presence && p.presence.st === 'playing' && !(p.presence.g && p.presence.g.d));
+}
+function updateWaitPill() {
+  const el = $('waitPill');
+  if (state !== 'waiting') { el.hidden = true; return; }
+  const rest = othersStillPlaying().map(p => (typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler'));
+  el.textContent = rest.length ? `Laser geraakt! Wachten op ${rest.length > 2 ? rest.length + ' spelers' : rest.join(' en ')}…` : 'Iedereen is klaar!';
+  el.hidden = false;
+}
+function startGroupCount() {
+  const opps = updateOpponents();
+  const parts = [{ self: true, n: countList.length }].concat(opps.map(o => ({
+    peer: o.peer, name: o.name, ids: Array.isArray(o.g.c) ? o.g.c.map(String) : [], n: Array.isArray(o.g.c) ? o.g.c.length : (+o.g.s || 0),
+  })));
+  gc = { tick: 0, max: Math.max(0, ...parts.map(p => p.n)), t: 0.6, done: false, parts, winners: null, endT: 0, trophyT: 0 };
+  oppCountLabels.clear();
+  countIdx = 0; countLabels.length = 0; hval.textContent = '0';
+  state = 'groupcount'; $('waitPill').hidden = true;
+}
+function updateGroupCount(dt) {
+  decayCountingFx(dt);
+  for (const arr of oppCountLabels.values()) for (const l of arr) l.t += dt;
+  if (gc.winners) gc.trophyT += dt;
+  gc.t -= dt;
+  if (gc.t > 0) return;
+  if (gc.tick < gc.max) {
+    gc.tick++;
+    const mine = gc.tick <= countList.length;
+    if (mine) countStep();
+    else { const semi = Math.min(gc.tick - 1, 24); tone(523.25 * Math.pow(2, semi / 12), 0.12, 'triangle', 0.07); }
+    for (const p of gc.parts) if (!p.self && gc.tick <= p.n) {
+      const arr = oppCountLabels.get(p.peer) || []; arr.push({ id: p.ids[gc.tick - 1], n: gc.tick, t: 0 }); oppCountLabels.set(p.peer, arr);
+    }
+    // even tempo voor iedereen; samen niet veel langer dan ~3,5 s
+    gc.t = Math.min(Math.max(0.08, 0.32 * Math.pow(0.9, gc.tick)), 3.2 / Math.max(1, gc.max));
+    if (gc.tick === gc.max) gc.t = 0.5;
+  } else if (!gc.winners) {
+    const best = Math.max(0, ...gc.parts.map(p => p.n));
+    gc.winners = gc.parts.filter(p => p.n === best);
+    const iWin = gc.winners.some(p => p.self);
+    if (gc.winners.length > 1) showBanner('Gelijkspel!', `${best} blokken`);
+    else showBanner(iWin ? 'Jij wint!' : `${gc.winners[0].name} wint!`, `${best} blokken`);
+    if (iWin) { confetti(); confetti(); sfx.milestone(); haptic('success'); } else tone(523.25, 0.35, 'triangle', 0.1);
+    for (const b of countList) b.pd.glow = 1;
+    gc.t = 2.6;
+  } else gameOver();
+}
+function decayCountingFx(dt) {
+  for (const l of countLabels) l.t += dt;
+  for (const b of pieces.slice()) {
+    const d = b.pd; d.sqv += -0.32 * d.sq; d.sqv *= 0.78; d.sq += d.sqv;
+    if (d.popping !== undefined) { d.popping += dt; d.flash = 1; if (d.popping >= POP_GROW) popBurst(b); continue; }
+    d.flash = Math.max(0, d.flash - dt * 4); d.glow = Math.max(0, d.glow - dt * 1.5);
+  }
+}
+const isWinner = o => !!(gc && gc.winners && gc.winners.some(w => (o.self ? w.self : w.peer === o.peer)));
+const shownScore = o => {
+  if (state === 'groupcount' && gc) { const p = gc.parts.find(q => (o.self ? q.self : q.peer === o.peer)); return p ? Math.min(gc.tick, p.n) : 0; }
+  return o.self ? score : (+o.g.s || 0);
+};
+/* cijfertjes boven andermans blokken tijdens het samen tellen (in wereld-coördinaten van die toren) */
+function drawOppCountLabels(o) {
+  const arr = oppCountLabels.get(o.peer); if (!arr) return;
+  for (const l of arr) {
+    const q = o.pieces.find(pc => pc.id === l.id); if (!q) continue;
+    const k = Math.min(1, l.t / 0.25), pop = easeOutBack(k);
+    ctx.save(); ctx.translate(q.x, q.y - 4 * k); ctx.scale(pop, pop); outlinedText(String(l.n), 0, 0, 22, '#ffffff', 'center'); ctx.restore();
+  }
+}
+/* trofee boven de winnaar (scherm-coördinaten): een gouden cartoonbeker met inktrand, springt tevoorschijn en dobbert */
+function drawTrophy(x, y, size) {
+  const k = Math.min(1, gc.trophyT / 0.4), pop = easeOutBack(k), bob = Math.sin(gc.trophyT * 4) * 3, s = size / 40;
+  ctx.save(); ctx.translate(x, y + bob); ctx.scale(pop * s, pop * s);
+  ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = INK;
+  // stralen
+  ctx.save(); ctx.rotate(gc.trophyT * 0.6); ctx.fillStyle = 'rgba(255,236,150,.55)';
+  for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(-4, -26); ctx.lineTo(4, -26); ctx.lineTo(0, -40); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+  // oren
+  ctx.beginPath(); ctx.arc(-15, -6, 8, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
+  ctx.beginPath(); ctx.arc(15, -6, 8, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+  // beker
+  ctx.beginPath(); ctx.moveTo(-16, -18); ctx.lineTo(16, -18); ctx.quadraticCurveTo(15, 6, 0, 9); ctx.quadraticCurveTo(-15, 6, -16, -18); ctx.closePath();
+  ctx.fillStyle = '#ffcf3a'; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffe58a'; ctx.beginPath(); ctx.moveTo(-11, -15); ctx.lineTo(-6, -15); ctx.quadraticCurveTo(-7, 0, -2, 5); ctx.quadraticCurveTo(-10, 2, -11, -15); ctx.fill();
+  // voet
+  ctx.fillStyle = '#e0a800'; ctx.fillRect(-3, 9, 6, 7); ctx.strokeRect(-3, 9, 6, 7);
+  rr(ctx, -11, 16, 22, 6, 2); ctx.fillStyle = '#ffcf3a'; ctx.fill(); ctx.stroke();
+  // ster
+  ctx.fillStyle = '#ffffff'; ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const r = i % 2 ? 2.2 : 5, a = -Math.PI / 2 + i * Math.PI / 5; ctx.lineTo(Math.cos(a) * r, -6 + Math.sin(a) * r); }
+  ctx.closePath(); ctx.fill();
+  ctx.restore(); ctx.lineJoin = 'miter';
 }
 function fail(reason, b) {
   if (state !== 'play') return;
@@ -1652,7 +1765,7 @@ function showResult() {
 function clearScene() {
   clearPieces(); contactEvents.length = 0;
   active = null; queue = []; laserY = null; countdown = 0; raceRunning = false; holdT = 0;
-  particles.length = rings.length = floaters.length = 0; countLabels.length = 0;
+  particles.length = rings.length = floaters.length = 0; countLabels.length = 0; gc = null; oppCountLabels.clear(); $('waitPill').hidden = true;
   hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; hint.classList.add('off');
 }
 function goHome() {
@@ -1919,6 +2032,8 @@ function update(dt) {
   }
   if (state === 'dying' && !paused) { overTimer -= dt; if (overTimer <= 0) { if (mode === 'puzzle' && result && result.reason === 'laser') startCounting(); else gameOver(); } }
   if (state === 'counting') updateCounting(dt);
+  if (state === 'waiting') { decayCountingFx(dt); updateWaitPill(); waitT += dt; if (waitT > 0.4 && othersStillPlaying().length === 0) startGroupCount(); }
+  if (state === 'groupcount') updateGroupCount(dt);
 
   // camera
   if (mode === 'puzzle' && laserY !== null) laserY += (laserTarget - laserY) * (1 - Math.exp(-dt * 3));
@@ -1990,7 +2105,7 @@ function drawShadow(b) {
 let drawOff = null;                 // tekent de pilaar met een andermans platform-hoogte (null = je eigen)
 const TYPE_PD = {}; for (const t of TYPES) TYPE_PD[t] = makePiece(t).pd;
 const oppCache = new Map();
-function partyView() { return !!party && mode === 'puzzle' && ['play', 'dying', 'counting', 'over'].includes(state); }
+function partyView() { return !!party && mode === 'puzzle' && ['play', 'dying', 'counting', 'waiting', 'groupcount', 'over'].includes(state); }
 /* vloeiend meekijken: elke update draagt de tijd van de afzender. We tekenen de ander ~0,11 s "in het verleden"
    en rekenen tussen de twee omringende standen door, zodat het op 60 beelden per seconde loopt, ook met wat haperend netwerk. */
 const OPP_DELAY = 110;
@@ -2023,7 +2138,7 @@ function updateOpponents() {
     const piecesNow = [];
     for (const [id, q1] of s1.pieces) {
       const q0 = s0.pieces.get(id);
-      piecesNow.push(q0 ? { t: q1.t, x: q0.x + (q1.x - q0.x) * k, y: q0.y + (q1.y - q0.y) * k, a: lerpAngle(q0.a, q1.a, k) } : q1);
+      piecesNow.push(q0 ? { id, t: q1.t, x: q0.x + (q1.x - q0.x) * k, y: q0.y + (q1.y - q0.y) * k, a: lerpAngle(q0.a, q1.a, k) } : { id, ...q1 });
     }
     let act = s1.act;
     if (act && s0.act && s0.act.t === act.t && Math.hypot(act.x - s0.act.x, act.y - s0.act.y) < 3 * CELL)
@@ -2036,12 +2151,13 @@ function updateOpponents() {
 }
 let lastSync = -1;
 function partySync() {
-  if (!party || mode !== 'puzzle' || !['play', 'dying', 'counting', 'over'].includes(state)) return;
+  if (!party || mode !== 'puzzle' || !['play', 'dying', 'counting', 'waiting', 'groupcount', 'over'].includes(state)) return;
   if (now - lastSync < 0.05) return; lastSync = now;   // 20 updates per seconde
   const p = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y).slice(0, 70)
     .map(b => [b.pd.id, b.pd.type, Math.round(b.position.x), Math.round(b.position.y), +b.angle.toFixed(2)]);
   const a = active ? [active.type, Math.round(active.visX), Math.round(active.y), +(active.visAngle + active.tilt).toFixed(2)] : 0;
-  party.nr.presence({ g: { ts: Math.round(performance.now()), p, a, o: +groundOff().toFixed(2), s: score, d: state === 'counting' || state === 'over' ? 1 : 0, r: rises } }).catch(() => {});
+  const done = ['waiting', 'groupcount', 'over'].includes(state);
+  party.nr.presence({ g: { ts: Math.round(performance.now()), p, a, o: +groundOff().toFixed(2), s: score, d: done ? 1 : 0, c: done ? countList.map(b => b.pd.id) : 0, r: rises } }).catch(() => {});
 }
 
 function drawViews(t) {
@@ -2066,6 +2182,7 @@ function drawViews(t) {
       const vp = { x: 10, y: 136 + i * (mh + 34), w: mw, h: mh, k: Math.min(mw / (CELL * 8), mh / (CELL * 19)) * DPR };
       drawMiniFrame(vp, o, true); drawOppWorld(t, vp, o); drawMiniFrame(vp, o, false);
     });
+    if (isWinner({ self: true })) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); drawTrophy(W / 2, H * 0.24, 70); }
   }
 }
 
@@ -2227,6 +2344,7 @@ function drawOppWorld(t, vp, o) {
   ctx.globalAlpha = 1;
   for (const q of o.pieces) drawP(q, 1);
   if (o.act) drawP(o.act, 0.85);
+  drawOppCountLabels(o);
   drawSea(t, left, right, bottom, 1);
   ctx.restore();
 }
@@ -2236,15 +2354,16 @@ function drawColumnFrame(vp, o, i) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (i > 0) { ctx.fillStyle = INK; ctx.fillRect(vp.x - 1.5, 0, 3, vp.h); }
   if (o.self) { ctx.strokeStyle = '#ffcf3a'; ctx.lineWidth = 5; ctx.strokeRect(vp.x + 4.5, 4.5, vp.w - 9, vp.h - 9); }
-  const name = o.self ? 'Jij' : o.name, s = o.self ? score : (+o.g.s || 0);
+  const name = o.self ? 'Jij' : o.name, s = shownScore(o);
   const ty = 26 + (o.self ? 0 : 0);
   ctx.save(); ctx.translate(vp.x + vp.w / 2, ty);
   outlinedText(`${name} · ${s}`, 0, 0, 17, o.self ? '#ffcf3a' : '#ffffff', 'center');
   ctx.restore();
-  if (!o.self && o.g.d) {
+  if (isWinner(o)) drawTrophy(vp.x + vp.w / 2, 74, 46);
+  if (!o.self && o.g.d && state !== 'groupcount' && state !== 'over') {
     ctx.fillStyle = 'rgba(43,33,64,.35)'; ctx.fillRect(vp.x, 0, vp.w, vp.h);
     ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.h * 0.45);
-    outlinedText('Klaar!', 0, -18, 24, '#ffffff', 'center'); outlinedText(`${s} blokken`, 0, 14, 18, '#ffcf3a', 'center');
+    outlinedText('Klaar!', 0, -6, 24, '#ffffff', 'center');
     ctx.restore();
   }
 }
@@ -2257,8 +2376,9 @@ function drawMiniFrame(vp, o, before) {
   ctx.save(); ctx.translate(vp.x + 22, vp.y + vp.h + 13);
   outlinedText(`${o.name}`, 0, 0, 12, '#ffffff', 'left'); ctx.restore();
   ctx.save(); ctx.translate(vp.x + vp.w - 4, vp.y + 12);
-  outlinedText(String(+o.g.s || 0), 0, 0, 16, '#ffcf3a', 'right'); ctx.restore();
-  if (o.g.d) { ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.y + vp.h / 2); outlinedText('Klaar', 0, 0, 14, '#ffffff', 'center'); ctx.restore(); }
+  outlinedText(String(shownScore(o)), 0, 0, 16, '#ffcf3a', 'right'); ctx.restore();
+  if (isWinner(o)) drawTrophy(vp.x + vp.w / 2, vp.y + 4, 28);
+  if (o.g.d && state !== 'groupcount' && state !== 'over') { ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.y + vp.h / 2); outlinedText('Klaar', 0, 0, 14, '#ffffff', 'center'); ctx.restore(); }
 }
 
 /* ranglijst op het eindscherm (werkt live bij terwijl anderen nog spelen) */
