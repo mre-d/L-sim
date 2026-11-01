@@ -525,9 +525,20 @@ const world = engine.world;
 /* platforms: runs = stenen platen (kolom van t/m), blocks = vaste stenen [kolom, rij boven de plaat] */
 const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
 // puzzel: een hoge, smalle rotspilaar (2 breed) die bijna tot aan de laser reikt; je bouwt eromheen
-const PILLAR_ROWS = 8;
+// per rij (van onder naar boven) welke kolommen steen zijn: gaten in de zijkant om blokken in te schuiven, en uitstekende richels
+const PILLAR_LAYOUT = [
+  [-1, 0],
+  [-1, 0, 1],      // richel rechts
+  [0],             // gat links
+  [-1, 0],
+  [-2, -1, 0],     // richel links
+  [-1],            // gat rechts
+  [-1, 0],
+  [-1, 0],
+];
+const PILLAR_ROWS = PILLAR_LAYOUT.length;
 const PUZZLE_DEF = { runs: [[-1, 0]], blocks: [], pillar: true };
-for (let r = 0; r < PILLAR_ROWS; r++) PUZZLE_DEF.blocks.push([-1, r], [0, r]);
+PILLAR_LAYOUT.forEach((cols, r) => cols.forEach(c => PUZZLE_DEF.blocks.push([c, r])));
 const PUZZLE_START_ROWS = PILLAR_ROWS + 2, RISE_EVERY = 10, RISE_ROWS = 3;
 let curDef = SURVIVAL_DEF, platformBodies = [];
 function buildPlatform(def) {
@@ -631,7 +642,17 @@ function tryMove(dir, byWind) {
   if (!active || paused) return false;
   const nx = active.x + dir * CELL;
   if (Math.abs(nx) > 9 * CELL) return false;
-  if (!fits(active, nx, active.y, active.angle)) return false;
+  if (!fits(active, nx, active.y, active.angle)) {
+    // inschuifhulp: past het blok een fractie hoger of lager wel (bv. in een gat van de pilaar)? dan schuift het erin
+    if (byWind) return false;
+    let ok = null;
+    for (const dy of [-4, 4, -8, 8, -12, 12, -16, 16]) if (fits(active, nx, active.y + dy, active.angle)) { ok = dy; break; }
+    if (ok === null) return false;
+    active.y += ok; active.x = nx; active.tilt = clamp(active.tilt + dir * 0.12, -0.22, 0.22);
+    tone(660, 0.05, 'square', 0.04, 990); noise(0.05, 0.05, 'highpass', 3000);
+    sparkle(nx + dir * CELL, active.y, '#ffd166', 6); noteAction();
+    return true;
+  }
   active.x = nx; active.tilt = clamp(active.tilt + dir * (byWind ? 0.14 : 0.07), -0.22, 0.22);
   if (!byWind) { sfx.move(); noteAction(); }
   return true;
@@ -1325,37 +1346,38 @@ function render(t) {
 }
 
 function drawPillar() {
-  const cols = [...new Set(curDef.blocks.map(b => b[0]))].sort((a, b) => a - b);
-  const top = Math.max(...curDef.blocks.map(b => b[1])) + 1;
-  const x0 = (cols[0] - 0.5) * CELL, w = cols.length * CELL, yTop = -top * CELL;
-  // massieve rotskolom
-  const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
-  g.addColorStop(0, '#4b5687'); g.addColorStop(0.45, '#6d78ab'); g.addColorStop(1, '#3d4774');
-  ctx.fillStyle = g; ctx.fillRect(x0, yTop, w, top * CELL);
-  // metselwerk: verspringende voegen
-  ctx.fillStyle = 'rgba(20,26,58,.45)';
-  for (let r = 0; r < top; r++) {
-    const y = -(r + 1) * CELL;
-    ctx.fillRect(x0, y + CELL - 2, w, 2);
-    const off = r % 2 ? CELL * 0.5 : CELL;
-    for (let x = x0 + off; x < x0 + w - 2; x += CELL) ctx.fillRect(x - 1, y, 2, CELL - 2);
+  const cells = curDef.blocks, has = (c, r) => cells.some(b => b[0] === c && b[1] === r);
+  const coreCols = [-1, 0];
+  // gaten: lege kern-vakjes met steen erboven en eronder -> donkere uitsparing
+  for (let r = 0; r < PILLAR_ROWS; r++) for (const c of coreCols) {
+    if (has(c, r)) continue;
+    const x = (c - 0.5) * CELL, y = -(r + 1) * CELL;
+    const g = ctx.createLinearGradient(x, 0, x + CELL, 0);
+    const inward = c === -1 ? 1 : -1;
+    g.addColorStop(inward > 0 ? 0 : 1, 'rgba(10,14,34,.15)'); g.addColorStop(inward > 0 ? 1 : 0, 'rgba(10,14,34,.75)');
+    ctx.fillStyle = g; ctx.fillRect(x, y, CELL, CELL);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x, y, CELL, 4);   // schaduw van de steen erboven
   }
-  // lichte bovenkant van elke steen
-  ctx.fillStyle = 'rgba(255,255,255,.12)';
-  for (let r = 0; r < top; r++) ctx.fillRect(x0, -(r + 1) * CELL, w, 2);
-  // randen
-  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(x0, yTop, 2, top * CELL);
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x0 + w - 3, yTop, 3, top * CELL);
-  // mos op de top met druppels langs de zijkant
-  ctx.fillStyle = '#3ddc97'; ctx.fillRect(x0, yTop, w, 5);
-  ctx.fillStyle = '#2bb37a'; ctx.fillRect(x0, yTop + 5, w, 2);
-  const drips = [[0.08, 11], [0.3, 7], [0.55, 13], [0.8, 8], [0.95, 10]];
-  ctx.fillStyle = '#2bb37a';
-  for (const [f, h] of drips) ctx.fillRect(x0 + f * w - 2, yTop + 5, 4, h);
-  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x0, yTop, w, 1.5);
-  // een paar mosplekjes lager op de pilaar
-  ctx.fillStyle = 'rgba(61,220,151,.55)';
-  for (const [f, r] of [[0.15, 3], [0.7, 5], [0.4, 1]]) if (r < top) ctx.fillRect(x0 + f * w, -(r + 1) * CELL + 1, 9, 3);
+  for (const [c, r] of cells) {
+    const x = (c - 0.5) * CELL, y = -(r + 1) * CELL;
+    const g = ctx.createLinearGradient(0, y, 0, y + CELL);
+    g.addColorStop(0, '#7681b3'); g.addColorStop(1, '#55609a');
+    ctx.fillStyle = g; ctx.fillRect(x, y, CELL, CELL);
+    // metselwerk: horizontale voeg + verspringende stootvoeg
+    ctx.fillStyle = 'rgba(20,26,58,.45)'; ctx.fillRect(x, y + CELL - 2, CELL, 2);
+    if (r % 2) ctx.fillRect(x + CELL / 2 - 1, y, 2, CELL - 2); else if (!has(c - 1, r)) {} else ctx.fillRect(x - 1, y, 2, CELL - 2);
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(x, y, CELL, 2);
+    if (!has(c - 1, r)) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x, y, 2, CELL); }
+    if (!has(c + 1, r)) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + CELL - 3, y, 3, CELL); }
+    if (!has(c, r - 1) && r > 0) { ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x, y + CELL - 3, CELL, 3); }
+    // mos op elke bovenkant zonder steen erboven
+    if (!has(c, r + 1)) {
+      ctx.fillStyle = '#3ddc97'; ctx.fillRect(x, y, CELL, 4);
+      ctx.fillStyle = '#2bb37a'; ctx.fillRect(x, y + 4, CELL, 2);
+      for (const [f, h] of [[0.15, 7 + (c & 3) * 2], [0.5, 4 + (r % 3) * 3], [0.82, 8]]) ctx.fillRect(x + f * CELL - 1.5, y + 4, 3, h);
+      ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(x, y, CELL, 1.2);
+    }
+  }
 }
 function drawSea(t, left, right, bottom, layer) {
   if (SEA_Y - 30 > bottom) return;
@@ -1389,7 +1411,7 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
-window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, at: active ? active.type : null, result,  bodies: world.bodies.filter(b => b.pd).map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
+window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: world.bodies.filter(b => b.pd).map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
 </script>
