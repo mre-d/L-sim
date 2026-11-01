@@ -795,6 +795,64 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .rw-wait { text-align: center; font-weight: 800; color: var(--muted); padding: 6px 0; }
 .rw-wait.err { color: #e03a6a; }
 .rw-note { text-align: center; font-weight: 700; font-size: 12px; color: var(--muted); }
+
+/* ================= stijl v2: dikke cartoonknoppen met 3D-onderkant en een gras-dakje ================= */
+:root { --grass-cap: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='22' viewBox='0 0 36 22'><path d='M0 6 H36 V12 Q32 21 27 13 Q22.5 19 18 13 Q13.5 21 9 13 Q4.5 19 0 12 Z' fill='%236fd65b'/><path d='M0 7.5 H36' stroke='%23a8f08f' stroke-width='2.4'/><path d='M0 6 H36 M0 12 Q4.5 19 9 13 Q13.5 21 18 13 Q22.5 19 27 13 Q32 21 36 12' fill='none' stroke='%232b2140' stroke-width='2.6' stroke-linejoin='round'/><path d='M7 6 L5.5 1.5 M9.5 6 L10.5 1 M25 6 L24 2 M27.5 6 L29 2.5' stroke='%232b2140' stroke-width='1.8' stroke-linecap='round'/></svg>"); }
+/* spelmodi: volle kleur, donkere onderkant, gras bovenop */
+.mode { --mc-d: color-mix(in srgb, var(--mc) 72%, #2b2140); background: var(--mc); color: #fff; border: 3px solid var(--ink); border-radius: 22px;
+  box-shadow: inset 0 -7px 0 var(--mc-d), inset 0 3px 0 rgba(255,255,255,.35), 0 4px 0 var(--ink); overflow: visible; margin-top: 10px; padding-bottom: 16px; }
+.mode::before { content: ""; position: absolute; left: -5px; right: -5px; top: -11px; height: 22px; width: auto; background: var(--grass-cap) repeat-x left top / 36px 22px; pointer-events: none;
+  -webkit-mask: linear-gradient(90deg, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%); mask: linear-gradient(90deg, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%); }
+.mode:not(.locked):active { transform: translateY(3px); box-shadow: inset 0 -4px 0 var(--mc-d), inset 0 3px 0 rgba(255,255,255,.35), 0 1px 0 var(--ink); }
+.mode b { color: #fff; font-size: 26px; text-shadow: 2px 0 var(--ink), -2px 0 var(--ink), 0 2px var(--ink), 0 -2px var(--ink), 1.6px 1.6px var(--ink), -1.6px 1.6px var(--ink), 1.6px -1.6px var(--ink), -1.6px -1.6px var(--ink), 0 4px 0 var(--ink); letter-spacing: .3px; }
+.mode span span { color: #fff; font-weight: 700; text-shadow: 0 1.5px 0 rgba(43,33,64,.45); }
+.mode em { color: #fff; opacity: .95; }
+.mode .ico { background: rgba(255,255,255,.92); border: 2.5px solid var(--ink); box-shadow: inset 0 -4px 0 rgba(43,33,64,.12); }
+.mode .go { background: #fff; color: var(--ink); border: 2.5px solid var(--ink); box-shadow: inset 0 -3px 0 rgba(43,33,64,.14), 0 3px 0 var(--ink); }
+.mode.party { --mc: #ffcf3a; }
+.mode.party span span { color: var(--ink); text-shadow: none; opacity: .8; }
+.mode.party .go { background: #ff8c42; color: #fff; text-shadow: 0 1.5px 0 rgba(43,33,64,.5); }
+.modes { gap: 16px; }
+#hpPlay { gap: 16px; }
+
+/* grote knoppen: ook met een dikke onderkant */
+.btn { border: 3px solid var(--ink); box-shadow: inset 0 -7px 0 rgba(43,33,64,.2), inset 0 3px 0 rgba(255,255,255,.55), 0 4px 0 var(--ink); }
+.btn:active { transform: translateY(3px); box-shadow: inset 0 -4px 0 rgba(43,33,64,.2), inset 0 3px 0 rgba(255,255,255,.55), 0 1px 0 var(--ink); }
+.btn.ghost { background: #fffaf0; box-shadow: inset 0 -6px 0 #eadfc8, 0 4px 0 var(--ink); }
+
+/* menubalk: zwevende crèmekleurige balk met getekende icoontjes; alleen het gekozen tabblad toont zijn naam */
+.tabbar { position: relative; width: auto; align-self: stretch; margin: 0 max(10px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 10px) max(10px, env(safe-area-inset-left, 0px));
+  background: #fdf6e7; border: 3px solid var(--ink); border-radius: 24px; padding: 0; gap: 0; overflow: visible;
+  box-shadow: inset 0 -7px 0 #eadcc0, 0 4px 0 var(--ink); }
+.tabbar::after { content: ""; position: absolute; left: 6px; right: 6px; top: -12px; height: 22px; background: var(--grass-cap) repeat-x left top / 36px 22px; pointer-events: none;
+  -webkit-mask: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%); mask: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%); }
+.tabbar button { max-width: none; border-radius: 0; padding: 12px 2px 13px; gap: 3px; justify-content: center; color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 14px; }
+.tabbar button + button { border-left: 2px solid rgba(43,33,64,.13); }
+.tabbar button:first-of-type { border-radius: 21px 0 0 21px; }
+.tabbar button:last-of-type { border-radius: 0 21px 21px 0; }
+.tabbar button svg.ti { width: 38px; height: 38px; stroke: none; filter: drop-shadow(0 2px 0 rgba(43,33,64,.18)); transition: transform .15s; }
+.tabbar button .tl { display: none; line-height: 1; }
+.tabbar button.on { background: #c4dc45; color: var(--ink); box-shadow: inset 0 -7px 0 #a3bb2c; }
+.tabbar button.on .tl { display: block; }
+.tabbar button.on svg.ti { transform: translateY(-2px) scale(1.06); }
+.tabbar button:active svg.ti { transform: scale(.92); }
+.tabbar button.dot::after { top: 6px; right: calc(50% - 24px); }
+
+/* pc: zijmenu in dezelfde stijl */
+@media (min-width: 960px) and (min-height: 560px) {
+  .tabbar { margin: 14px 0 14px 14px; padding: 18px 10px 14px; gap: 8px; border-radius: 26px; box-shadow: inset -6px 0 0 #eadcc0, 4px 4px 0 var(--ink); border-right: 3px solid var(--ink); }
+  .tabbar::after { left: 10px; right: 10px; }
+  .tabbar::before { color: var(--ink); padding: 8px 10px 14px; }
+  .tabbar button, .tabbar button:first-of-type, .tabbar button:last-of-type { border-radius: 16px; padding: 8px 12px; gap: 12px; font-size: 18px; justify-content: flex-start; }
+  .tabbar button + button { border-left: 0; }
+  .tabbar button .tl { display: block; }
+  .tabbar button svg.ti { width: 40px; height: 40px; }
+  .tabbar button.on { box-shadow: inset 0 0 0 2.5px var(--ink), inset 0 -6px 0 #a3bb2c; }
+  .tabbar button:hover:not(.on) { background: #f4ead2; }
+  .tabbar button.dot::after { top: 50%; right: 12px; }
+  #hpPlay .modes .mode { padding-bottom: 22px; }
+  .hscroll { padding-top: 22px; }
+}
 </style>
 
 <div id="app">
@@ -910,11 +968,11 @@ canvas.pv-blocks { width: 90px; height: 63px; }
     </section>
     </div>
     <nav class="tabbar" aria-label="Menu">
-      <button data-tab="play" class="on"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>Spelen</button>
-      <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1.2 11.5a1.5 1.5 0 0 1-1.5 1.5H7.7a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>Winkel</button>
-      <button data-tab="quests" id="tabQuests"><svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><path d="M8.5 9l1.8 1.8L14 7.5M8.5 15.5h7"/></svg>Opdrachten</button>
-      <button data-tab="rank"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17M5 20.5v-6h4.5v6M9.5 20.5V10h5v10.5M14.5 20.5v-8H19v8"/></svg>Ranglijst</button>
-      <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>Profiel</button>
+      <button data-tab="play" class="on"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="6" y="25" width="17" height="17" rx="3.5" fill="#3fc4f5"/><rect x="25" y="25" width="17" height="17" rx="3.5" fill="#ff5c8a"/><rect x="15.5" y="7" width="17" height="17" rx="3.5" fill="#ffd23f"/></g><g fill="#fff" opacity=".75"><rect x="9" y="28" width="6" height="2.6" rx="1.3"/><rect x="28" y="28" width="6" height="2.6" rx="1.3"/><rect x="18.5" y="10" width="6" height="2.6" rx="1.3"/></g><g fill="#000" opacity=".14"><rect x="7.3" y="37" width="14.4" height="3.7"/><rect x="26.3" y="37" width="14.4" height="3.7"/><rect x="16.8" y="19" width="14.4" height="3.7"/></g></svg><span class="tl">Spelen</span></button>
+      <button data-tab="shop"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="8" y="18" width="32" height="24" rx="3" fill="#f3ecdf"/><rect x="25" y="25" width="10" height="17" rx="2" fill="#6e9cf0"/><rect x="12" y="25" width="9" height="8" rx="1.5" fill="#bfe4ff"/><path d="M6 12 L10 6 H38 L42 12 V16 a4 4 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4 4 0 0 1 -9 0 Z" fill="#fff"/></g><path d="M10.3 7.5 H18 L15 16.5 a4 4 0 0 1 -7.6 -.6 L7.4 12.4 Z M24 7.5 H31 L33 16 a4.5 4.5 0 0 1 -9 0 Z M37.7 7.5 L40.6 12.4 V16 a4 4 0 0 1 -7.6 .4 Z" fill="#ff5c8a"/><path d="M6 12 L10 6 H38 L42 12 V16 a4 4 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4 4 0 0 1 -9 0 Z" fill="none" stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"/><circle cx="32.8" cy="34" r="1.3" fill="#2b2140"/></svg><span class="tl">Winkel</span></button>
+      <button data-tab="quests" id="tabQuests"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="9" y="8" width="30" height="35" rx="4" fill="#d9a066"/><rect x="13" y="13" width="22" height="26" rx="2" fill="#fffaf0"/><rect x="17" y="5" width="14" height="7" rx="2.5" fill="#c3c7e6"/></g><g fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 20.5l2.2 2.2 4-4.4" stroke="#2fb35a"/><path d="M16.5 30l2.2 2.2 4-4.4" stroke="#2fb35a"/><path d="M25.5 21h6M25.5 30.5h6" stroke="#2b2140" opacity=".45"/></g></svg><span class="tl">Opdrachten</span></button>
+      <button data-tab="rank"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="17" y="18" width="14" height="24" rx="2" fill="#ffd23f"/><rect x="5" y="26" width="13" height="16" rx="2" fill="#c3d3e6"/><rect x="30" y="30" width="13" height="12" rx="2" fill="#e8a46a"/><path d="M24 4.5l2.3 4.8 5.2.6-3.9 3.6 1 5.1L24 16l-4.6 2.6 1-5.1-3.9-3.6 5.2-.6z" fill="#fff6c2"/></g><g fill="#2b2140" font-family="Lilita One,sans-serif" font-size="9" text-anchor="middle"><text x="24" y="31">1</text><text x="11.5" y="37">2</text><text x="36.5" y="39.5">3</text></g></svg><span class="tl">Ranglijst</span></button>
+      <button data-tab="profile"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="8" width="36" height="34" rx="9" fill="#ffd23f" stroke="#2b2140" stroke-width="2.8"/><rect x="11" y="12" width="12" height="4" rx="2" fill="#fff" opacity=".6"/><path d="M8 34 Q24 44 40 34 V36 a6 6 0 0 1 -6 6 H14 a6 6 0 0 1 -6 -6Z" fill="#000" opacity=".12"/><ellipse cx="18" cy="25" rx="2.8" ry="3.6" fill="#2b2140"/><ellipse cx="30" cy="25" rx="2.8" ry="3.6" fill="#2b2140"/><path d="M18 33q6 5 12 0" stroke="#2b2140" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg><span class="tl">Profiel</span></button>
     </nav>
   </div>
   <div class="overlay" id="dailyOv" hidden>
