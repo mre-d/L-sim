@@ -400,6 +400,18 @@ body { background: var(--sky); color: var(--ink); }
 .link-btn { background: none; border: 0; color: var(--danger); font: 800 15px var(--body); cursor: pointer; padding: 6px; }
 .btn[disabled] { opacity: .5; cursor: default; }
 .mode.party { --mc: #ffcf3a; }
+
+/* party-spel */
+#hud.compact .height, #hud.compact .hudleft { visibility: hidden; }
+#hud.compact .next { transform: scale(.8); transform-origin: top right; }
+.rank { list-style: none; margin: 0; padding: 10px; width: min(340px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px;
+  background: #fff; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); }
+.rank li { display: grid; grid-template-columns: 22px 16px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; color: var(--ink); }
+.rank li.me { background: #fff3c4; }
+.rank b { font-family: var(--display); font-weight: 400; font-size: 20px; }
+.rank i { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--ink); }
+.rank span { font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank em { font-style: normal; font-weight: 800; font-size: 14px; color: var(--muted); }
 </style>
 
 <div id="app">
@@ -515,6 +527,7 @@ body { background: var(--sky); color: var(--ink); }
       <div class="big" id="resScore">0</div>
       <div class="hunit" id="resUnit"></div>
     </div>
+    <ol class="rank" id="resRank" hidden></ol>
     <div class="stats">
       <div class="stat"><b id="resS1v">0</b><span id="resS1l"></span></div>
       <div class="stat"><b id="resS2v">0</b><span id="resS2l"></span></div>
@@ -905,11 +918,12 @@ for (const type of TYPES) {
 }
 
 /* een "stuk": draagt de spelgegevens (pd) en spiegelt na elke physics-stap positie, hoek, grenzen en snelheid in px */
+let pieceSeq = 0;
 function makePiece(type) {
   const cells = SHAPES[type], g = GEOM[type];
   const offs = cells.map(([cx, cy]) => ({ x: (cx - g.mx) * CELL, y: (cy - g.my) * CELL }));
   const P = { body: null, position: { x: 0, y: 0 }, angle: 0, bounds: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } }, speed: 0, angularVelocity: 0, isSleeping: false };
-  P.pd = { type, offs, box: pieceBox(type), sx: -(g.mx + 0.5) * CELL, sy: -(g.my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
+  P.pd = { id: ++pieceSeq, type, offs, box: pieceBox(type), sx: -(g.mx + 0.5) * CELL, sy: -(g.my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
            sq: 0, sqv: 0, flash: 0, glow: 0, lastClack: 0, maxErr: 0, landT: 0 };
   return P;
 }
@@ -1632,7 +1646,7 @@ function showResult() {
   md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
   $('resMain').textContent = party ? 'Terug naar lobby' : 'Nog een keer';
   $('resMenu').textContent = party ? 'Party verlaten' : 'Naar het menu';
-  $('resOv').hidden = false; $('resMain').focus();
+  $('resOv').hidden = false; $('resMain').focus(); renderRank();
   if (mode === 'race' || isRec) { sfx.milestone(); haptic('success'); } else sfx.over();
 }
 function clearScene() {
@@ -1710,7 +1724,7 @@ async function enterParty(code, isHost, mode) {
   catch (e) { (isHost ? $('pAvail') : $('pJoinErr')).textContent = 'Verbinden lukt niet. Probeer het zo nog eens.'; return; }
   party = { code, nr, host: isHost, mode, ready: isHost, unsubs: [] };
   await nr.presence({ nick: myNick(), host: isHost, mode: isHost ? mode : null, ready: isHost, st: 'lobby' }).catch(() => {});
-  party.unsubs.push(nr.onPeers(() => renderLobby()), nr.on('start', onPartyStart));
+  party.unsubs.push(nr.onPeers(() => { renderLobby(); renderRank(); }), nr.on('start', onPartyStart));
   showPartyStep('pLobby'); renderLobby();
   sfx.spawn();
   if (!isHost) {
@@ -1785,7 +1799,7 @@ function backToLobby() {
   if (!party) { goHome(); return; }
   clearScene(); state = 'menu'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
   for (const id of ['resOv', 'pauseOv']) $(id).hidden = true;
-  party.ready = party.host; party.nr.presence({ st: 'lobby', ready: party.host }).catch(() => {});
+  party.ready = party.host; party.nr.presence({ st: 'lobby', ready: party.host, g: null }).catch(() => {}); oppCache.clear(); $('resRank').hidden = true;
   $('partyOv').hidden = false; showPartyStep('pLobby'); renderLobby();
 }
 
@@ -1970,45 +1984,78 @@ function drawShadow(b) {
   blit(b.pd, 'shadow'); ctx.restore();
 }
 
-function render(t) {
-  const cw = cv.width, ch = cv.height;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  // lucht: zonnig blauw; hoe hoger je bouwt, hoe dieper het blauw en hoe meer sterretjes
-  ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, cw, ch);
-  const alt = clamp(-camY / CELL * M_PER_CELL / 40, 0, 1);
-  if (alt > 0) {
-    ctx.fillStyle = `rgba(48,40,140,${(alt * 0.55).toFixed(3)})`; ctx.fillRect(0, 0, cw, ch);
-    for (const s of stars) {
-      const a = alt * (0.5 + 0.5 * Math.sin(t * 0.002 + s.ph));
-      ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
-      ctx.beginPath(); ctx.arc(s.x * cw, s.y * ch, s.r * DPR * 1.2, 0, 7); ctx.fill();
+/* ---------- party-spelscherm: meerdere torens ----------
+   Breder dan hoog (pc, telefoon horizontaal): B = alle torens naast elkaar in kolommen.
+   Hoger dan breed (telefoon rechtop):         A = jouw toren groot, de anderen als mini-torens links. */
+let drawOff = null;                 // tekent de pilaar met een andermans platform-hoogte (null = je eigen)
+const TYPE_PD = {}; for (const t of TYPES) TYPE_PD[t] = makePiece(t).pd;
+const oppCache = new Map();
+function partyView() { return !!party && mode === 'puzzle' && ['play', 'dying', 'counting', 'over'].includes(state); }
+function updateOpponents() {
+  if (!party) return [];
+  const out = [];
+  for (const p of party.nr.peers()) {
+    if (p.sameTab || p.kind !== 'viewer') continue;
+    const g = p.presence && p.presence.g; if (!g || typeof g !== 'object') continue;
+    let c = oppCache.get(p.peer); if (!c) { c = { pieces: new Map(), off: +g.o || 0 }; oppCache.set(p.peer, c); }
+    const seen = new Set();
+    for (const it of (Array.isArray(g.p) ? g.p : []).slice(0, 80)) {
+      if (!Array.isArray(it) || it.length < 5 || !SHAPES[it[1]]) continue;
+      const id = String(it[0]); seen.add(id);
+      const tx = +it[2] || 0, ty = +it[3] || 0, ta = +it[4] || 0;
+      let q = c.pieces.get(id); if (!q) { q = { t: it[1], x: tx, y: ty, a: ta }; c.pieces.set(id, q); }
+      q.x += (tx - q.x) * 0.3; q.y += (ty - q.y) * 0.3; q.a += (ta - q.a) * 0.3;   // vloeiend naar de nieuwste stand
     }
+    for (const id of [...c.pieces.keys()]) if (!seen.has(id)) c.pieces.delete(id);
+    c.off += ((+g.o || 0) - c.off) * 0.15;
+    const nick = typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler';
+    out.push({ peer: p.peer, name: nick, color: peerColor(p), g, c, pieces: [...c.pieces.values()] });
   }
-  // zon met langzaam draaiende stralen
-  {
-    const sx = cw * 0.18, sy = ch * 0.13 - camY * 0.05 * K, r = 34 * DPR;
-    ctx.save(); ctx.translate(sx, sy); ctx.rotate(t * 0.00008);
-    ctx.fillStyle = 'rgba(255,240,170,.35)';
-    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-6 * DPR, r * 1.25); ctx.lineTo(6 * DPR, r * 1.25); ctx.lineTo(0, r * 2.3); ctx.closePath(); ctx.fill(); }
-    ctx.restore();
-    ctx.fillStyle = 'rgba(255,248,200,.45)'; ctx.beginPath(); ctx.arc(sx, sy, r * 1.25, 0, 7); ctx.fill();
-    ctx.fillStyle = '#ffe36b'; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.35, 0, 7); ctx.fill();
-  }
-  // bolle cartoonwolken (parallax)
-  for (const c of clouds) {
-    const spr = cloudSprites[c.spr], w = spr.width * c.s * DPR * 0.5, h = spr.height * c.s * DPR * 0.5;
-    const y = ((c.y * ch * 0.5 + ch * 0.35) - camY * c.par * K) % (ch * 1.6);
-    ctx.globalAlpha = c.par < 0.2 ? 0.75 : 1;
-    ctx.drawImage(spr, cw / 2 + c.x * cw * 0.7 - w / 2, (y < -h ? y + ch * 1.6 : y) - h / 2, w, h);
-    ctx.globalAlpha = 1;
-  }
+  return out;
+}
+let lastSync = -1;
+function partySync() {
+  if (!party || mode !== 'puzzle' || !['play', 'dying', 'counting', 'over'].includes(state)) return;
+  if (now - lastSync < 0.1) return; lastSync = now;
+  const p = pieces.filter(b => !b.pd.lost && b.position.y < SEA_Y).slice(0, 70)
+    .map(b => [b.pd.id, b.pd.type, Math.round(b.position.x), Math.round(b.position.y), +b.angle.toFixed(2)]);
+  const a = active ? [active.type, Math.round(active.visX), Math.round(active.y), +(active.visAngle + active.tilt).toFixed(2)] : 0;
+  party.nr.presence({ g: { p, a, o: +groundOff().toFixed(2), s: score, d: state === 'counting' || state === 'over' ? 1 : 0, r: rises } }).catch(() => {});
+}
 
+function drawViews(t) {
+  const full = { x: 0, y: 0, w: W, h: H, k: K };
+  const pv = partyView();
+  const landscape = W > H * 1.05;
+  hud.classList.toggle('compact', pv && landscape);
+  if (!pv) { drawOwnWorld(t, full); return; }
+  const opps = updateOpponents();
+  if (landscape) {
+    const all = [{ self: true }].concat(opps).slice(0, 4), n = all.length, cwid = W / n;
+    const k = Math.min(cwid / (CELL * 10), H / (CELL * 20)) * DPR;
+    all.forEach((o, i) => {
+      const vp = { x: i * cwid, y: 0, w: cwid, h: H, k };
+      if (o.self) drawOwnWorld(t, vp); else drawOppWorld(t, vp, o);
+      drawColumnFrame(vp, o, i);
+    });
+  } else {
+    drawOwnWorld(t, full);
+    const mw = Math.min(96, W * 0.24), mh = mw * 1.7;
+    opps.slice(0, 3).forEach((o, i) => {
+      const vp = { x: 10, y: 136 + i * (mh + 34), w: mw, h: mh, k: Math.min(mw / (CELL * 8), mh / (CELL * 19)) * DPR };
+      drawMiniFrame(vp, o, true); drawOppWorld(t, vp, o); drawMiniFrame(vp, o, false);
+    });
+  }
+}
+
+/* jouw eigen wereld, in een willekeurig kader (heel scherm, of een kolom) */
+function drawOwnWorld(t, vp) {
+  const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
   const sx = shake > 0.05 ? rand(-shake, shake) * DPR : 0, sy = shake > 0.05 ? rand(-shake, shake) * DPR : 0;
-  const ox = cw / 2 + sx, oy = ch * 0.5 - camY * K + sy;
+  const ox = vx + vw / 2 + sx, oy = vy + vh * 0.5 - camY * K + sy;
   ctx.setTransform(K, 0, 0, K, ox, oy);
-  const left = -ox / K - 20, right = (cw - ox) / K + 20, bottom = (ch - oy) / K + 20, top = -oy / K - 20;
-
+  const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20, top = (vy - oy) / K - 20;
   drawHills(t, left, right, bottom);
   // subtiel raster boven het platform
   {
@@ -2130,6 +2177,126 @@ function render(t) {
   }
 
   drawSea(t, left, right, bottom, 1);
+  ctx.restore();
+}
+
+/* andermans toren, getekend uit wat hij doorstuurt */
+function drawOppWorld(t, vp, o) {
+  const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
+  const cam = (laserTarget - 4 * CELL) / 2;
+  const ox = vx + vw / 2, oy = vy + vh * 0.5 - cam * K;
+  ctx.setTransform(K, 0, 0, K, ox, oy);
+  const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20;
+  drawHills(t, left, right, bottom);
+  drawSea(t, left, right, bottom, 0);
+  drawOff = o.c.off; drawIslands(); drawStatic(); drawOff = null;
+  // laser
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
+  ctx.strokeStyle = '#ff5c8a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(left, laserTarget); ctx.lineTo(right, laserTarget); ctx.stroke();
+  ctx.lineCap = 'butt';
+  // blokken
+  const drawP = (q, alpha) => {
+    const d = TYPE_PD[q.t]; if (!d) return;
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(q.x, q.y); ctx.rotate(q.a); blit(d, 'color'); ctx.restore();
+  };
+  ctx.globalAlpha = 0.18;
+  for (const q of o.pieces) { const d = TYPE_PD[q.t]; ctx.save(); ctx.translate(q.x + 3, q.y + 4); ctx.rotate(q.a); blit(d, 'shadow'); ctx.restore(); }
+  ctx.globalAlpha = 1;
+  for (const q of o.pieces) drawP(q, 1);
+  const a = Array.isArray(o.g.a) ? o.g.a : null;
+  if (a && SHAPES[a[0]]) drawP({ t: a[0], x: +a[1] || 0, y: +a[2] || 0, a: +a[3] || 0 }, 0.85);
+  drawSea(t, left, right, bottom, 1);
+  ctx.restore();
+}
+
+/* kolomrand + naam en score bovenaan (B) */
+function drawColumnFrame(vp, o, i) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (i > 0) { ctx.fillStyle = INK; ctx.fillRect(vp.x - 1.5, 0, 3, vp.h); }
+  if (o.self) { ctx.strokeStyle = '#ffcf3a'; ctx.lineWidth = 5; ctx.strokeRect(vp.x + 4.5, 4.5, vp.w - 9, vp.h - 9); }
+  const name = o.self ? 'Jij' : o.name, s = o.self ? score : (+o.g.s || 0);
+  const ty = 26 + (o.self ? 0 : 0);
+  ctx.save(); ctx.translate(vp.x + vp.w / 2, ty);
+  outlinedText(`${name} · ${s}`, 0, 0, 17, o.self ? '#ffcf3a' : '#ffffff', 'center');
+  ctx.restore();
+  if (!o.self && o.g.d) {
+    ctx.fillStyle = 'rgba(43,33,64,.35)'; ctx.fillRect(vp.x, 0, vp.w, vp.h);
+    ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.h * 0.45);
+    outlinedText('Klaar!', 0, -18, 24, '#ffffff', 'center'); outlinedText(`${s} blokken`, 0, 14, 18, '#ffcf3a', 'center');
+    ctx.restore();
+  }
+}
+/* mini-toren rechtsboven (A): eerst achtergrond, daarna rand en naam */
+function drawMiniFrame(vp, o, before) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (before) { rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.fillStyle = '#9fdcff'; ctx.fill(); return; }
+  rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = o.color; ctx.beginPath(); ctx.arc(vp.x + 12, vp.y + vp.h + 13, 6, 0, 7); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
+  ctx.save(); ctx.translate(vp.x + 22, vp.y + vp.h + 13);
+  outlinedText(`${o.name}`, 0, 0, 12, '#ffffff', 'left'); ctx.restore();
+  ctx.save(); ctx.translate(vp.x + vp.w - 4, vp.y + 12);
+  outlinedText(String(+o.g.s || 0), 0, 0, 16, '#ffcf3a', 'right'); ctx.restore();
+  if (o.g.d) { ctx.save(); ctx.translate(vp.x + vp.w / 2, vp.y + vp.h / 2); outlinedText('Klaar', 0, 0, 14, '#ffffff', 'center'); ctx.restore(); }
+}
+
+/* ranglijst op het eindscherm (werkt live bij terwijl anderen nog spelen) */
+function renderRank() {
+  const el = $('resRank');
+  if (!party || $('resOv').hidden) { el.hidden = true; return; }
+  const rows = party.nr.peers().filter(p => p.kind === 'viewer').map(p => {
+    const g = p.sameTab ? { s: score, d: 1 } : (p.presence.g || {});
+    const nick = p.sameTab ? 'Jij' : (typeof p.presence.nick === 'string' && p.presence.nick ? p.presence.nick.slice(0, 14) : 'Speler');
+    return { nick, s: +g.s || 0, done: !!g.d, color: peerColor(p), me: p.sameTab };
+  }).sort((a, b) => (b.done - a.done) || (b.s - a.s));
+  el.textContent = '';
+  rows.forEach((r, i) => {
+    const li = document.createElement('li'); if (r.me) li.className = 'me';
+    const pos = document.createElement('b'); pos.textContent = r.done ? String(i + 1) : '…';
+    const dot = document.createElement('i'); dot.style.background = r.color;
+    const nm = document.createElement('span'); nm.textContent = r.nick;
+    const sc = document.createElement('em'); sc.textContent = r.done ? `${r.s} blokken` : 'speelt nog…';
+    li.append(pos, dot, nm, sc); el.append(li);
+  });
+  el.hidden = rows.length < 2;
+}
+
+function render(t) {
+  const cw = cv.width, ch = cv.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // lucht: zonnig blauw; hoe hoger je bouwt, hoe dieper het blauw en hoe meer sterretjes
+  ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, cw, ch);
+  const alt = clamp(-camY / CELL * M_PER_CELL / 40, 0, 1);
+  if (alt > 0) {
+    ctx.fillStyle = `rgba(48,40,140,${(alt * 0.55).toFixed(3)})`; ctx.fillRect(0, 0, cw, ch);
+    for (const s of stars) {
+      const a = alt * (0.5 + 0.5 * Math.sin(t * 0.002 + s.ph));
+      ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(s.x * cw, s.y * ch, s.r * DPR * 1.2, 0, 7); ctx.fill();
+    }
+  }
+  // zon met langzaam draaiende stralen
+  {
+    const sx = cw * 0.18, sy = ch * 0.13 - camY * 0.05 * K, r = 34 * DPR;
+    ctx.save(); ctx.translate(sx, sy); ctx.rotate(t * 0.00008);
+    ctx.fillStyle = 'rgba(255,240,170,.35)';
+    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-6 * DPR, r * 1.25); ctx.lineTo(6 * DPR, r * 1.25); ctx.lineTo(0, r * 2.3); ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,248,200,.45)'; ctx.beginPath(); ctx.arc(sx, sy, r * 1.25, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffe36b'; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.35, 0, 7); ctx.fill();
+  }
+  // bolle cartoonwolken (parallax)
+  for (const c of clouds) {
+    const spr = cloudSprites[c.spr], w = spr.width * c.s * DPR * 0.5, h = spr.height * c.s * DPR * 0.5;
+    const y = ((c.y * ch * 0.5 + ch * 0.35) - camY * c.par * K) % (ch * 1.6);
+    ctx.globalAlpha = c.par < 0.2 ? 0.75 : 1;
+    ctx.drawImage(spr, cw / 2 + c.x * cw * 0.7 - w / 2, (y < -h ? y + ch * 1.6 : y) - h / 2, w, h);
+    ctx.globalAlpha = 1;
+  }
+
+  drawViews(t);
 
   // scherm-overlays: windvlagen als cartoon-krullen, schade-gloed
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2176,7 +2343,7 @@ function drawHills(t, left, right, bottom) {
 
 /* bruin rotseiland onder elke plaat */
 function drawIslands() {
-  const off = groundOff() * CELL;   // de rots groeit mee als het platform stijgt
+  const off = (drawOff === null ? groundOff() : drawOff) * CELL;   // de rots groeit mee als het platform stijgt
   const jag = n => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
   for (const [a, b2] of curDef.runs) {
     const x0 = (a - 0.5) * CELL, x1 = (b2 + 0.5) * CELL, w = x1 - x0, n = 6, depth = SEA_Y + CELL * 0.5 - off, top0 = CELL + off;
@@ -2201,8 +2368,8 @@ function drawIslands() {
 
 /* plaat + pilaar: één silhouet met dikke inktrand, aarde/steen binnenin, gras met plukjes op elke vrije bovenkant */
 function drawStatic() {
-  const cells = staticCells;   // [x, ybovenkant] in vakjes; x = kolom - 0.5 (al verschoven met het stijgende platform)
-  const off = groundOff() * CELL;
+  const cells = drawOff === null ? staticCells : baseCells.map(([x, y]) => [x, y + drawOff]);   // [x, ybovenkant] in vakjes, verschoven met het platform
+  const off = (drawOff === null ? groundOff() : drawOff) * CELL;
   const key = (x, y) => x + ',' + y, set = new Set(cells.map(c => key(c[0], c[1]))), has = (x, y) => set.has(key(x, y));
   // gaten in de pilaar: donkere uitsparing (achter het silhouet)
   if (curDef.holes) for (let r = 0; r < PILLAR_ROWS; r++) for (const c of [-1, 0]) {
@@ -2321,6 +2488,7 @@ function drawLine(y, left, right, color, label) {
 function frame(t) {
   const dt = Math.min(0.05, (t - last) / 1000); last = t; now += dt;
   update(paused ? 0 : dt);
+  partySync();
   render(t);
   requestAnimationFrame(frame);
 }
