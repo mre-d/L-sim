@@ -409,11 +409,10 @@ body {
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/planck@1.4.2/dist/planck.min.js"></script>
 <script>
 (() => {
 'use strict';
-const { Engine, Bodies, Body, Composite, Events, Query } = Matter;
 
 /* ---------- constanten ---------- */
 const CELL = 32;                 // wereldpixels per blokje
@@ -595,12 +594,19 @@ const sfx = {
   over() { [12, 7, 4, 0].forEach((s, i) => tone(392*Math.pow(2, s/12), 0.35, 'triangle', 0.1, null, i*0.12)); },
 };
 
-/* ---------- physics ---------- */
-const HZ = 120, STEP = 1000 / HZ, V60 = HZ / 60;   // substeps voor stabiel stapelen; V60 rekent snelheid om naar px per 1/60 s
-// geen slaapmodus: slapende blokken werden niet gewekt bij een zachte landing en bleven dan scheef 'bevroren' staan
-const engine = Engine.create({ enableSleeping: false, positionIterations: 24, velocityIterations: 18 });
-engine.gravity.y = 1;
-const world = engine.world;
+/* ---------- physics: Box2D (planck.js) ----------
+   Eenheden in de physics-wereld: 1 = één vakje (CELL px). y wijst omlaag, net als op het scherm.
+   Waarom Box2D: Matter.js duwde blokken soms in één stap 15 px in elkaar, liet schuine blokken wegkruipen
+   en bevroor slapende blokken. Box2D stapelt stabiel, wekt slapende blokken correct en kruipt niet. */
+const { World, Vec2, Box, Chain, Transform, AABB, testOverlap } = planck;
+const HZ = 120, STEP_S = 1 / HZ, V60 = 1;   // V60 = 1: stuk.speed staat al in px per 1/60 s
+const GRAVITY = 30;                          // vakjes per s²
+const INSET = 0.02;                          // speling per buitenkant van een blok (in vakjes)
+const TOL_MOVE = 0.03;                       // vallend blok mag ~1 px langs een rand schuren
+const CORE_INSET = 0.06;                     // vangnet in de pilaar ligt ~2 px binnen de rand                       // vallend blok mag ~2 px langs een rand schuren
+const world = new World({ gravity: Vec2(0, GRAVITY) });
+const pieces = [];                           // alle stukken in de wereld
+
 /* platforms: runs = stenen platen (kolom van t/m), blocks = vaste stenen [kolom, rij boven de plaat] */
 const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
 // puzzel: een hoge, smalle rotspilaar (2 breed) die bijna tot aan de laser reikt; je bouwt eromheen
@@ -619,39 +625,111 @@ const PILLAR_ROWS = PILLAR_LAYOUT.length;
 const PUZZLE_DEF = { runs: [[-1, 0]], blocks: [], pillar: true };
 PILLAR_LAYOUT.forEach((cols, r) => cols.forEach(c => PUZZLE_DEF.blocks.push([c, r])));
 const PUZZLE_START_ROWS = PILLAR_ROWS + 2, RISE_EVERY = 10, RISE_ROWS = 3;
-let curDef = SURVIVAL_DEF, platformBodies = [];
+
+/* omtrek van een groep vakjes als gesloten lus. Eén doorlopende rand zonder naden,
+   zodat blokken niet achter de voegen tussen losse stenen blijven haken. */
+function outlineLoops(cells) {
+  const key = (x, y) => x + ',' + y, set = new Set(cells.map(c => key(c[0], c[1])));
+  const has = (x, y) => set.has(key(x, y));
+  const edges = new Map();
+  for (const [x, y] of cells) {   // vakje (x, y) = linksboven-hoek, 1×1
+    if (!has(x, y - 1)) edges.set(key(x, y), [x + 1, y]);
+    if (!has(x + 1, y)) edges.set(key(x + 1, y), [x + 1, y + 1]);
+    if (!has(x, y + 1)) edges.set(key(x + 1, y + 1), [x, y + 1]);
+    if (!has(x - 1, y)) edges.set(key(x, y + 1), [x, y]);
+  }
+  const loops = [];
+  while (edges.size) {
+    const start = edges.keys().next().value; const pts = []; let cur = start;
+    while (edges.has(cur)) { const nx = edges.get(cur); edges.delete(cur); pts.push(cur.split(',').map(Number)); cur = key(nx[0], nx[1]); }
+    loops.push(pts.filter((p, i) => {   // collineaire tussenpunten weg
+      const a = pts[(i - 1 + pts.length) % pts.length], c = pts[(i + 1) % pts.length];
+      return (p[0] - a[0]) * (c[1] - p[1]) - (p[1] - a[1]) * (c[0] - p[0]) !== 0;
+    }));
+  }
+  return loops;
+}
+let curDef = SURVIVAL_DEF, groundBody = null, staticCells = [];
 function buildPlatform(def) {
-  for (const b of platformBodies) Composite.remove(world, b);
-  const opts = { isStatic: true, friction: 1, frictionStatic: 3, restitution: 0, label: 'platform' };
-  platformBodies = def.runs.map(([a, b]) => Bodies.rectangle((a + b) / 2 * CELL, CELL / 2, (b - a + 1) * CELL, CELL, opts))
-    .concat(def.blocks.map(([c, r]) => Bodies.rectangle(c * CELL, -(r + 0.5) * CELL, CELL, CELL, opts)));
-  Composite.add(world, platformBodies);
+  if (groundBody) world.destroyBody(groundBody);
+  // vakjes in physics-coördinaten: kolom c → x c-0.5 .. c+0.5 ; plaat y 0..1 ; rij r → y -(r+1) .. -r
+  const cells = [];
+  for (const [a, b] of def.runs) for (let c = a; c <= b; c++) cells.push([c - 0.5, 0]);
+  for (const [c, r] of def.blocks) cells.push([c - 0.5, -(r + 1)]);
+  staticCells = cells;   // massieve vakjes, voor de vrij-controle van het vallende blok (de physics-rand zelf is hol)
+  groundBody = world.createBody({ type: 'static' });
+  for (const loop of outlineLoops(cells)) groundBody.createFixture(Chain(loop.map(([x, y]) => Vec2(x, y)), true), { friction: 0.9, restitution: 0 });
+  // vangnet: iets kleinere massieve vulling binnen de rand. Raakt alleen een hoek die al in de steen dreigt te prikken.
+  for (const [sx, sy] of cells) groundBody.createFixture(Box(0.5 - CORE_INSET, 0.5 - CORE_INSET, Vec2(sx + 0.5, sy + 0.5), 0), { friction: 0.9, restitution: 0 });
+  groundBody.setUserData(null);
   curDef = def;
 }
 buildPlatform(SURVIVAL_DEF);
-// rotatiedemping: blokken kantelen traag en komen snel tot rust, zodat de toren als één stevig geheel voelt
-Events.on(engine, 'beforeUpdate', () => {
-  for (const b of world.bodies) {
-    if (!b.pd || b.isSleeping || !b.pd.landed) continue;
-    Body.setAngularVelocity(b, b.angularVelocity * 0.99);
-  }
-});
 
-function makePiece(type) {
-  const cells = SHAPES[type];
-  const mx = cells.reduce((a, c) => a + c[0], 0) / cells.length;
-  const my = cells.reduce((a, c) => a + c[1], 0) / cells.length;
-  const offs = cells.map(([cx, cy]) => ({ x: (cx - mx) * CELL, y: (cy - my) * CELL }));
-  const parts = offs.map(o => Bodies.rectangle(o.x, o.y, CELL, CELL));
-  // zwaar, stroef en traag in rotatie: blokken grijpen in elkaar in plaats van te glijden
-  const body = Body.create({ parts, friction: 1, frictionStatic: 3, restitution: 0, density: 0.003, slop: 0.05, frictionAir: 0.012 });   // slop .05: kleinere slop liet schuine blokken langzaam wegkruipen
-  Body.setInertia(body, body.inertia * 1.8);
-  for (const p of body.parts) { p.friction = 1; p.frictionStatic = 3; p.restitution = 0; p.slop = 0.05; }
-  const box = pieceBox(type);
-  body.pd = { type, offs, box, sx: -(mx + 0.5) * CELL, sy: -(my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
-              sq: 0, sqv: 0, flash: 0, glow: 0, lastClack: 0 };
-  return body;
+/* elk stuk als zo min mogelijk rechthoeken ([x0, y0, b, h] in vakjes): geen interne naden die achter uitsteeksels haken */
+const RECTS = {
+  I: [[0,0,4,1]], O: [[0,0,2,2]], T: [[0,0,3,1],[1,1,1,1]],
+  L: [[0,0,1,2],[0,2,2,1]], J: [[1,0,1,2],[0,2,2,1]], S: [[1,0,2,1],[0,1,2,1]], Z: [[0,0,2,1],[1,1,2,1]],
+};
+const GEOM = {};
+for (const type of TYPES) {
+  const cells = SHAPES[type], set = new Set(cells.map(c => c[0] + ',' + c[1])), has = (x, y) => set.has(x + ',' + y);
+  const mx = cells.reduce((a, c) => a + c[0], 0) / 4, my = cells.reduce((a, c) => a + c[1], 0) / 4;
+  const outer = list => list.every(([x, y]) => !has(x, y));
+  // een zijde krijgt alleen speling als hij helemaal aan de buitenkant van het stuk ligt
+  const rects = RECTS[type].map(([x0, y0, w, h]) => {
+    const L = outer([...Array(h)].map((_, i) => [x0 - 1, y0 + i])) ? INSET : 0;
+    const R = outer([...Array(h)].map((_, i) => [x0 + w, y0 + i])) ? INSET : 0;
+    const T = outer([...Array(w)].map((_, i) => [x0 + i, y0 - 1])) ? INSET : 0;
+    const B = outer([...Array(w)].map((_, i) => [x0 + i, y0 + h])) ? INSET : 0;
+    const ax = x0 - mx - 0.5 + L, bx = x0 + w - mx - 0.5 - R, ay = y0 - my - 0.5 + T, by = y0 + h - my - 0.5 - B;
+    return { cx: (ax + bx) / 2, cy: (ay + by) / 2, hx: (bx - ax) / 2, hy: (by - ay) / 2 };
+  });
+  const shapesFor = tol => rects.map(r => Box(Math.max(0.02, r.hx - tol), Math.max(0.02, r.hy - tol), Vec2(r.cx, r.cy), 0));
+  GEOM[type] = { mx, my, rects, test: { move: shapesFor(TOL_MOVE), strict: shapesFor(0) } };
 }
+
+/* een "stuk": draagt de spelgegevens (pd) en spiegelt na elke physics-stap positie, hoek, grenzen en snelheid in px */
+function makePiece(type) {
+  const cells = SHAPES[type], g = GEOM[type];
+  const offs = cells.map(([cx, cy]) => ({ x: (cx - g.mx) * CELL, y: (cy - g.my) * CELL }));
+  const P = { body: null, position: { x: 0, y: 0 }, angle: 0, bounds: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } }, speed: 0, angularVelocity: 0, isSleeping: false };
+  P.pd = { type, offs, box: pieceBox(type), sx: -(g.mx + 0.5) * CELL, sy: -(g.my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
+           sq: 0, sqv: 0, flash: 0, glow: 0, lastClack: 0, maxErr: 0, landT: 0 };
+  return P;
+}
+function addToWorld(P, x, y, angle, vy) {
+  const g = GEOM[P.pd.type];
+  const b = world.createBody({ type: 'dynamic', position: Vec2(x / CELL, y / CELL), angle, angularDamping: 0.4, linearDamping: 0.05, allowSleep: true });
+  for (const r of g.rects) b.createFixture(Box(r.hx, r.hy, Vec2(r.cx, r.cy), 0), { density: 1, friction: 0.9, restitution: 0 });
+  b.setLinearVelocity(Vec2(0, vy)); b.setUserData(P);
+  P.body = b; pieces.push(P); syncPiece(P);
+}
+function removePiece(P) {
+  if (P.body) world.destroyBody(P.body);
+  P.body = null; const i = pieces.indexOf(P); if (i >= 0) pieces.splice(i, 1);
+}
+function clearPieces() { for (const P of pieces.slice()) removePiece(P); }
+function syncPiece(P) {
+  const b = P.body, pos = b.getPosition(), v = b.getLinearVelocity();
+  P.position.x = pos.x * CELL; P.position.y = pos.y * CELL; P.angle = b.getAngle();
+  P.speed = Math.hypot(v.x, v.y) * CELL / 60; P.angularVelocity = b.getAngularVelocity() / 60; P.isSleeping = !b.isAwake();
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let f = b.getFixtureList(); f; f = f.getNext()) {
+    const bb = f.getAABB(0); x0 = Math.min(x0, bb.lowerBound.x); y0 = Math.min(y0, bb.lowerBound.y); x1 = Math.max(x1, bb.upperBound.x); y1 = Math.max(y1, bb.upperBound.y);
+  }
+  P.bounds.min.x = x0 * CELL; P.bounds.min.y = y0 * CELL; P.bounds.max.x = x1 * CELL; P.bounds.max.y = y1 * CELL;
+}
+
+/* botsingen: Box2D meldt het begin van elk contact; we verwerken ze na de stap (dan mag de wereld weer aangepast worden) */
+const contactEvents = [];
+world.on('begin-contact', c => {
+  const A = c.getFixtureA().getBody(), B = c.getFixtureB().getBody();
+  const va = A.getLinearVelocity(), vb = B.getLinearVelocity();
+  const wm = c.getWorldManifold(null), p = wm && wm.points && wm.points[0];
+  contactEvents.push({ A: A.getUserData(), B: B.getUserData(), rv: Math.hypot(va.x - vb.x, va.y - vb.y) * CELL / 60,
+    pt: p ? { x: p.x * CELL, y: p.y * CELL } : null });
+});
 
 /* ---------- state ---------- */
 let state = 'menu', paused = false;
@@ -671,29 +749,38 @@ function drawFromBag() {
   return bag.pop();
 }
 
-function fits(p, x, y, a, tol = 2.5) {
-  Body.setPosition(p.body, { x, y }); Body.setAngle(p.body, a);
-  const others = Composite.allBodies(world);
-  for (let i = 1; i < p.body.parts.length; i++) {
-    for (const c of Query.collides(p.body.parts[i], others)) if (c.depth > tol) return false;   // een paar pixels schuren mag: blokken glijden makkelijker langs elkaar
+/* past het vallende blok op (x, y) px met hoek a? Test tegen alle vaste en losse blokken met Box2D-overlaptests.
+   'move' laat ~2 px schuren toe zodat je makkelijk langs randen glijdt; 'strict' is exact. */
+function fits(p, x, y, a, kind = 'move') {
+  const shapes = GEOM[p.type].test[kind];
+  const cx = x / CELL, cy = y / CELL;
+  // 1) vaste stenen als massieve vakjes: het vallende blok staat altijd recht (veelvoud van 90°), dus rechthoek-tegen-rechthoek
+  const tol = kind === 'move' ? TOL_MOVE : 0, co = Math.round(Math.cos(a)), si = Math.round(Math.sin(a));
+  for (const r of GEOM[p.type].rects) {
+    const rx = cx + r.cx * co - r.cy * si, ry = cy + r.cx * si + r.cy * co;
+    const hx = (co ? r.hx : r.hy) - tol, hy = (co ? r.hy : r.hx) - tol;
+    for (const [sx, sy] of staticCells) if (rx + hx > sx && rx - hx < sx + 1 && ry + hy > sy && ry - hy < sy + 1) return false;
   }
-  return true;
+  // 2) losse blokken (die mogen schuin liggen): exacte Box2D-overlaptest
+  const xf = Transform(Vec2(cx, cy), a);
+  let hit = false;
+  world.queryAABB(AABB(Vec2(cx - 2.6, cy - 2.6), Vec2(cx + 2.6, cy + 2.6)), fx => {
+    if (fx.getBody() === groundBody) return true;
+    const sh = fx.getShape(), xfB = fx.getBody().getTransform(), n = sh.getChildCount();
+    for (let i = 0; i < n && !hit; i++) for (const s of shapes) if (testOverlap(s, 0, sh, i, xf, xfB)) { hit = true; break; }
+    return !hit;   // false = stop met zoeken
+  });
+  return !hit;
 }
 
 function landedTop() {
   let top = 0;
-  for (const b of Composite.allBodies(world)) {
-    if (!b.pd || !b.pd.landed || b.pd.lost) continue;
-    if (b.bounds.min.y < top) top = b.bounds.min.y;
-  }
+  for (const b of pieces) if (b.pd.landed && !b.pd.lost && b.bounds.min.y < top) top = b.bounds.min.y;
   return top;
 }
 function settledTop() {
   let top = 0;
-  for (const b of Composite.allBodies(world)) {
-    if (!b.pd || !b.pd.settled || b.pd.lost) continue;
-    if (b.bounds.min.y < top) top = b.bounds.min.y;
-  }
+  for (const b of pieces) if (b.pd.settled && !b.pd.lost && b.bounds.min.y < top) top = b.bounds.min.y;
   return top;
 }
 
@@ -753,18 +840,17 @@ function noteAction() { if (++actionsDone === 4) hint.classList.add('off'); }
 
 function dropActive() {
   const p = active;
-  // losduwen: zoek de dichtstbijzijnde plek waar het blok nergens in steekt (eerst omhoog, dan opzij)
-  let fx = p.x, fy = p.y;
-  search: for (const dy of [0, -1, -2, -3, -4]) for (const dx of [0, -1, 1, -2, 2, -3, 3]) {
-    if (fits(p, p.x + dx, p.y + dy, p.angle, 0.3)) { fx = p.x + dx; fy = p.y + dy; break search; }
+  // losduwen: zoek de dichtstbijzijnde plek (in stapjes van 1 px) waar het blok exact vrij ligt; eerst omhoog, dan opzij
+  let fx = p.x, fy = p.y, found = false;
+  search: for (const dy of [0, -1, -2, -3, -4, -6, -8]) for (const dx of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+    if (fits(p, p.x + dx, p.y + dy, p.angle, 'strict')) { fx = p.x + dx; fy = p.y + dy; found = true; break search; }
   }
+  // geen exacte plek binnen 3 px: dan laat Box2D het kleine beetje overlap rustig oplossen (max ~2 px)
   p.x = fx; p.y = fy;
-  Body.setPosition(p.body, { x: p.x, y: p.y }); Body.setAngle(p.body, p.angle);
   // landingssnelheid begrensd: ook na snel laten vallen landt een blok stevig maar beheerst
-  Body.setVelocity(p.body, { x: 0, y: Math.min(p.fast ? 18 * CELL : fallSpeed(), 6 * CELL) / HZ });
-  Body.setAngularVelocity(p.body, 0);
+  const vy = Math.min(p.fast ? 18 * CELL : fallSpeed(), 6 * CELL) / CELL;
   p.body.pd.dropped = true;
-  Composite.add(world, p.body);
+  addToWorld(p.body, p.x, p.y, p.angle, vy);
   active = null; spawnTimer = 0.42;
 }
 
@@ -800,91 +886,46 @@ function showBanner(big, sub) {
 }
 function addShake(v) { if (!reduceMotion) shake = Math.min(shake + v, 16); }
 
-Events.on(engine, 'collisionStart', e => {
-  if (state === 'menu') return;
-  for (const pair of e.pairs) {
-    const A = pair.bodyA.parent, B = pair.bodyB.parent;
-    if (A.pd) A.pd.wake = true; if (B.pd) B.pd.wake = true;
-    const rv = Math.hypot(A.velocity.x - B.velocity.x, A.velocity.y - B.velocity.y) * V60;
-    const sup = pair.collision && pair.collision.supports;
-    const pt = sup && sup[0] && isFinite(sup[0].x) ? { x: sup[0].x, y: sup[0].y } : { x: (A.position.x + B.position.x) / 2, y: (A.position.y + B.position.y) / 2 };
+function handleContacts() {
+  if (state === 'menu') { contactEvents.length = 0; return; }
+  for (const e of contactEvents) {
+    const A = e.A, B = e.B, rv = e.rv;
+    const pt = e.pt || (A ? A.position : B ? B.position : { x: 0, y: 0 });
     let first = null;
-    for (const X of [A, B]) if (X.pd && X.pd.dropped && !X.pd.landed) { X.pd.landed = true; X.pd.landT = now; X.pd.maxErr = 0; first = X; }
+    for (const X of [A, B]) if (X && X.pd.dropped && !X.pd.landed) { X.pd.landed = true; X.pd.landT = now; X.pd.maxErr = 0; first = X; }
     const k = clamp(rv / 7, 0, 1);
     if (first) {
       const other = first === A ? B : A;
       first.pd.sq = 0.04 + 0.07 * k; first.pd.sqv = 0; first.pd.flash = 1;
-      if (other.pd) { other.pd.sq = Math.max(other.pd.sq, 0.02 + 0.03 * k); other.pd.flash = Math.max(other.pd.flash, 0.35); }
+      if (other) { other.pd.sq = Math.max(other.pd.sq, 0.02 + 0.03 * k); other.pd.flash = Math.max(other.pd.flash, 0.35); }
       puff(pt.x, pt.y, k); chips(pt.x, pt.y, COLORS[first.pd.type], k);
       addShake(1.5 + 7 * k); sfx.land(k); haptic(k > 0.45 ? 'heavy' : k > 0.2 ? 'medium' : 'light');
       if (rv > 5) rings.push({ x: pt.x, y: pt.y, r: 4, life: 0, max: 0.35, color: '255,255,255', w: 3 });
     } else if (rv > 1.4) {
       for (const X of [A, B]) {
-        if (!X.pd || now - X.pd.lastClack < 0.14) continue;
+        if (!X || now - X.pd.lastClack < 0.14) continue;
         X.pd.lastClack = now; X.pd.sq = Math.max(X.pd.sq, 0.02 + 0.03 * k); X.pd.flash = Math.max(X.pd.flash, 0.25);
       }
       if (rv > 2) { puff(pt.x, pt.y, k * 0.5); sfx.clack(k); addShake(1 + 3 * k); }
     }
   }
-});
+  contactEvents.length = 0;
+}
 
-/* magnetisch raster: een blok dat bijna recht tot rust komt, wordt in de eerste seconde na de landing
-   zachtjes op het raster getrokken (hoek en x). Daarna is het gewoon vrij en kan het nog bewegen of omvallen. */
-/* rustanker: Matter laat blokken die stil op een helling liggen heel langzaam wegkruipen.
-   Ligt een blok echt stil, dan zetten we zijn positie vast (snelheid op nul, niets wordt opgespaard).
-   Draaien blijft vrij: begint het blok te kantelen, of botst er iets tegenaan, dan laat het anker los. */
-/* ligt dit blok ergens óp (contact met iets eronder)? Alleen schuren langs een zijkant telt niet. */
-function supportedFromBelow(b) {
-  for (const pair of engine.pairs.list) {
-    if (!pair.isActive) continue;
-    const A = pair.bodyA.parent, B = pair.bodyB.parent;
-    if (A !== b && B !== b) continue;
-    const ny = A === b ? -pair.collision.normal.y : pair.collision.normal.y;   // Matter: normaal wijst van B naar A
-    if (ny > 0.5) return true;
-  }
-  return false;
+/* zacht raster: een blok dat net recht is geland en bijna stil ligt, krijgt in de eerste 0,9 s een klein
+   zijwaarts duwtje richting het raster. Via snelheid (niet door te teleporteren), zodat Box2D botsingen
+   gewoon blijft oplossen en er nooit iets in een buurblok schuift. */
+function gridNudge(b, d) {
+  const q = Math.PI / 2, aErr = Math.abs(b.angle - Math.round(b.angle / q) * q);
+  if (now - d.landT < 1.5) d.maxErr = Math.max(d.maxErr, aErr);
+  if (now - d.landT > 0.9 || !b.body || !b.body.isAwake()) return;
+  if (aErr > 0.02 || b.speed > 1.2 || Math.abs(b.angularVelocity) > 0.02) return;
+  const tx = snapX(d.offs, b.position.x, Math.round(b.angle / q) * q), dx = tx - b.position.x;
+  if (Math.abs(dx) < 0.3 || Math.abs(dx) > 9) return;
+  const v = b.body.getLinearVelocity();
+  b.body.setLinearVelocity(Vec2(clamp(dx / CELL * 5, -0.6, 0.6), v.y));
 }
-function wakeIfNeighbourMoves(b, d) {
-  for (const pair of engine.pairs.list) {
-    if (!pair.isActive) continue;
-    const A = pair.bodyA.parent, B = pair.bodyB.parent;
-    const o = A === b ? B : B === b ? A : null;
-    if (!o || o.isStatic || !o.pd || o.pd.anchor) continue;
-    if (o.speed * V60 > 0.3 || Math.abs(o.angularVelocity) * V60 > 0.01) { d.wake = true; return; }
-  }
-}
-function restAnchor(b, d) {
-  if (d.anchor) {
-    const A = d.anchor;
-    if (d.wake || Math.abs(b.angle - A.a) > 0.015 || !supportedFromBelow(b)) { d.anchor = null; d.restN = 0; d.wake = false; return; }
-    Body.setPosition(b, { x: A.x, y: A.y }); Body.setVelocity(b, { x: 0, y: 0 });
-    return;
-  }
-  d.wake = false;
-  const q = Math.PI / 2, tilted = Math.abs(b.angle - Math.round(b.angle / q) * q) > 0.02;
-  if (!tilted && now - (d.landT || 0) < 1.15) { d.restN = 0; return; }     // rechte blokken: eerst rasteren
-  const slow = b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004;
-  if (!slow || !supportedFromBelow(b)) { d.restN = 0; return; }
-  if (++d.restN > (tilted ? 10 : 30)) d.anchor = { x: b.position.x, y: b.position.y, a: b.angle };
-}
-function gridSnap(b, d) {
-  const age = now - (d.landT || 0);
-  if (age > 1.1) return;
-  const q = Math.PI / 2, ta = Math.round(b.angle / q) * q, aErr = ta - b.angle;
-  d.maxErr = Math.max(d.maxErr || 0, Math.abs(aErr));
-  // alleen de horizontale positie rechtzetten; de hoek laten we vrij zodat kantelen nooit wordt tegengehouden
-  if (Math.abs(aErr) > 0.02) return;
-  if (b.speed * V60 > 1.2 || Math.abs(b.angularVelocity) * V60 > 0.02) return;
-  const tx = snapX(d.offs, b.position.x, ta), dx = tx - b.position.x;
-  if (Math.abs(dx) > 9 || Math.abs(dx) < 0.05 || !supportedFromBelow(b)) return;
-  // niet rasteren als het blok daardoor in een buur zou schuiven
-  const ox = b.position.x;
-  Body.setPosition(b, { x: ox + dx * 0.22, y: b.position.y });
-  const others = Composite.allBodies(world).filter(o => o !== b);
-  for (let i = 1; i < b.parts.length; i++) for (const c of Query.collides(b.parts[i], others)) {
-    if (c.depth > 0.6 && Math.abs(c.normal.x) > 0.7) { Body.setPosition(b, { x: ox, y: b.position.y }); return; }
-  }
-}
+
 function onSettle(b) {
   const quarter = Math.PI / 2;
   const err = Math.max(b.pd.maxErr || 0, Math.abs(b.angle - Math.round(b.angle / quarter) * quarter));
@@ -1156,7 +1197,7 @@ function updateCountdown(dt) {
 
 /* ---------- run starten ---------- */
 function resetRun(def) {
-  for (const b of Composite.allBodies(world)) if (b.pd) Composite.remove(world, b);
+  clearPieces(); contactEvents.length = 0;
   buildPlatform(def);
   particles.length = rings.length = floaters.length = 0;
   active = null; bag = []; queue = []; result = null; winT = 0; laserHot = 0; laserFail = 0;
@@ -1197,8 +1238,8 @@ function updatePuzzleTag() {
 }
 function puzzleCheck(dt) {
   let above = null, count = 0;
-  for (const b of world.bodies) {
-    const d = b.pd; if (!d || d.lost || !d.landed) continue;
+  for (const b of pieces) {
+    const d = b.pd; if (d.lost || !d.landed) continue;
     if (b.bounds.min.y < laserTarget - 1.5) {
       above = b;
       if (d.settled) { d.flash = 1; fail('laser', b); return; }
@@ -1295,7 +1336,7 @@ function showResult() {
   if (mode === 'race' || isRec) { sfx.milestone(); haptic('success'); } else sfx.over();
 }
 function clearScene() {
-  for (const b of Composite.allBodies(world)) if (b.pd) Composite.remove(world, b);
+  clearPieces(); contactEvents.length = 0;
   active = null; queue = []; laserY = null; countdown = 0; raceRunning = false; holdT = 0;
   particles.length = rings.length = floaters.length = 0;
   hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; hint.classList.add('off');
@@ -1385,20 +1426,20 @@ function update(dt) {
   }
 
   if (simulate) {
-    acc += dt * 1000; let n = 0;
-    while (acc >= STEP && n < 8) { Engine.update(engine, STEP); acc -= STEP; n++; }
+    acc += dt; let n = 0;
+    while (acc >= STEP_S && n < 8) { world.step(STEP_S, 16, 8); acc -= STEP_S; n++; }
     if (n === 8) acc = 0;
-    for (const b of Composite.allBodies(world)) {
-      const d = b.pd; if (!d) continue;
+    for (const b of pieces) syncPiece(b);
+    handleContacts();
+    for (const b of pieces.slice()) {
+      const d = b.pd;
       // jelly-veer voor squash
       d.sqv += -0.32 * d.sq; d.sqv *= 0.78; d.sq += d.sqv;
       d.flash = Math.max(0, d.flash - dt * 5); d.glow = Math.max(0, d.glow - dt * 2.2);
       if (!d.lost && b.position.y > SEA_Y) { if (state === 'play') loseLife(b); else d.lost = true; }
-      if (b.position.y > SEA_Y + 600) { Composite.remove(world, b); continue; }
+      if (b.position.y > SEA_Y + 600) { removePiece(b); continue; }
       if (!d.landed || d.lost) continue;
-      if (d.anchor && !d.wake) wakeIfNeighbourMoves(b, d);
-      gridSnap(b, d);
-      restAnchor(b, d);
+      gridNudge(b, d);
       if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
       else { d.still = 0; if (d.settled && b.speed * V60 > 1.6) d.settled = false; }
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
@@ -1578,7 +1619,7 @@ function render(t) {
   }
 
   // blokken
-  const bodies = Composite.allBodies(world).filter(b => b.pd && b.position.y < bottom + 60 && b.position.y > top - 200);
+  const bodies = pieces.filter(b => b.position.y < bottom + 60 && b.position.y > top - 200);
   ctx.globalAlpha = 0.28; for (const b of bodies) drawShadow(b); ctx.globalAlpha = 1;
   for (const b of bodies) drawBody(b);
 
@@ -1763,7 +1804,7 @@ function frame(t) {
 }
 resize();
 renderHearts(false);
-window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: world.bodies.filter(b => b.pd).map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
+window.__storm = () => ({ state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
 requestAnimationFrame(t => { last = t; frame(t); });
 })();
 </script>
