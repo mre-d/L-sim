@@ -706,20 +706,27 @@ const pieces = [];                           // alle stukken in de wereld
 const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
 // puzzel: een hoge, smalle rotspilaar (2 breed) die bijna tot aan de laser reikt; je bouwt eromheen
 // per rij (van onder naar boven) welke kolommen steen zijn: gaten in de zijkant om blokken in te schuiven, en uitstekende richels
-const PILLAR_LAYOUT = [
-  [-1, 0],
-  [-1, 0, 1],      // richel rechts
-  [0],             // gat links
-  [-1, 0],
-  [-2, -1, 0],     // richel links
-  [-1],            // gat rechts
-  [-1, 0],
-  [-1, 0],
-];
-const PILLAR_ROWS = PILLAR_LAYOUT.length;
-const PUZZLE_DEF = { runs: [[-1, 0]], blocks: [], pillar: true };
-PILLAR_LAYOUT.forEach((cols, r) => cols.forEach(c => PUZZLE_DEF.blocks.push([c, r])));
-const PUZZLE_START_ROWS = PILLAR_ROWS + 4;   // laser staat vast; je begint met 2 vakjes meer ruimte
+/* puzzel: elke ronde een nieuwe pilaar. Een houten stam van één vakje breed in het midden,
+   met links en rechts willekeurige klontjes steen (1-3 hoog) en open gaten (1-2) ertussen. */
+const PILLAR_ROWS = 9;
+function generatePillar() {
+  const blocks = [];
+  for (let r = 0; r < PILLAR_ROWS; r++) blocks.push([0, r]);          // de stam
+  for (const side of [-1, 1]) {
+    let r = 0;
+    if (Math.random() < 0.85) {                                        // fundering onderaan
+      const len = Math.random() < 0.4 ? 2 : 1;
+      for (let i = 0; i < len; i++) blocks.push([side, r++]);
+    }
+    while (r < PILLAR_ROWS) {
+      r += 1 + (Math.random() < 0.45 ? 1 : 0);                         // open gat van 1 of 2
+      const len = 1 + Math.floor(Math.random() * 3);                   // klontje van 1 tot 3
+      for (let i = 0; i < len && r < PILLAR_ROWS; i++) blocks.push([side, r++]);
+    }
+  }
+  return { runs: [[-1, 1]], blocks, pillar: true, trunk: 0 };
+}
+const PUZZLE_START_ROWS = PILLAR_ROWS + 4;   // laser staat vast, 4 vakjes boven de stam
 const RISE_TIME = 0.7;                        // duur van de platform-animatie (s)
 
 /* omtrek van een groep vakjes als gesloten lus. Eén doorlopende rand zonder naden,
@@ -1364,7 +1371,7 @@ function setCount(n) {
 }
 function startPuzzle() {
   mode = 'puzzle';
-  resetRun(PUZZLE_DEF);
+  resetRun(generatePillar());
   laserRows = PUZZLE_START_ROWS; laserTarget = -laserRows * CELL; laserY = laserTarget;
   score = 0; dropped = 0; rises = 0;
   camY = (laserY - 4 * CELL) / 2 - 3 * CELL;
@@ -1897,7 +1904,7 @@ function drawStatic() {
   const off = groundOff() * CELL;
   const key = (x, y) => x + ',' + y, set = new Set(cells.map(c => key(c[0], c[1]))), has = (x, y) => set.has(key(x, y));
   // gaten in de pilaar: donkere uitsparing (achter het silhouet)
-  if (curDef.pillar) for (let r = 0; r < PILLAR_ROWS; r++) for (const c of [-1, 0]) {
+  if (curDef.holes) for (let r = 0; r < PILLAR_ROWS; r++) for (const c of [-1, 0]) {
     if (curDef.blocks.some(b => b[0] === c && b[1] === r)) continue;
     const x = (c - 0.5) * CELL, y = -(r + 1) * CELL + off;
     ctx.fillStyle = '#5a4c7a'; ctx.fillRect(x, y, CELL, CELL);
@@ -1912,6 +1919,14 @@ function drawStatic() {
       ctx.fillStyle = '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
       ctx.fillStyle = 'rgba(43,33,64,.25)';
       ctx.beginPath(); ctx.arc(x + CELL * (0.3 + ((sx * 7) % 3) * 0.2), y + CELL * 0.55, 2.2, 0, 7); ctx.fill();
+    } else if (curDef.trunk !== undefined && Math.abs(sx - (curDef.trunk - 0.5)) < 0.01) {   // houten stam
+      ctx.fillStyle = '#8b5a3a'; ctx.fillRect(x, y, CELL, CELL);
+      ctx.fillStyle = '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL);
+      ctx.fillStyle = '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL);
+      ctx.strokeStyle = 'rgba(43,33,64,.45)'; ctx.lineWidth = 2; ctx.lineCap = 'round';          // houtnerf en ringen
+      ctx.beginPath(); ctx.moveTo(x + 4, y + CELL * 0.35); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.22, x + CELL - 4, y + CELL * 0.4);
+      ctx.moveTo(x + 4, y + CELL * 0.82); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.7, x + CELL - 4, y + CELL * 0.88); ctx.stroke(); ctx.lineCap = 'butt';
+      if (((sy * 7) | 0) % 3 === 0) { ctx.fillStyle = 'rgba(43,33,64,.35)'; ctx.beginPath(); ctx.ellipse(x + CELL * 0.4, y + CELL * 0.58, 3, 2, 0, 0, 7); ctx.fill(); }
     } else {      // gemetselde steen
       ctx.fillStyle = '#c3c7e6'; ctx.fillRect(x, y, CELL, CELL);
       ctx.fillStyle = '#a5a9d0'; ctx.fillRect(x, y + CELL * 0.7, CELL, CELL * 0.3);
