@@ -99,11 +99,28 @@ body {
 #banner span { display: block; font-weight: 800; font-size: 18px; margin-top: 6px; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
 
 #hint {
-  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 26px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); transform: translateX(-50%);
   display: flex; gap: 8px; pointer-events: none; transition: opacity .5s; flex-wrap: wrap; justify-content: center;
   width: max-content; max-width: calc(100% - 32px);
 }
 #hint.off { opacity: 0; }
+#pad {
+  position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 18px) max(16px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.pad-group { display: flex; gap: 12px; pointer-events: auto; }
+.pad-btn {
+  width: 68px; height: 68px; border-radius: 20px; padding: 0; cursor: pointer; touch-action: none;
+  background: rgba(14,19,42,.62); border: 2px solid rgba(255,255,255,.14); color: var(--paper);
+  display: grid; place-items: center; box-shadow: 0 5px 0 rgba(0,0,0,.35);
+  transition: transform .06s, box-shadow .06s, background .06s;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.pad-btn svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.pad-btn.pressed { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.35); background: rgba(255,209,102,.28); border-color: rgba(255,209,102,.6); }
+.pad-rot { background: rgba(255,209,102,.2); border-color: rgba(255,209,102,.45); color: var(--gold); }
+.pad-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .chip {
   padding: 6px 12px; border-radius: 999px; background: rgba(10,14,32,.6); border: 2px solid rgba(255,255,255,.12);
   font-weight: 700; font-size: 13px; color: var(--paper); white-space: nowrap;
@@ -178,6 +195,17 @@ body {
   </div>
 
   <div id="banner"><b id="bannerBig"></b><span id="bannerSub"></span></div>
+
+  <div id="pad" hidden>
+    <div class="pad-group">
+      <button class="pad-btn" data-act="left" aria-label="Naar links"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="pad-btn" data-act="right" aria-label="Naar rechts"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="pad-group">
+      <button class="pad-btn" data-act="down" aria-label="Sneller laten vallen"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
+      <button class="pad-btn pad-rot" data-act="rotate" aria-label="Draaien"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19 4v5h-5"/></svg></button>
+    </div>
+  </div>
 
   <div id="hint" class="off">
     <div class="chip"><kbd>⇆</kbd>Sleep om te schuiven</div>
@@ -476,15 +504,23 @@ function spawn() {
   const type = queue.shift(); queue.push(drawFromBag());
   const body = makePiece(type);
   const y = Math.min(landedTop(), 0) - 11 * CELL;
-  active = { body, type, offs: body.pd.offs, x: 0, y, angle: 0, visX: 0, visAngle: 0, tilt: 0, pop: 0, bump: 0, fast: false };
-  if (!fits(active, 0, y, 0)) active.y -= 2 * CELL;
+  const x0 = snapX(body.pd.offs, 0, 0);
+  active = { body, type, offs: body.pd.offs, x: x0, y, angle: 0, visX: x0, visAngle: 0, tilt: 0, pop: 0, bump: 0, fast: false };
+  if (!fits(active, x0, y, 0)) active.y -= 2 * CELL;
   drawNext(); sfx.spawn();
   sparkle(0, y, COLORS[type], 6);
 }
 
+const GRID0 = -PLATFORM_CELLS * CELL / 2;   // rasterlijnen vallen samen met de randen van het platform
+function snapX(offs, x, a) {
+  const c = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
+  let mn = Infinity; for (const o of offs) mn = Math.min(mn, o.x * c - o.y * sn);
+  const left = x + mn - CELL / 2;
+  return x + (Math.round((left - GRID0) / CELL) * CELL + GRID0 - left);
+}
 function tryMove(dir, byWind) {
   if (!active || paused) return false;
-  const nx = active.x + dir * CELL / 2;
+  const nx = active.x + dir * CELL;
   if (Math.abs(nx) > 9 * CELL) return false;
   if (!fits(active, nx, active.y, active.angle)) return false;
   active.x = nx; active.tilt = clamp(active.tilt + dir * (byWind ? 0.14 : 0.07), -0.22, 0.22);
@@ -494,8 +530,9 @@ function tryMove(dir, byWind) {
 function tryRotate() {
   if (!active || paused) return;
   const na = active.angle + Math.PI / 2;
-  for (const k of [0, 0.5, -0.5, 1, -1]) {
-    const nx = active.x + k * CELL;
+  const base = snapX(active.offs, active.x, na);
+  for (const k of [0, 1, -1, 2, -2]) {
+    const nx = base + k * CELL;
     if (Math.abs(nx) <= 9 * CELL && fits(active, nx, active.y, na)) {
       active.angle = na; active.x = nx; active.bump = 1; sfx.rotate(); noteAction();
       return;
@@ -638,7 +675,7 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (!ptr || e.pointerId !== ptr.id) return;
   const dx = e.clientX - ptr.lx; ptr.lx = e.clientX; ptr.acc += dx;
-  const step = CELL * SCALE / 2;
+  const step = CELL * SCALE * 0.8;
   while (ptr.acc > step) { tryMove(1); ptr.acc -= step; }
   while (ptr.acc < -step) { tryMove(-1); ptr.acc += step; }
   const tdx = e.clientX - ptr.x0, tdy = e.clientY - ptr.y0;
@@ -663,6 +700,29 @@ addEventListener('keydown', e => {
   else if (e.key === 'ArrowDown' || e.key === 's') { if (active) active.fast = true; e.preventDefault(); }
 });
 addEventListener('keyup', e => { if ((e.key === 'ArrowDown' || e.key === 's') && active) active.fast = false; });
+
+const padEl = $('pad');
+for (const btn of padEl.querySelectorAll('.pad-btn')) {
+  const act = btn.dataset.act; let delay = null, rep = null;
+  const stop = () => {
+    btn.classList.remove('pressed'); clearTimeout(delay); clearInterval(rep);
+    if (act === 'down' && active) active.fast = false;
+  };
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault(); initAudio();
+    if (state !== 'play' || paused) return;
+    btn.setPointerCapture && btn.setPointerCapture(e.pointerId);
+    btn.classList.add('pressed');
+    if (act === 'rotate') tryRotate();
+    else if (act === 'down') { if (active) active.fast = true; noteAction(); }
+    else {
+      const dir = act === 'left' ? -1 : 1; tryMove(dir);
+      delay = setTimeout(() => { rep = setInterval(() => tryMove(dir), 70); }, 190);
+    }
+  });
+  btn.addEventListener('pointerup', stop); btn.addEventListener('pointercancel', stop); btn.addEventListener('lostpointercapture', stop);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+}
 
 function setPaused(v) {
   if (state !== 'play' && state !== 'dying') return;
@@ -689,12 +749,12 @@ function startGame() {
   spawnTimer = 0.5; wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
   state = 'play'; paused = false; shownH = -1; updateHeightHud();
   $('startOv').hidden = true; $('overOv').hidden = true; $('pauseOv').hidden = true;
-  hud.classList.add('on'); renderHearts(false); drawNext();
+  hud.classList.add('on'); padEl.hidden = false; renderHearts(false); drawNext();
   actionsDone = 0; hint.classList.remove('off'); setTimeout(() => hint.classList.add('off'), 7000);
 }
 
 function gameOver() {
-  state = 'over'; hud.classList.remove('on'); windEl.hidden = true;
+  state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true;
   const isRec = maxH > best + 0.001;
   if (isRec) { best = maxH; store('st_best', String(best)); }
   $('overH').innerHTML = `${maxH.toFixed(1)}<small>m</small>`;
@@ -844,7 +904,7 @@ function updateWind(dt) {
     windEl.classList.remove('warn'); windText.textContent = wind.dir > 0 ? 'Wind naar rechts' : 'Wind naar links'; sfx.gust();
   } else if (wind.phase === 'gust') {
     wind.nudgeT -= dt;
-    if (wind.nudgeT <= 0) { wind.nudgeT = 0.6; tryMove(wind.dir, true); }
+    if (wind.nudgeT <= 0) { wind.nudgeT = 0.95; tryMove(wind.dir, true); }
     if (wind.t <= 0) { wind.phase = 'calm'; wind.t = rand(9, 16); windEl.hidden = true; }
   }
 }
@@ -911,6 +971,14 @@ function render(t) {
   ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillRect(px, 0, pw, 3);
   ctx.fillStyle = 'rgba(20,26,60,.3)'; ctx.fillRect(px, CELL - 4, pw, 4);
 
+  // subtiel raster boven het platform
+  {
+    const gTop = Math.max(top, Math.min(landedTop(), 0) - 16 * CELL);
+    const gg = ctx.createLinearGradient(0, 0, 0, gTop);
+    gg.addColorStop(0, 'rgba(214,226,255,.09)'); gg.addColorStop(1, 'rgba(214,226,255,0)');
+    ctx.fillStyle = gg;
+    for (let k = -3; k <= PLATFORM_CELLS + 3; k++) ctx.fillRect(GRID0 + k * CELL - 0.5, gTop, 1, -gTop);
+  }
   // recordlijn
   if (best > 0) drawLine(-best / M_PER_CELL * CELL, left, right, '255,209,102', `RECORD ${best.toFixed(1)} m`, 0.75);
   // mijlpaal-lijn
