@@ -215,8 +215,8 @@ body {
 
 .hudleft { display: flex; flex-direction: column; gap: 4px; }
 .lvltag { padding-top: 2px; line-height: 1.05; }
-.lvltag b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--gold); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
-.lvltag span { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
+.lvltag b { display: block; white-space: nowrap; font-family: var(--display); font-weight: 400; font-size: 19px; color: var(--gold); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.lvltag span { display: block; white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .title i, #banner.show, .hval.bump, #wind.warn { animation-duration: .01s; }
@@ -272,10 +272,11 @@ body {
   <div class="overlay" id="homeOv">
     <div class="title" id="title"></div>
     <p class="tag">Stapel blokken op een klif midden in de storm. Kies hoe je wilt spelen.</p>
+    <div class="record" id="homeRecord" hidden></div>
     <div class="modes">
       <button class="mode open" id="modePuzzle">
         <span class="ico"><svg viewBox="0 0 40 40"><rect x="4" y="27" width="32" height="7" fill="#8d97c4"/><rect x="8" y="17" width="10" height="10" fill="#ffd166"/><rect x="18" y="17" width="10" height="10" fill="#ffd166"/><rect x="18" y="7" width="10" height="10" fill="#c77dff"/><path d="M2 4h36" stroke="#ff5d8f" stroke-width="2.4" stroke-dasharray="4 3"/></svg></span>
-        <span><b>Puzzel</b><span>Krijg alle blokken onder de laser</span></span>
+        <span><b>Puzzel</b><span>Zoveel mogelijk blokken onder de laser</span></span>
         <span class="go">Spelen</span>
       </button>
       <div class="mode locked" aria-disabled="true">
@@ -292,25 +293,21 @@ body {
     <div class="controls" id="startControls"></div>
   </div>
 
-  <div class="overlay" id="levelsOv" hidden>
-    <div class="lv-head">
-      <button class="icon-btn" id="lvBack" aria-label="Terug naar home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="over-h">Puzzel</div>
-    </div>
-    <p class="tag">Plaats alle blokken zonder dat iets boven de laser uitsteekt. Hoe lager je toren, hoe meer sterren.</p>
-    <div class="lv-grid" id="lvGrid"></div>
-  </div>
-
   <div class="overlay" id="resOv" hidden>
-    <div class="over-h" id="resTitle">Gelukt!</div>
-    <div class="stars" id="resStars"></div>
-    <p class="tag" id="resText"></p>
+    <div class="over-h">Laser geraakt!</div>
+    <div class="newrec" id="resRec" hidden>Nieuw record</div>
+    <div class="stack" style="gap:4px">
+      <div class="big" id="resScore">0</div>
+      <div class="hunit">blokken onder de laser</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="resBest">0</b><span>Record</span></div>
+      <div class="stat"><b id="resLaser">0</b><span>Laser (m)</span></div>
+      <div class="stat"><b id="resLost">0</b><span>In zee</span></div>
+    </div>
     <div class="stack">
-      <button class="btn" id="resMain">Volgende puzzel</button>
-      <div class="row-btns">
-        <button class="btn ghost" id="resRetry">Opnieuw</button>
-        <button class="btn ghost" id="resLevels">Levels</button>
-      </div>
+      <button class="btn" id="resMain">Nog een keer</button>
+      <button class="btn ghost" id="resMenu">Naar het menu</button>
     </div>
   </div>
 
@@ -526,16 +523,8 @@ engine.gravity.y = 1;
 const world = engine.world;
 /* platforms: runs = stenen platen (kolom van t/m), blocks = vaste stenen [kolom, rij boven de plaat] */
 const SURVIVAL_DEF = { runs: [[-3, 3]], blocks: [] };
-const LEVELS = [
-  { name: 'Eerste steen', runs: [[-3, 3]], blocks: [], laser: 4, pieces: 'OIOI' },
-  { name: 'Opstapje', runs: [[-3, 3]], blocks: [[-3,0],[-2,0],[-1,0]], laser: 5, pieces: 'ITOLJ' },
-  { name: 'De kom', runs: [[-3, 3]], blocks: [[-3,0],[-3,1],[3,0],[3,1]], laser: 5, pieces: 'OOILJ' },
-  { name: 'Smalle richel', runs: [[-2, 1]], blocks: [], laser: 7, pieces: 'IOLJO' },
-  { name: 'Twee rotsen', runs: [[-3, -2], [1, 3]], blocks: [], laser: 6, pieces: 'IITOZJ' },
-  { name: 'De trap', runs: [[-3, 3]], blocks: [[-3,0],[-3,1],[-3,2],[-2,0],[-2,1],[-2,2],[-1,0],[-1,1],[0,0],[0,1],[1,0],[2,0]], laser: 6, pieces: 'SZTLJ' },
-  { name: 'Inkeping', runs: [[-4, 3]], blocks: [[-4,0],[-3,0],[-2,0],[1,0],[2,0],[3,0]], laser: 6, pieces: 'TOIISL' },
-  { name: 'Eilandjes', runs: [[-3, -3], [-1, 1], [3, 3]], blocks: [[-3,0],[3,0]], laser: 7, pieces: 'IITOLJS' },
-];
+const PUZZLE_DEF = { runs: [[-3, 3]], blocks: [] };
+const PUZZLE_START_ROWS = 7, RISE_EVERY = 10, RISE_ROWS = 3;
 let curDef = SURVIVAL_DEF, platformBodies = [];
 function buildPlatform(def) {
   for (const b of platformBodies) Composite.remove(world, b);
@@ -579,8 +568,8 @@ let spawnTimer = 0, camY = -4*CELL, shake = 0, flashA = 0, hurtA = 0, overTimer 
 let wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 };
 let lightningT = rand(8, 18);
 let actionsDone = 0;
-let mode = 'survival', levelIdx = 0, laserY = null, laserHot = 0, laserFail = 0, winT = 0, result = null;
-let progress = {}; try { progress = JSON.parse(store('st_puz') || '{}') || {}; } catch (e) { progress = {}; }
+let mode = 'survival', laserY = null, laserTarget = 0, laserRows = 0, laserHot = 0, laserFail = 0, winT = 0, result = null;
+let score = 0, dropped = 0, nextRise = 10, puzzleBest = parseInt(store('st_puzbest') || '0', 10) || 0;
 const particles = [], rings = [], floaters = [];
 
 function drawFromBag() {
@@ -614,13 +603,12 @@ function settledTop() {
   return top;
 }
 
-const fallSpeed = () => (mode === 'puzzle' ? 2 : Math.min(1.7 + placed * 0.03, 4.2)) * CELL;
+const fallSpeed = () => (mode === 'puzzle' ? Math.min(1.8 + placed * 0.02, 3.4) : Math.min(1.7 + placed * 0.03, 4.2)) * CELL;
 
 function spawn() {
-  const type = queue.shift(); if (mode === 'survival') queue.push(drawFromBag());
+  const type = queue.shift(); queue.push(drawFromBag());
   const body = makePiece(type);
-  const y = mode === 'puzzle' ? laserY - 5 * CELL : Math.min(landedTop(), 0) - 11 * CELL;
-  if (mode === 'puzzle') setCount(queue.length + 1);
+  const y = mode === 'puzzle' ? laserTarget - 5 * CELL : Math.min(landedTop(), 0) - 11 * CELL;
   const x0 = snapX(body.pd.offs, 0, 0);
   active = { body, type, offs: body.pd.offs, x: x0, y, angle: 0, visX: x0, visAngle: 0, tilt: 0, pop: 0, bump: 0, fast: false };
   if (!fits(active, x0, y, 0)) active.y -= 2 * CELL;
@@ -752,7 +740,7 @@ function loseLife(b) {
   rings.push({ x: b.position.x, y: SEA_Y, r: 8, life: 0, max: 0.7, color: '214,236,242', w: 3, flat: true });
   sfx.splash(); setTimeout(() => sfx.lose(), 150);
   addShake(8); hurtA = 1;
-  if (mode === 'puzzle') { fail('sea'); return; }
+  if (mode === 'puzzle') { dropped++; floater(b.position.x, SEA_Y - 24, 'In zee!', '#d6ecf2', 14); return; }
   renderHearts(true);
   if (lives <= 0 && state === 'play') { state = 'dying'; overTimer = 1.6; active = null; }
 }
@@ -850,22 +838,16 @@ function setPaused(v) {
 }
 $('pauseBtn').onclick = () => { initAudio(); setPaused(true); };
 $('resumeBtn').onclick = () => setPaused(false);
-$('restartBtn').onclick = () => { setPaused(false); mode === 'puzzle' ? startPuzzle(levelIdx) : startGame(); };
+$('restartBtn').onclick = () => { setPaused(false); mode === 'puzzle' ? startPuzzle() : startGame(); };
 $('menuBtn').onclick = () => { setPaused(false); goHome(); };
 function renderMute() { $('muteWaves').style.opacity = muted ? 0.15 : 1; }
 $('muteBtn').onclick = () => { initAudio(); muted = !muted; store('st_muted', muted ? '1' : '0'); renderMute(); };
 renderMute();
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') setPaused(true); });
 
-$('modePuzzle').onclick = () => { initAudio(); openLevels(); };
-$('lvBack').onclick = () => goHome();
-$('resRetry').onclick = () => startPuzzle(levelIdx);
-$('resLevels').onclick = () => openLevels();
-$('resMain').onclick = () => {
-  if (result && result.win && levelIdx + 1 < LEVELS.length) startPuzzle(levelIdx + 1);
-  else if (result && result.win) openLevels();
-  else startPuzzle(levelIdx);
-};
+$('modePuzzle').onclick = () => { initAudio(); startPuzzle(); };
+$('resMain').onclick = () => { initAudio(); startPuzzle(); };
+$('resMenu').onclick = () => goHome();
 $('againBtn').onclick = () => { initAudio(); startGame(); };
 
 function resetRun(def) {
@@ -876,7 +858,7 @@ function resetRun(def) {
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
   spawnTimer = 0.6; wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
   state = 'play'; paused = false; shownH = -1;
-  for (const id of ['homeOv', 'levelsOv', 'overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
+  for (const id of ['homeOv', 'overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
   hud.classList.add('on'); padEl.hidden = false;
   actionsDone = 0; hint.classList.remove('off');
   clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 7000);
@@ -892,77 +874,62 @@ function setCount(n) {
   const v = String(n);
   if (hval.textContent !== v) { hval.textContent = v; hval.classList.remove('bump'); void hval.offsetWidth; hval.classList.add('bump'); }
 }
-function startPuzzle(i) {
-  mode = 'puzzle'; levelIdx = i;
-  const L = LEVELS[i];
-  resetRun(L);
-  queue = L.pieces.split(''); laserY = -L.laser * CELL;
+function startPuzzle() {
+  mode = 'puzzle';
+  resetRun(PUZZLE_DEF);
+  queue = [drawFromBag(), drawFromBag()];
+  laserRows = PUZZLE_START_ROWS; laserTarget = -laserRows * CELL; laserY = laserTarget;
+  score = 0; dropped = 0; nextRise = RISE_EVERY;
   camY = (laserY - 4 * CELL) / 2 - 3 * CELL;
   livesEl.hidden = true; $('lvlTag').hidden = false;
-  $('lvlNum').textContent = `Puzzel ${i + 1}`; $('lvlName').textContent = L.name;
-  $('hunit').textContent = 'blokken over';
-  hval.textContent = String(queue.length); drawNext();
-  showBanner(`Puzzel ${i + 1}`, L.name);
+  hval.textContent = '0'; $('hunit').textContent = 'onder de laser';
+  updatePuzzleTag(); drawNext();
+  showBanner('Puzzel', 'Zoveel mogelijk blokken onder de laser');
+}
+function updatePuzzleTag() {
+  $('lvlNum').textContent = `Record ${puzzleBest}`;
+  $('lvlName').textContent = `Laser stijgt bij ${nextRise}`;
 }
 function puzzleCheck(dt) {
-  let above = null, allSettled = true;
-  const left = queue.length + (active ? 1 : 0);
-  $('hunit').textContent = left === 1 ? 'blok over' : 'blokken over';
+  let above = null, count = 0;
   for (const b of world.bodies) {
-    const d = b.pd; if (!d || d.lost) continue;
-    if (!d.landed) { allSettled = false; continue; }
-    if (b.bounds.min.y < laserY - 1.5) {
+    const d = b.pd; if (!d || d.lost || !d.landed) continue;
+    if (b.bounds.min.y < laserTarget - 1.5) {
       above = b;
       if (d.settled) { d.flash = 1; fail('laser', b); return; }
     }
-    if (!d.settled) allSettled = false;
+    if (d.ever) count++;   // eenmaal vastgezet telt hij, tot hij in zee valt
   }
+  if (count !== score) { score = count; setCount(score); }
   if (above) {
     laserHot = 1;
     if (Math.random() < 0.6) particles.push({ t: 'star', x: above.position.x + rand(-CELL, CELL), y: laserY, vx: rand(-80, 80), vy: rand(-90, 30), life: 0, max: rand(0.2, 0.4), size: rand(1.5, 3), color: '#ff7aa2' });
   }
-  if (!queue.length && !active && allSettled) { winT += dt; if (winT > 0.7) win(); } else winT = 0;
+  // eindeloos: na elke RISE_EVERY blokken gaat de laser omhoog
+  if (score >= nextRise) {
+    nextRise += RISE_EVERY; laserRows += RISE_ROWS; laserTarget = -laserRows * CELL;
+    showBanner('Laser omhoog!', `+${RISE_ROWS * M_PER_CELL} m ruimte`);
+    sfx.milestone(); confetti(); updatePuzzleTag();
+  }
 }
 function fail(reason, b) {
   if (state !== 'play') return;
-  state = 'dying'; overTimer = 1.5; active = null; result = { win: false, reason };
-  if (reason === 'laser') {
-    laserFail = 1; addShake(7); hurtA = 0.8;
-    tone(1400, 0.35, 'sawtooth', 0.07, 180); noise(0.3, 0.12, 'highpass', 2500);
-    if (b) sparkle(b.position.x, laserY, '#ff5d8f', 18);
-  }
+  state = 'dying'; overTimer = 1.6; active = null; result = { reason };
+  laserFail = 1; addShake(7); hurtA = 0.8;
+  tone(1400, 0.35, 'sawtooth', 0.07, 180); noise(0.3, 0.12, 'highpass', 2500);
+  if (b) sparkle(b.position.x, laserY, '#ff5d8f', 18);
 }
-function win() {
-  if (state !== 'play') return;
-  const L = LEVELS[levelIdx];
-  const topRows = -settledTop() / CELL;
-  const stars = topRows <= L.laser - 1 + 0.08 ? 3 : topRows <= L.laser - 0.45 ? 2 : 1;
-  result = { win: true, stars };
-  progress[levelIdx] = Math.max(progress[levelIdx] || 0, stars);
-  store('st_puz', JSON.stringify(progress));
-  state = 'dying'; overTimer = 1.1;
-  showBanner('Gelukt!', stars === 3 ? 'Perfect gestapeld' : 'Alle blokken staan');
-  sfx.milestone(); confetti();
-}
-const starSvg = (on, dim) => `<svg viewBox="0 0 24 24" style="color:${on ? 'var(--gold)' : dim}"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="currentColor" stroke="rgba(0,0,0,.35)" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 function showResult() {
   state = 'over'; hud.classList.remove('on'); padEl.hidden = true;
-  const r = result || { win: false, reason: 'sea' };
-  $('resTitle').textContent = r.win ? 'Gelukt!' : 'Mislukt';
-  $('resStars').hidden = !r.win;
-  if (r.win) {
-    $('resStars').innerHTML = [0, 1, 2].map(i => starSvg(i < r.stars, 'rgba(255,255,255,.14)')).join('');
-    [...$('resStars').children].forEach((el, i) => { el.style.animationDelay = (0.15 + i * 0.18) + 's'; });
-    [0, 1, 2].forEach(i => { if (i < r.stars) setTimeout(() => tone(note(i * 2 + 2), 0.2, 'triangle', 0.1), 150 + i * 180); });
-    $('resText').textContent = r.stars === 3 ? 'Alles netjes onder de laser, met ruimte over.' : 'Lukt het met een lagere toren? Dan krijg je meer sterren.';
-    $('resMain').textContent = levelIdx + 1 < LEVELS.length ? 'Volgende puzzel' : 'Alle levels';
-  } else {
-    $('resText').textContent = r.reason === 'laser' ? 'Een blok stak boven de laser uit.' : 'Er viel een blok in zee.';
-    $('resMain').textContent = 'Opnieuw proberen';
-    sfx.over();
-  }
-  $('resRetry').hidden = !r.win;
+  const isRec = score > puzzleBest;
+  if (isRec) { puzzleBest = score; store('st_puzbest', String(score)); }
+  $('resScore').textContent = score;
+  $('resRec').hidden = !isRec;
+  $('resBest').textContent = puzzleBest;
+  $('resLaser').textContent = (laserRows * M_PER_CELL).toFixed(1);
+  $('resLost').textContent = dropped;
   $('resOv').hidden = false; $('resMain').focus();
+  sfx.over();
 }
 function clearScene() {
   for (const b of Composite.allBodies(world)) if (b.pd) Composite.remove(world, b);
@@ -971,33 +938,14 @@ function clearScene() {
 }
 function goHome() {
   clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF);
-  for (const id of ['levelsOv', 'overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
-  $('homeOv').hidden = false;
+  for (const id of ['overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
+  $('homeOv').hidden = false; renderHomeRecord();
 }
-function platformSvg(L) {
-  const cols = L.runs.flat().concat(L.blocks.map(b => b[0]));
-  const mn = Math.min(...cols) - 1, mx = Math.max(...cols) + 1, w = mx - mn + 1, rows = L.laser + 1;
-  const y0 = rows * 10 - 2;
-  let out = `<svg class="pf" viewBox="0 0 ${w * 10} ${rows * 10 + 4}" preserveAspectRatio="xMidYMax meet" aria-hidden="true">`;
-  for (const [a, b] of L.runs) out += `<rect x="${(a - mn) * 10}" y="${y0}" width="${(b - a + 1) * 10}" height="6" fill="#8d97c4"/>`;
-  for (const [c, r] of L.blocks) out += `<rect x="${(c - mn) * 10 + 0.5}" y="${y0 - (r + 1) * 10 + 0.5}" width="9" height="9" fill="#6c77a8"/>`;
-  out += `<line x1="0" x2="${w * 10}" y1="${y0 - L.laser * 10}" y2="${y0 - L.laser * 10}" stroke="#ff5d8f" stroke-width="1.6" stroke-dasharray="3 2"/></svg>`;
-  return out;
+function renderHomeRecord() {
+  const el = $('homeRecord'); el.hidden = puzzleBest <= 0;
+  el.textContent = `Puzzel-record: ${puzzleBest} blokken`;
 }
-function openLevels() {
-  clearScene(); state = 'menu'; mode = 'puzzle'; buildPlatform(SURVIVAL_DEF);
-  for (const id of ['homeOv', 'overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
-  const lock = '<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-  $('lvGrid').innerHTML = LEVELS.map((L, i) => {
-    const open = i === 0 || (progress[i - 1] || 0) > 0, st = progress[i] || 0;
-    return `<button class="lv" data-i="${i}" ${open ? '' : 'disabled'} aria-label="Puzzel ${i + 1}: ${L.name}${open ? '' : ' (op slot)'}">
-      <div class="top"><span class="num">${i + 1}</span><span class="nm">${L.name}</span></div>
-      ${platformSvg(L)}
-      <div class="st">${[0, 1, 2].map(k => starSvg(k < st, 'rgba(255,255,255,.16)')).join('')}</div>${open ? '' : lock}</button>`;
-  }).join('');
-  for (const b of $('lvGrid').querySelectorAll('.lv:not([disabled])')) b.onclick = () => { initAudio(); startPuzzle(+b.dataset.i); };
-  $('levelsOv').hidden = false;
-}
+renderHomeRecord();
 function gameOver() {
   if (mode === 'puzzle') { showResult(); return; }
   state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true;
@@ -1115,6 +1063,7 @@ function update(dt) {
   if (state === 'dying' && !paused) { overTimer -= dt; if (overTimer <= 0) gameOver(); }
 
   // camera
+  if (mode === 'puzzle' && laserY !== null) laserY += (laserTarget - laserY) * (1 - Math.exp(-dt * 3));
   const target = mode === 'puzzle' && laserY !== null ? (laserY - 4 * CELL) / 2 : Math.min(landedTop(), 0) - 4 * CELL;
   laserHot *= Math.exp(-dt * 5); laserFail *= Math.exp(-dt * 2);
   camY += (target - camY) * (1 - Math.exp(-dt * 2.4));
