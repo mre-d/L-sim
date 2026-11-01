@@ -218,8 +218,64 @@ body {
 .lvltag b { display: block; white-space: nowrap; font-family: var(--display); font-weight: 400; font-size: 19px; color: var(--gold); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
 .lvltag span { display: block; white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--muted); }
 
+
+/* home: modus-kaarten met eigen accentkleur */
+.mode { position: relative; overflow: hidden; }
+.mode::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--mc, var(--gold)); }
+.mode em { display: block; font-style: normal; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-top: 4px; }
+.mode em:empty { display: none; }
+.mode .go { background: var(--mc, var(--gold)); }
+.corner-btn { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: max(16px, env(safe-area-inset-right, 0px)); width: 44px; height: 44px; }
+.corner-btn svg { width: 22px; height: 22px; }
+
+/* uitlegkaart */
+.intro-card {
+  box-sizing: border-box; width: min(360px, 100%); padding: 24px 20px 20px; border-radius: 26px; text-align: left;
+  background: linear-gradient(180deg, rgba(43,56,102,.95), rgba(18,23,46,.97)); border: 2px solid rgba(255,255,255,.12);
+  box-shadow: 0 20px 50px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 14px; align-items: stretch;
+  animation: cardin .45s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes cardin { from { transform: translateY(30px) scale(.92); opacity: 0; } }
+.intro-card .btn { align-self: center; }
+.intro-ico { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: rgba(255,255,255,.08); }
+.intro-ico svg { width: 46px; height: 46px; }
+.intro-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.intro-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; font-size: 16px; font-weight: 600; line-height: 1.35; color: var(--paper); }
+.intro-list li i { font-style: normal; font-family: var(--display); width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--gold); color: var(--ink); font-size: 16px; }
+
+/* instellingen */
+.set-list { width: min(360px, 100%); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; background: rgba(14,19,42,.72); border: 2px solid rgba(255,255,255,.1); }
+.set-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; padding: 14px 16px;
+  background: none; border: 0; color: var(--paper); font-family: var(--body); cursor: pointer; touch-action: manipulation;
+}
+.set-row + .set-row { border-top: 1px solid rgba(255,255,255,.08); }
+.set-row b { display: block; font-size: 16px; font-weight: 800; }
+.set-row span span { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.set-row:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+.set-row.danger b { color: var(--danger); }
+.sw { flex: none; width: 50px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.16); position: relative; transition: background .2s; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s cubic-bezier(.3,1.5,.5,1); box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+.set-row[aria-checked="true"] .sw { background: var(--success, #3ddc97); }
+.set-row[aria-checked="true"] .sw::after { transform: translateX(20px); }
+.fine { font-size: 12px; color: var(--muted); margin: 0; }
+
+/* medaille */
+.medal { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 15px; color: #2a1a00;
+  box-shadow: inset 0 -6px 0 rgba(0,0,0,.2), inset 0 4px 0 rgba(255,255,255,.45), 0 6px 0 rgba(0,0,0,.3); animation: starpop .6s cubic-bezier(.3,1.8,.5,1) .2s both; }
+.medal.gold { background: radial-gradient(circle at 35% 30%, #fff3b0, #ffd166 45%, #d99a1e); }
+.medal.silver { background: radial-gradient(circle at 35% 30%, #ffffff, #cfd6ea 45%, #8d97c4); }
+.medal.bronze { background: radial-gradient(circle at 35% 30%, #ffd9b8, #e0915a 45%, #9a5a2e); }
+
+/* aftellen */
+#count { position: absolute; left: 0; right: 0; top: 30%; text-align: center; pointer-events: none; font-family: var(--display);
+  font-size: 110px; line-height: 1; color: #fff; text-shadow: 0 6px 0 rgba(0,0,0,.35), 0 0 40px rgba(255,209,102,.5); opacity: 0; }
+#count.go { color: var(--gold); font-size: 72px; }
+#count.show { animation: countpop .8s cubic-bezier(.2,1.5,.4,1) forwards; }
+@keyframes countpop { 0% { opacity: 0; transform: scale(2.2); } 25% { opacity: 1; transform: scale(1); } 75% { opacity: 1; transform: scale(.95); } 100% { opacity: 0; transform: scale(.7); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .title i, #banner.show, .hval.bump, #wind.warn { animation-duration: .01s; }
+  .title i, #banner.show, .hval.bump, #wind.warn, #count.show, .intro-card, .medal { animation-duration: .01s; }
 }
 </style>
 
@@ -251,6 +307,7 @@ body {
   </div>
 
   <div id="banner"><b id="bannerBig"></b><span id="bannerSub"></span></div>
+  <div id="count" aria-live="polite"></div>
 
   <div id="pad" hidden>
     <div class="pad-group">
@@ -270,40 +327,70 @@ body {
   </div>
 
   <div class="overlay" id="homeOv">
+    <button class="icon-btn corner-btn" id="setBtn" aria-label="Instellingen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
     <div class="title" id="title"></div>
     <p class="tag">Stapel blokken op een klif midden in de storm. Kies hoe je wilt spelen.</p>
-    <div class="record" id="homeRecord" hidden></div>
     <div class="modes">
-      <button class="mode open" id="modePuzzle">
-        <span class="ico"><svg viewBox="0 0 40 40"><rect x="4" y="27" width="32" height="7" fill="#8d97c4"/><rect x="8" y="17" width="10" height="10" fill="#ffd166"/><rect x="18" y="17" width="10" height="10" fill="#ffd166"/><rect x="18" y="7" width="10" height="10" fill="#c77dff"/><path d="M2 4h36" stroke="#ff5d8f" stroke-width="2.4" stroke-dasharray="4 3"/></svg></span>
-        <span><b>Puzzel</b><span>Zoveel mogelijk blokken onder de laser</span></span>
+      <button class="mode" data-mode="puzzle" style="--mc:#c77dff">
+        <span class="ico"><svg viewBox="0 0 40 40"><rect x="15" y="10" width="10" height="26" fill="#8d97c4"/><rect x="5" y="16" width="10" height="10" fill="#ffd166"/><rect x="25" y="20" width="10" height="10" fill="#c77dff"/><path d="M2 6h36" stroke="#ff5d8f" stroke-width="2.4" stroke-dasharray="4 3"/></svg></span>
+        <span><b>Puzzel</b><span>Zoveel mogelijk blokken onder de laser</span><em id="recPuzzle"></em></span>
         <span class="go">Spelen</span>
       </button>
-      <div class="mode locked" aria-disabled="true">
-        <span class="ico"><svg viewBox="0 0 40 40"><rect x="6" y="20" width="8" height="14" fill="#4cc9f0"/><rect x="16" y="12" width="8" height="22" fill="#3ddc97"/><rect x="26" y="24" width="8" height="10" fill="#ff9f43"/><path d="M6 6h28" stroke="#fff" stroke-width="2.4" stroke-dasharray="3 3"/></svg></span>
-        <span><b>Race</b><span>Als eerste bij de finishlijn</span></span>
-        <span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Binnenkort</span>
-      </div>
-      <div class="mode locked" aria-disabled="true">
+      <button class="mode" data-mode="race" style="--mc:#4cc9f0">
+        <span class="ico"><svg viewBox="0 0 40 40"><rect x="10" y="22" width="8" height="12" fill="#4cc9f0"/><rect x="18" y="14" width="8" height="20" fill="#3ddc97"/><rect x="26" y="26" width="6" height="8" fill="#ff9f43"/><rect x="4" y="5" width="4" height="4" fill="#fff"/><rect x="8" y="9" width="4" height="4" fill="#fff"/><rect x="12" y="5" width="4" height="4" fill="#fff"/><rect x="16" y="9" width="4" height="4" fill="#fff"/><rect x="20" y="5" width="4" height="4" fill="#fff"/><rect x="24" y="9" width="4" height="4" fill="#fff"/><rect x="28" y="5" width="4" height="4" fill="#fff"/><rect x="32" y="9" width="4" height="4" fill="#fff"/></svg></span>
+        <span><b>Race</b><span>Zo snel mogelijk naar de finishlijn</span><em id="recRace"></em></span>
+        <span class="go">Spelen</span>
+      </button>
+      <button class="mode" data-mode="survival" style="--mc:#ff5d8f">
         <span class="ico"><svg viewBox="0 0 40 40"><rect x="10" y="26" width="20" height="8" fill="#4d7cfe"/><rect x="14" y="16" width="12" height="10" fill="#ff5d8f"/><rect x="16" y="6" width="8" height="10" fill="#ffd166"/></svg></span>
-        <span><b>Overleven</b><span>Zo hoog mogelijk met 3 levens</span></span>
-        <span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Binnenkort</span>
-      </div>
+        <span><b>Overleven</b><span>Zo hoog mogelijk met 3 levens</span><em id="recSurvival"></em></span>
+        <span class="go">Spelen</span>
+      </button>
     </div>
     <div class="controls" id="startControls"></div>
   </div>
 
+  <div class="overlay" id="introOv" hidden>
+    <div class="intro-card" id="introCard">
+      <div class="intro-ico" id="introIco"></div>
+      <div class="over-h" id="introTitle"></div>
+      <ul class="intro-list" id="introList"></ul>
+      <button class="btn" id="introGo">Begrepen, bouwen!</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="setOv" hidden>
+    <div class="lv-head">
+      <button class="icon-btn" id="setBack" aria-label="Terug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="over-h">Instellingen</div>
+    </div>
+    <div class="set-list">
+      <button class="set-row" data-key="sfx" role="switch"><span><b>Geluidseffecten</b><span>Klappen, plonzen en piepjes</span></span><i class="sw"></i></button>
+      <button class="set-row" data-key="music" role="switch"><span><b>Muziek</b><span>Rustige stormmuziek op de achtergrond</span></span><i class="sw"></i></button>
+      <button class="set-row" data-key="haptics" role="switch"><span><b>Trillen</b><span>Voel elke landing in je handen</span></span><i class="sw"></i></button>
+      <button class="set-row" data-key="guide" role="switch"><span><b>Hulplijnen</b><span>Lichtbundel onder het vallende blok</span></span><i class="sw"></i></button>
+    </div>
+    <div class="set-list">
+      <button class="set-row plain" id="setIntro"><span><b>Uitleg opnieuw tonen</b><span>Zie de spelregels weer bij elke modus</span></span></button>
+      <button class="set-row plain danger" id="setReset"><span><b id="setResetLabel">Voortgang wissen</b><span>Alle records gaan terug naar nul</span></span></button>
+    </div>
+    <p class="fine">Stormtoren · versie 1.0</p>
+  </div>
+
   <div class="overlay" id="resOv" hidden>
-    <div class="over-h">Laser geraakt!</div>
+    <div class="over-h" id="resTitle"></div>
+    <div class="medal" id="resMedal" hidden></div>
     <div class="newrec" id="resRec" hidden>Nieuw record</div>
     <div class="stack" style="gap:4px">
       <div class="big" id="resScore">0</div>
-      <div class="hunit">blokken onder de laser</div>
+      <div class="hunit" id="resUnit"></div>
     </div>
     <div class="stats">
-      <div class="stat"><b id="resBest">0</b><span>Record</span></div>
-      <div class="stat"><b id="resLaser">0</b><span>Laser (m)</span></div>
-      <div class="stat"><b id="resLost">0</b><span>In zee</span></div>
+      <div class="stat"><b id="resS1v">0</b><span id="resS1l"></span></div>
+      <div class="stat"><b id="resS2v">0</b><span id="resS2l"></span></div>
+      <div class="stat"><b id="resS3v">0</b><span id="resS3l"></span></div>
     </div>
     <div class="stack">
       <button class="btn" id="resMain">Nog een keer</button>
@@ -320,17 +407,6 @@ body {
     </div>
   </div>
 
-  <div class="overlay" id="overOv" hidden>
-    <div class="over-h">Ingestort!</div>
-    <div class="newrec" id="newRec" hidden>Nieuw record</div>
-    <div class="big" id="overH">0.0<small>m</small></div>
-    <div class="stats">
-      <div class="stat"><b id="stPlaced">0</b><span>Blokken</span></div>
-      <div class="stat"><b id="stPerfect">0</b><span>Strak</span></div>
-      <div class="stat"><b id="stBest">0.0</b><span>Record</span></div>
-    </div>
-    <button class="btn" id="againBtn">Nog een toren</button>
-  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -375,6 +451,9 @@ function rr(c, x, y, w, h, r) {
   c.arcTo(x, y+h, x, y, r); c.arcTo(x, y, x+w, y, r); c.closePath();
 }
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+const settings = Object.assign({ sfx: true, music: true, haptics: true, guide: true }, (() => { try { return JSON.parse(store('st_settings') || '{}') || {}; } catch (e) { return {}; } })());
+if (store('st_muted') === '1' && store('st_settings') === null) settings.sfx = false;
+function saveSettings() { store('st_settings', JSON.stringify(settings)); }
 
 /* blokje tekenen: snoepachtig, met 3D-onderrand, glans en een ingekerfde voeg */
 function drawCellRaw(c, x, y, s, color) {
@@ -461,7 +540,7 @@ const HEART_SVG = '<svg class="heart" viewBox="0 0 26 24"><path d="M13 22S2 15.2
 })();
 
 /* ---------- audio (gesynthetiseerd) ---------- */
-let AC = null, master = null, noiseBuf = null, muted = store('st_muted') === '1';
+let AC = null, master = null, noiseBuf = null, muted = !settings.sfx;
 function initAudio() {
   if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
   try {
@@ -618,7 +697,7 @@ function settledTop() {
   return top;
 }
 
-const fallSpeed = () => (mode === 'puzzle' ? Math.min(1.8 + placed * 0.02, 3.4) : Math.min(1.7 + placed * 0.03, 4.2)) * CELL;
+const fallSpeed = () => (mode === 'puzzle' ? Math.min(1.8 + placed * 0.02, 3.4) : mode === 'race' ? Math.min(2.3 + placed * 0.03, 4.6) : Math.min(1.7 + placed * 0.03, 4.2)) * CELL;
 
 function spawn() {
   const type = queue.shift(); queue.push(drawFromBag());
@@ -737,7 +816,7 @@ Events.on(engine, 'collisionStart', e => {
       first.pd.sq = 0.04 + 0.07 * k; first.pd.sqv = 0; first.pd.flash = 1;
       if (other.pd) { other.pd.sq = Math.max(other.pd.sq, 0.02 + 0.03 * k); other.pd.flash = Math.max(other.pd.flash, 0.35); }
       puff(pt.x, pt.y, k); chips(pt.x, pt.y, COLORS[first.pd.type], k);
-      addShake(1.5 + 7 * k); sfx.land(k);
+      addShake(1.5 + 7 * k); sfx.land(k); haptic(k > 0.45 ? 'heavy' : k > 0.2 ? 'medium' : 'light');
       if (rv > 5) rings.push({ x: pt.x, y: pt.y, r: 4, life: 0, max: 0.35, color: '255,255,255', w: 3 });
     } else if (rv > 1.4) {
       for (const X of [A, B]) {
@@ -829,7 +908,9 @@ function loseLife(b) {
   rings.push({ x: b.position.x, y: SEA_Y, r: 8, life: 0, max: 0.7, color: '214,236,242', w: 3, flat: true });
   sfx.splash(); setTimeout(() => sfx.lose(), 150);
   addShake(8); hurtA = 1;
+  haptic('heavy');
   if (mode === 'puzzle') { dropped++; floater(b.position.x, SEA_Y - 24, 'In zee!', '#d6ecf2', 14); return; }
+  if (mode === 'race') { penalty += RACE_PENALTY; floater(b.position.x, SEA_Y - 24, `+${RACE_PENALTY} s`, '#ff8fb0', 16); return; }
   renderHearts(true);
   if (lives <= 0 && state === 'play') { state = 'dying'; overTimer = 1.6; active = null; }
 }
@@ -887,7 +968,7 @@ function endPtr(e) {
 cv.addEventListener('pointerup', endPtr);
 cv.addEventListener('pointercancel', endPtr);
 addEventListener('keydown', e => {
-  if (state !== 'play') { if ((e.key === 'Enter' || e.key === ' ') && state === 'over' && mode === 'survival') { e.preventDefault(); startGame(); } return; }
+  if (state !== 'play') { if ((e.key === 'Enter' || e.key === ' ') && state === 'over') { e.preventDefault(); restartCurrent(); } return; }
   if (e.key === 'p' || e.key === 'Escape') { setPaused(!paused); return; }
   if (paused) return;
   if (e.key === 'ArrowLeft' || e.key === 'a') { tryMove(-1); e.preventDefault(); }
@@ -923,39 +1004,176 @@ for (const btn of padEl.querySelectorAll('.pad-btn')) {
 function setPaused(v) {
   if (state !== 'play' && state !== 'dying') return;
   paused = v; $('pauseOv').hidden = !v;
+  if (musicGain && AC) musicGain.gain.setTargetAtTime(v ? MUSIC_VOL * 0.3 : MUSIC_VOL, AC.currentTime, 0.3);
   if (v) $('resumeBtn').focus();
 }
 $('pauseBtn').onclick = () => { initAudio(); setPaused(true); };
 $('resumeBtn').onclick = () => setPaused(false);
-$('restartBtn').onclick = () => { setPaused(false); mode === 'puzzle' ? startPuzzle() : startGame(); };
+$('restartBtn').onclick = () => { setPaused(false); restartCurrent(); };
 $('menuBtn').onclick = () => { setPaused(false); goHome(); };
-function renderMute() { $('muteWaves').style.opacity = muted ? 0.15 : 1; }
-$('muteBtn').onclick = () => { initAudio(); muted = !muted; store('st_muted', muted ? '1' : '0'); renderMute(); };
-renderMute();
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') setPaused(true); });
+/* ---------- instellingen ---------- */
+function renderMute() { $('muteWaves').style.opacity = settings.sfx ? 1 : 0.15; }
+$('muteBtn').onclick = () => { initAudio(); setSetting('sfx', !settings.sfx); };
+function setSetting(key, val) {
+  settings[key] = val; saveSettings();
+  muted = !settings.sfx; renderMute(); renderSettings();
+  if (key === 'music') { if (val) startMusic(); else stopMusic(); }
+  if (key === 'haptics' && val) haptic('light');
+}
+function renderSettings() {
+  for (const row of document.querySelectorAll('.set-row[data-key]')) row.setAttribute('aria-checked', settings[row.dataset.key] ? 'true' : 'false');
+}
+for (const row of document.querySelectorAll('.set-row[data-key]')) row.onclick = () => { initAudio(); setSetting(row.dataset.key, !settings[row.dataset.key]); sfx.move(); };
+$('setBtn').onclick = () => { initAudio(); renderSettings(); $('homeOv').hidden = true; $('setOv').hidden = false; $('setBack').focus(); };
+$('setBack').onclick = () => { $('setOv').hidden = true; goHome(); };
+$('setIntro').onclick = () => { for (const m of ['puzzle', 'race', 'survival']) store('st_seen_' + m, '0'); showToastIn($('setIntro'), 'Uitleg komt weer bij elke modus'); };
+let resetArmed = 0;
+$('setReset').onclick = () => {
+  const lbl = $('setResetLabel');
+  if (performance.now() - resetArmed > 3000) { resetArmed = performance.now(); lbl.textContent = 'Tik nog een keer om te wissen'; setTimeout(() => { lbl.textContent = 'Voortgang wissen'; }, 3000); return; }
+  for (const k of ['st_best', 'st_puzbest', 'st_racebest']) store(k, '0');
+  best = 0; puzzleBest = 0; raceBest = 0; resetArmed = 0;
+  lbl.textContent = 'Voortgang gewist'; sfx.lose();
+};
+function showToastIn(row, text) {
+  const s = row.querySelector('span span'); const old = s.textContent;
+  s.textContent = text; setTimeout(() => { s.textContent = old; }, 2200);
+}
+renderMute(); renderSettings();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (state === 'play') setPaused(true); if (musicGain && AC) musicGain.gain.setTargetAtTime(0, AC.currentTime, 0.1); }
+  else if (musicGain && AC) musicGain.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime, 0.5);
+});
 
-$('modePuzzle').onclick = () => { initAudio(); startPuzzle(); };
-$('resMain').onclick = () => { initAudio(); startPuzzle(); };
+/* ---------- trillen (Capacitor Haptics in de app, vibrate als terugval) ---------- */
+function haptic(kind) {
+  if (!settings.haptics) return;
+  try {
+    const Hp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+    if (Hp) {
+      if (kind === 'success') Hp.notification({ type: 'SUCCESS' });
+      else if (kind === 'error') Hp.notification({ type: 'ERROR' });
+      else Hp.impact({ style: kind === 'heavy' ? 'HEAVY' : kind === 'medium' ? 'MEDIUM' : 'LIGHT' });
+      return;
+    }
+    if (navigator.vibrate) navigator.vibrate(kind === 'heavy' || kind === 'error' ? 30 : kind === 'success' ? [15, 40, 15] : 8);
+  } catch (e) { /* geen trilfunctie beschikbaar */ }
+}
+
+/* ---------- muziek: rustige, zelf gegenereerde stormmuziek ---------- */
+const MUSIC_VOL = 0.55;
+let musicGain = null, musicTimer = null, musicNextT = 0, musicStep = 0;
+const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];   // Am F C G
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const MSTEP = 0.36;
+function startMusic() {
+  if (!AC || !settings.music || musicTimer) return;
+  musicGain = AC.createGain(); musicGain.gain.value = 0; musicGain.connect(AC.destination);
+  musicGain.gain.setTargetAtTime(MUSIC_VOL, AC.currentTime, 1.2);
+  musicNextT = AC.currentTime + 0.1;
+  musicTimer = setInterval(scheduleMusic, 150); scheduleMusic();
+}
+function stopMusic() {
+  if (!musicTimer) return;
+  clearInterval(musicTimer); musicTimer = null;
+  const g = musicGain; musicGain = null;
+  if (g && AC) { g.gain.setTargetAtTime(0, AC.currentTime, 0.3); setTimeout(() => g.disconnect(), 1500); }
+}
+function mNote(freq, t, dur, type, vol, filt) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.9, dur * 0.3));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  if (filt) { const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filt; o.connect(f); f.connect(g); } else o.connect(g);
+  g.connect(musicGain); o.start(t); o.stop(t + dur + 0.1);
+}
+function scheduleMusic() {
+  if (!musicGain) return;
+  while (musicNextT < AC.currentTime + 0.8) {
+    const t = musicNextT, s = musicStep % 16, ch = CHORDS[Math.floor(musicStep / 16) % CHORDS.length];
+    if (s === 0) for (const m of ch) { mNote(mtof(m - 12), t, MSTEP * 16, 'sawtooth', 0.018, 600); mNote(mtof(m - 12) * 1.004, t, MSTEP * 16, 'sawtooth', 0.014, 500); }
+    if (s === 0 || s === 8) mNote(mtof(ch[0] - 24), t, MSTEP * 7, 'sine', 0.09);
+    if (s % 2 === 0 && Math.random() < 0.6) {
+      const m = ch[(s / 2 + Math.floor(Math.random() * 2)) % ch.length] + 12 + (Math.random() < 0.25 ? 12 : 0);
+      mNote(mtof(m), t, 0.9, 'triangle', 0.03);
+    }
+    musicNextT += MSTEP; musicStep++;
+  }
+}
+
+/* ---------- uitleg per modus (eerste keer) ---------- */
+const MODE_INFO = {
+  puzzle: { title: 'Puzzel', color: '#c77dff', rules: [
+    'Bouw rond de stenen pilaar. Schuif blokken opzij in de gaten.',
+    'Alles moet onder de laser blijven. Raakt een blok de laser, dan is het voorbij.',
+    'Elke 10 blokken gaat de laser omhoog. Hoeveel krijg jij eronder?' ] },
+  race: { title: 'Race', color: '#4cc9f0', rules: [
+    'Bouw zo snel mogelijk een toren tot aan de finishlijn op 10 meter.',
+    'Houd je toren 1,5 seconde boven de lijn om te finishen.',
+    'Valt er een blok in zee, dan krijg je 3 seconden straftijd.' ] },
+  survival: { title: 'Overleven', color: '#ff5d8f', rules: [
+    'Bouw zo hoog als je kunt. Je hebt 3 levens.',
+    'Elk blok dat in zee valt kost een leven.',
+    'Pas op voor windstoten: die duwen je vallende blok opzij.' ] },
+};
+const MODE_ICON = m => document.querySelector(`.mode[data-mode="${m}"] .ico`).innerHTML;
+let introThen = null;
+function launch(m) {
+  initAudio(); startMusic();
+  const go = () => (m === 'puzzle' ? startPuzzle() : m === 'race' ? startRace() : startGame());
+  if (store('st_seen_' + m) === '1') { go(); return; }
+  const info = MODE_INFO[m];
+  $('introIco').innerHTML = MODE_ICON(m); $('introIco').style.background = info.color + '33';
+  $('introTitle').textContent = info.title;
+  $('introList').innerHTML = info.rules.map((r, i) => `<li><i>${i + 1}</i><span>${r}</span></li>`).join('');
+  for (const id of ['homeOv', 'resOv']) $(id).hidden = true;
+  $('introOv').hidden = false; $('introGo').focus();
+  introThen = () => { store('st_seen_' + m, '1'); $('introOv').hidden = true; go(); };
+}
+$('introGo').onclick = () => { if (introThen) introThen(); };
+for (const card of document.querySelectorAll('.mode[data-mode]')) card.onclick = () => { haptic('light'); launch(card.dataset.mode); };
+$('resMain').onclick = () => { initAudio(); restartCurrent(); };
 $('resMenu').onclick = () => goHome();
-$('againBtn').onclick = () => { initAudio(); startGame(); };
+function restartCurrent() { mode === 'puzzle' ? startPuzzle() : mode === 'race' ? startRace() : startGame(); }
 
+/* ---------- aftellen ---------- */
+let countdown = 0, lastCd = 0;
+const countEl = $('count');
+function beginCountdown() { countdown = 3; lastCd = 4; spawnTimer = 3.15; }
+function showCount(txt, go) {
+  countEl.textContent = txt; countEl.classList.toggle('go', !!go);
+  countEl.classList.remove('show'); void countEl.offsetWidth; countEl.classList.add('show');
+}
+function updateCountdown(dt) {
+  if (countdown <= 0) return;
+  countdown -= dt;
+  const n = Math.max(0, Math.ceil(countdown));
+  if (n === lastCd) return;
+  lastCd = n;
+  if (n > 0) { showCount(String(n)); tone(660, 0.12, 'triangle', 0.1); haptic('light'); }
+  else { showCount('Bouwen!', true); tone(990, 0.25, 'triangle', 0.12); tone(1320, 0.3, 'sine', 0.06, null, 0.05); haptic('medium'); if (mode === 'race') raceRunning = true; }
+}
+
+/* ---------- run starten ---------- */
 function resetRun(def) {
   for (const b of Composite.allBodies(world)) if (b.pd) Composite.remove(world, b);
   buildPlatform(def);
   particles.length = rings.length = floaters.length = 0;
   active = null; bag = []; queue = []; result = null; winT = 0; laserHot = 0; laserFail = 0;
   lives = 3; placed = 0; perfects = 0; streak = 0; curH = 0; maxH = 0; nextMilestone = 5; recordBeaten = false;
-  spawnTimer = 0.6; wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
-  state = 'play'; paused = false; shownH = -1;
-  for (const id of ['homeOv', 'overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
+  wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 }; windEl.hidden = true;
+  state = 'play'; paused = false; shownH = -1; laserY = null; raceRunning = false; holdT = 0;
+  for (const id of ['homeOv', 'pauseOv', 'resOv', 'introOv', 'setOv']) $(id).hidden = true;
   hud.classList.add('on'); padEl.hidden = false;
   actionsDone = 0; hint.classList.remove('off');
-  clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 7000);
+  clearTimeout(resetRun.ht); resetRun.ht = setTimeout(() => hint.classList.add('off'), 9000);
+  queue = [drawFromBag(), drawFromBag()];
+  beginCountdown();
 }
 function startGame() {
-  mode = 'survival'; laserY = null;
+  mode = 'survival';
   resetRun(SURVIVAL_DEF);
-  queue = [drawFromBag(), drawFromBag()];
+  camY = -4 * CELL;
   livesEl.hidden = false; $('lvlTag').hidden = true; $('hunit').textContent = 'meter hoog';
   updateHeightHud(); renderHearts(false); drawNext();
 }
@@ -966,17 +1184,15 @@ function setCount(n) {
 function startPuzzle() {
   mode = 'puzzle';
   resetRun(PUZZLE_DEF);
-  queue = [drawFromBag(), drawFromBag()];
   laserRows = PUZZLE_START_ROWS; laserTarget = -laserRows * CELL; laserY = laserTarget;
   score = 0; dropped = 0; nextRise = RISE_EVERY;
   camY = (laserY - 4 * CELL) / 2 - 3 * CELL;
   livesEl.hidden = true; $('lvlTag').hidden = false;
   hval.textContent = '0'; $('hunit').textContent = 'onder de laser';
   updatePuzzleTag(); drawNext();
-  showBanner('Puzzel', 'Zoveel mogelijk blokken onder de laser');
 }
 function updatePuzzleTag() {
-  $('lvlNum').textContent = `Record ${puzzleBest}`;
+  $('lvlNum').textContent = puzzleBest ? `Record ${puzzleBest}` : 'Puzzel';
   $('lvlName').textContent = `Laser stijgt bij ${nextRise}`;
 }
 function puzzleCheck(dt) {
@@ -994,58 +1210,107 @@ function puzzleCheck(dt) {
     laserHot = 1;
     if (Math.random() < 0.6) particles.push({ t: 'star', x: above.position.x + rand(-CELL, CELL), y: laserY, vx: rand(-80, 80), vy: rand(-90, 30), life: 0, max: rand(0.2, 0.4), size: rand(1.5, 3), color: '#ff7aa2' });
   }
-  // eindeloos: na elke RISE_EVERY blokken gaat de laser omhoog
   if (score >= nextRise) {
     nextRise += RISE_EVERY; laserRows += RISE_ROWS; laserTarget = -laserRows * CELL;
     showBanner('Laser omhoog!', `+${RISE_ROWS * M_PER_CELL} m ruimte`);
-    sfx.milestone(); confetti(); updatePuzzleTag();
+    sfx.milestone(); confetti(); updatePuzzleTag(); haptic('success');
   }
 }
 function fail(reason, b) {
   if (state !== 'play') return;
   state = 'dying'; overTimer = 1.6; active = null; result = { reason };
-  laserFail = 1; addShake(7); hurtA = 0.8;
+  laserFail = 1; addShake(7); hurtA = 0.8; haptic('error');
   tone(1400, 0.35, 'sawtooth', 0.07, 180); noise(0.3, 0.12, 'highpass', 2500);
   if (b) sparkle(b.position.x, laserY, '#ff5d8f', 18);
 }
+
+/* ---------- race ---------- */
+const RACE_ROWS = 20, RACE_PENALTY = 3, HOLD_TIME = 1.5;
+const MEDALS = [['gold', 'Goud', 75], ['silver', 'Zilver', 110], ['bronze', 'Brons', 160]];
+let raceT = 0, raceRunning = false, penalty = 0, holdT = 0;
+let raceBest = parseFloat(store('st_racebest') || '0') || 0;
+const finishY = -RACE_ROWS * CELL;
+const fmtTime = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
+function startRace() {
+  mode = 'race';
+  resetRun(SURVIVAL_DEF);
+  raceT = 0; penalty = 0; holdT = 0; camY = -4 * CELL;
+  livesEl.hidden = true; $('lvlTag').hidden = false;
+  $('lvlNum').textContent = raceBest ? `Record ${fmtTime(raceBest)}` : 'Race';
+  $('lvlName').textContent = `0.0 / ${RACE_ROWS * M_PER_CELL} m`;
+  hval.textContent = fmtTime(0); $('hunit').textContent = 'tijd';
+  drawNext();
+}
+function raceCheck(dt) {
+  if (raceRunning) raceT += dt;
+  const total = raceT + penalty, txt = fmtTime(total);
+  if (hval.textContent !== txt) hval.textContent = txt;
+  curH = Math.max(0, -settledTop() / CELL * M_PER_CELL);
+  const ht = `${Math.min(curH, RACE_ROWS * M_PER_CELL).toFixed(1)} / ${RACE_ROWS * M_PER_CELL} m`;
+  if ($('lvlName').textContent !== ht) $('lvlName').textContent = ht;
+  if (settledTop() <= finishY + 0.5) {
+    if (holdT === 0) { tone(880, 0.1, 'triangle', 0.08); haptic('light'); }
+    holdT += dt;
+    if (holdT >= HOLD_TIME) raceFinish();
+  } else holdT = 0;
+}
+function raceFinish() {
+  raceRunning = false; state = 'dying'; overTimer = 1.6; active = null;
+  result = { win: true, time: raceT + penalty };
+  showBanner('Finish!', fmtTime(result.time));
+  sfx.milestone(); confetti(); confetti(); haptic('success');
+}
+
+/* ---------- einde van een run ---------- */
+function gameOver() { showResult(); }
 function showResult() {
-  state = 'over'; hud.classList.remove('on'); padEl.hidden = true;
-  const isRec = score > puzzleBest;
-  if (isRec) { puzzleBest = score; store('st_puzbest', String(score)); }
-  $('resScore').textContent = score;
+  state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; raceRunning = false;
+  let title, big, unit, stats, isRec = false, medal = null;
+  if (mode === 'puzzle') {
+    isRec = score > puzzleBest;
+    if (isRec) { puzzleBest = score; store('st_puzbest', String(score)); }
+    title = 'Laser geraakt!'; big = String(score); unit = 'blokken onder de laser';
+    stats = [[puzzleBest, 'Record'], [(laserRows * M_PER_CELL).toFixed(1), 'Laser (m)'], [dropped, 'In zee']];
+  } else if (mode === 'race') {
+    const t = result && result.time || raceT + penalty;
+    isRec = !raceBest || t < raceBest;
+    if (isRec) { raceBest = t; store('st_racebest', String(t)); }
+    const m = MEDALS.find(x => t <= x[2]);
+    medal = m;
+    title = 'Finish!'; big = fmtTime(t); unit = m ? `${m[1]} · onder ${fmtTime(m[2])}` : `Goud haal je onder ${fmtTime(MEDALS[0][2])}`;
+    stats = [[fmtTime(raceBest), 'Record'], [placed, 'Blokken'], [`+${penalty}s`, 'Straftijd']];
+  } else {
+    isRec = maxH > best + 0.001;
+    if (isRec) { best = maxH; store('st_best', String(best)); }
+    title = 'Ingestort!'; big = maxH.toFixed(1); unit = 'meter hoog';
+    stats = [[placed, 'Blokken'], [perfects, 'Strak'], [best.toFixed(1), 'Record (m)']];
+  }
+  $('resTitle').textContent = title;
+  $('resScore').textContent = big; $('resUnit').textContent = unit;
+  stats.forEach(([v, l], i) => { $(`resS${i + 1}v`).textContent = v; $(`resS${i + 1}l`).textContent = l; });
   $('resRec').hidden = !isRec;
-  $('resBest').textContent = puzzleBest;
-  $('resLaser').textContent = (laserRows * M_PER_CELL).toFixed(1);
-  $('resLost').textContent = dropped;
+  const md = $('resMedal');
+  md.hidden = !medal; if (medal) { md.className = 'medal ' + medal[0]; md.textContent = medal[1]; }
   $('resOv').hidden = false; $('resMain').focus();
-  sfx.over();
+  if (mode === 'race' || isRec) { sfx.milestone(); haptic('success'); } else sfx.over();
 }
 function clearScene() {
   for (const b of Composite.allBodies(world)) if (b.pd) Composite.remove(world, b);
-  active = null; queue = []; laserY = null; particles.length = rings.length = floaters.length = 0;
+  active = null; queue = []; laserY = null; countdown = 0; raceRunning = false; holdT = 0;
+  particles.length = rings.length = floaters.length = 0;
   hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true; hint.classList.add('off');
 }
 function goHome() {
-  clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF);
-  for (const id of ['overOv', 'pauseOv', 'resOv']) $(id).hidden = true;
-  $('homeOv').hidden = false; renderHomeRecord();
+  clearScene(); state = 'menu'; mode = 'survival'; buildPlatform(SURVIVAL_DEF); camY = -4 * CELL;
+  for (const id of ['pauseOv', 'resOv', 'introOv', 'setOv']) $(id).hidden = true;
+  $('homeOv').hidden = false; renderHomeRecords();
 }
-function renderHomeRecord() {
-  const el = $('homeRecord'); el.hidden = puzzleBest <= 0;
-  el.textContent = `Puzzel-record: ${puzzleBest} blokken`;
+function renderHomeRecords() {
+  $('recPuzzle').textContent = puzzleBest ? `Record: ${puzzleBest} blokken` : '';
+  $('recRace').textContent = raceBest ? `Record: ${fmtTime(raceBest)}` : '';
+  $('recSurvival').textContent = best ? `Record: ${best.toFixed(1)} m` : '';
 }
-renderHomeRecord();
-function gameOver() {
-  if (mode === 'puzzle') { showResult(); return; }
-  state = 'over'; hud.classList.remove('on'); padEl.hidden = true; windEl.hidden = true;
-  const isRec = maxH > best + 0.001;
-  if (isRec) { best = maxH; store('st_best', String(best)); }
-  $('overH').innerHTML = `${maxH.toFixed(1)}<small>m</small>`;
-  $('stPlaced').textContent = placed; $('stPerfect').textContent = perfects; $('stBest').textContent = best.toFixed(1);
-  $('newRec').hidden = !isRec;
-  $('overOv').hidden = false; $('againBtn').focus();
-  sfx.over();
-}
+renderHomeRecords();
 
 /* ---------- canvas / sprites ---------- */
 let W = 0, H = 0, DPR = 1, SCALE = 1, K = 1;
@@ -1096,6 +1361,7 @@ function update(dt) {
   const simulate = (state === 'play' || state === 'dying' || state === 'over') && !paused;
 
   if (playing) {
+    updateCountdown(dt);
     if (!active && queue.length) { spawnTimer -= dt; if (spawnTimer <= 0) spawn(); }
     if (active) {
       const p = active;
@@ -1138,13 +1404,14 @@ function update(dt) {
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
     }
     if (state === 'play' && mode === 'puzzle') puzzleCheck(dt);
+    if (state === 'play' && mode === 'race') raceCheck(dt);
     if (state === 'play' && mode === 'survival') {
       curH = Math.max(0, -settledTop() / CELL * M_PER_CELL);
       if (curH > maxH) {
         maxH = curH;
         if (maxH >= nextMilestone) {
           showBanner(`${nextMilestone} m`, ['Lekker bezig!', 'Hij staat als een huis', 'Boven de meeuwen', 'In de wolken!', 'Duizelingwekkend'][Math.min(nextMilestone / 5 - 1, 4) | 0]);
-          sfx.milestone(); confetti(); nextMilestone += 5;
+          sfx.milestone(); confetti(); nextMilestone += 5; haptic('success');
         } else if (!recordBeaten && best > 0 && maxH > best) {
           recordBeaten = true; showBanner('Record!', 'Hoger dan ooit'); sfx.milestone(); confetti();
         }
@@ -1291,7 +1558,8 @@ function render(t) {
   if (mode === 'survival' && (state === 'play' || state === 'dying')) drawLine(-nextMilestone / M_PER_CELL * CELL, left, right, '214,226,255', `${nextMilestone} m`, 0.35);
 
   // geleidestraal van het actieve blok
-  if (active && state === 'play') {
+  if (mode === 'race' && state !== 'menu') drawFinish(t, left, right);
+  if (active && state === 'play' && settings.guide) {
     const p = active, ca = Math.cos(p.angle), sa = Math.sin(p.angle);
     let mnx = 1e9, mxx = -1e9, mxy = -1e9;
     for (const o of p.offs) {
@@ -1412,6 +1680,23 @@ function render(t) {
   }
 }
 
+function drawFinish(t, left, right) {
+  const y = finishY, sq = 8;
+  ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(left, y - 30, right - left, 30);
+  for (let x = Math.floor(left / sq) * sq, i = 0; x < right; x += sq, i++) {
+    ctx.fillStyle = i % 2 ? '#f3f1ff' : '#12172e'; ctx.fillRect(x, y - sq, sq, sq);
+    ctx.fillStyle = i % 2 ? '#12172e' : '#f3f1ff'; ctx.fillRect(x, y - sq * 2, sq, sq);
+  }
+  ctx.font = '12px "Lilita One", "Trebuchet MS", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = '#ffd166'; ctx.fillText(`FINISH ${RACE_ROWS * M_PER_CELL} m`, left + 26, y - sq * 2 - 3);
+  if (holdT > 0 && state === 'play') {
+    const k = Math.min(1, holdT / HOLD_TIME), w = 120;
+    ctx.fillStyle = 'rgba(10,14,32,.75)'; ctx.fillRect(-w / 2 - 4, y - 58, w + 8, 22);
+    ctx.fillStyle = '#3ddc97'; ctx.fillRect(-w / 2, y - 54, w * k, 14);
+    ctx.font = '11px "Lilita One", "Trebuchet MS", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#fff'; ctx.fillText('Vasthouden…', 0, y - 60);
+  }
+}
 function drawPillar() {
   const cells = curDef.blocks, has = (c, r) => cells.some(b => b[0] === c && b[1] === r);
   const coreCols = [-1, 0];
