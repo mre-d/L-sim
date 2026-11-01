@@ -565,9 +565,9 @@ function makePiece(type) {
   const offs = cells.map(([cx, cy]) => ({ x: (cx - mx) * CELL, y: (cy - my) * CELL }));
   const parts = offs.map(o => Bodies.rectangle(o.x, o.y, CELL, CELL));
   // zwaar, stroef en traag in rotatie: blokken grijpen in elkaar in plaats van te glijden
-  const body = Body.create({ parts, friction: 1, frictionStatic: 3, restitution: 0, density: 0.003, slop: 0.008, frictionAir: 0.012 });
+  const body = Body.create({ parts, friction: 1, frictionStatic: 3, restitution: 0, density: 0.003, slop: 0.05, frictionAir: 0.012 });   // slop .05: kleinere slop liet schuine blokken langzaam wegkruipen
   Body.setInertia(body, body.inertia * 1.8);
-  for (const p of body.parts) { p.friction = 1; p.frictionStatic = 3; p.restitution = 0; p.slop = 0.008; }
+  for (const p of body.parts) { p.friction = 1; p.frictionStatic = 3; p.restitution = 0; p.slop = 0.05; }
   const box = pieceBox(type);
   body.pd = { type, offs, box, sx: -(mx + 0.5) * CELL, sy: -(my + 0.5) * CELL, dropped: false, landed: false, settled: false, ever: false, still: 0, lost: false,
               sq: 0, sqv: 0, flash: 0, glow: 0, lastClack: 0 };
@@ -744,6 +744,21 @@ Events.on(engine, 'collisionStart', e => {
 
 /* magnetisch raster: een blok dat bijna recht tot rust komt, wordt in de eerste seconde na de landing
    zachtjes op het raster getrokken (hoek en x). Daarna is het gewoon vrij en kan het nog bewegen of omvallen. */
+/* rustanker: Matter laat blokken die stil op een helling liggen heel langzaam wegkruipen.
+   Ligt een blok echt stil, dan zetten we het terug op zijn rustplek. Snelheid laten we intact,
+   dus een blok dat echt gaat kantelen of geraakt wordt bouwt snelheid op en laat het anker los. */
+function restAnchor(b, d) {
+  const slow = b.speed * V60 < 0.25 && Math.abs(b.angularVelocity) * V60 < 0.012;
+  if (!slow) { d.anchor = null; d.restN = 0; return; }
+  if (!d.anchor) {
+    if (++d.restN > 12) d.anchor = { x: b.position.x, y: b.position.y, a: b.angle };
+    return;
+  }
+  const A = d.anchor;
+  if (Math.hypot(b.position.x - A.x, b.position.y - A.y) > 4 || Math.abs(b.angle - A.a) > 0.05) { d.anchor = null; d.restN = 0; return; }
+  if (now - (d.landT || 0) < 1.15) { A.x = b.position.x; A.y = b.position.y; A.a = b.angle; return; }   // tijdens rasteren meebewegen
+  Body.setPosition(b, { x: A.x, y: A.y }); Body.setAngle(b, A.a);
+}
 function gridSnap(b, d) {
   const age = now - (d.landT || 0);
   if (age > 1.1) return;
@@ -1082,6 +1097,7 @@ function update(dt) {
       if (b.position.y > SEA_Y + 600) { Composite.remove(world, b); continue; }
       if (!d.landed || d.lost) continue;
       gridSnap(b, d);
+      restAnchor(b, d);
       if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
       else { d.still = 0; if (d.settled && b.speed * V60 > 1.6) d.settled = false; }
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
