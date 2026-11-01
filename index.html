@@ -719,6 +719,7 @@ Events.on(engine, 'collisionStart', e => {
   if (state === 'menu') return;
   for (const pair of e.pairs) {
     const A = pair.bodyA.parent, B = pair.bodyB.parent;
+    if (A.pd) A.pd.wake = true; if (B.pd) B.pd.wake = true;
     const rv = Math.hypot(A.velocity.x - B.velocity.x, A.velocity.y - B.velocity.y) * V60;
     const sup = pair.collision && pair.collision.supports;
     const pt = sup && sup[0] && isFinite(sup[0].x) ? { x: sup[0].x, y: sup[0].y } : { x: (A.position.x + B.position.x) / 2, y: (A.position.y + B.position.y) / 2 };
@@ -745,32 +746,42 @@ Events.on(engine, 'collisionStart', e => {
 /* magnetisch raster: een blok dat bijna recht tot rust komt, wordt in de eerste seconde na de landing
    zachtjes op het raster getrokken (hoek en x). Daarna is het gewoon vrij en kan het nog bewegen of omvallen. */
 /* rustanker: Matter laat blokken die stil op een helling liggen heel langzaam wegkruipen.
-   Ligt een blok echt stil, dan zetten we het terug op zijn rustplek. Snelheid laten we intact,
-   dus een blok dat echt gaat kantelen of geraakt wordt bouwt snelheid op en laat het anker los. */
+   Ligt een blok echt stil, dan zetten we zijn positie vast (snelheid op nul, niets wordt opgespaard).
+   Draaien blijft vrij: begint het blok te kantelen, of botst er iets tegenaan, dan laat het anker los. */
+function wakeIfNeighbourMoves(b, d) {
+  for (const pair of engine.pairs.list) {
+    if (!pair.isActive) continue;
+    const A = pair.bodyA.parent, B = pair.bodyB.parent;
+    const o = A === b ? B : B === b ? A : null;
+    if (!o || o.isStatic || !o.pd || o.pd.anchor) continue;
+    if (o.speed * V60 > 0.3 || Math.abs(o.angularVelocity) * V60 > 0.01) { d.wake = true; return; }
+  }
+}
 function restAnchor(b, d) {
-  const slow = b.speed * V60 < 0.25 && Math.abs(b.angularVelocity) * V60 < 0.012;
-  if (!slow) { d.anchor = null; d.restN = 0; return; }
-  if (!d.anchor) {
-    if (++d.restN > 12) d.anchor = { x: b.position.x, y: b.position.y, a: b.angle };
+  if (d.anchor) {
+    const A = d.anchor;
+    if (d.wake || Math.abs(b.angle - A.a) > 0.015) { d.anchor = null; d.restN = 0; d.wake = false; return; }
+    Body.setPosition(b, { x: A.x, y: A.y }); Body.setVelocity(b, { x: 0, y: 0 });
     return;
   }
-  const A = d.anchor;
-  if (Math.hypot(b.position.x - A.x, b.position.y - A.y) > 4 || Math.abs(b.angle - A.a) > 0.05) { d.anchor = null; d.restN = 0; return; }
-  if (now - (d.landT || 0) < 1.15) { A.x = b.position.x; A.y = b.position.y; A.a = b.angle; return; }   // tijdens rasteren meebewegen
-  Body.setPosition(b, { x: A.x, y: A.y }); Body.setAngle(b, A.a);
+  d.wake = false;
+  const q = Math.PI / 2, tilted = Math.abs(b.angle - Math.round(b.angle / q) * q) > 0.02;
+  if (!tilted && now - (d.landT || 0) < 1.15) { d.restN = 0; return; }     // rechte blokken: eerst rasteren
+  const slow = b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004;
+  if (!slow) { d.restN = 0; return; }
+  if (++d.restN > (tilted ? 10 : 30)) d.anchor = { x: b.position.x, y: b.position.y, a: b.angle };
 }
 function gridSnap(b, d) {
   const age = now - (d.landT || 0);
   if (age > 1.1) return;
   const q = Math.PI / 2, ta = Math.round(b.angle / q) * q, aErr = ta - b.angle;
   d.maxErr = Math.max(d.maxErr || 0, Math.abs(aErr));
-  if (Math.abs(aErr) > 0.13) return;                                   // echt aan het kantelen: niet ingrijpen
-  if (b.speed * V60 > 1.2 || Math.abs(b.angularVelocity) * V60 > 0.06) return;
+  // alleen de horizontale positie rechtzetten; de hoek laten we vrij zodat kantelen nooit wordt tegengehouden
+  if (Math.abs(aErr) > 0.02) return;
+  if (b.speed * V60 > 1.2 || Math.abs(b.angularVelocity) * V60 > 0.02) return;
   const tx = snapX(d.offs, b.position.x, ta), dx = tx - b.position.x;
-  if (Math.abs(dx) > 9) return;
-  const k = 0.22;
-  if (Math.abs(aErr) > 0.0005) { Body.setAngle(b, b.angle + aErr * k); Body.setAngularVelocity(b, b.angularVelocity * 0.5); }
-  if (Math.abs(dx) > 0.05) Body.setPosition(b, { x: b.position.x + dx * k, y: b.position.y });
+  if (Math.abs(dx) > 9 || Math.abs(dx) < 0.05) return;
+  Body.setPosition(b, { x: b.position.x + dx * 0.22, y: b.position.y });
 }
 function onSettle(b) {
   const quarter = Math.PI / 2;
@@ -1096,6 +1107,7 @@ function update(dt) {
       if (!d.lost && b.position.y > SEA_Y) { if (state === 'play') loseLife(b); else d.lost = true; }
       if (b.position.y > SEA_Y + 600) { Composite.remove(world, b); continue; }
       if (!d.landed || d.lost) continue;
+      if (d.anchor && !d.wake) wakeIfNeighbourMoves(b, d);
       gridSnap(b, d);
       restAnchor(b, d);
       if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
