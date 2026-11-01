@@ -677,6 +677,12 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .nm-col { text-shadow: 1.5px 0 var(--ink), -1.5px 0 var(--ink), 0 1.5px var(--ink), 0 -1.5px var(--ink), 0 2px var(--ink); }
 .pod-av { animation: fadein .3s ease calc(var(--d) + .3s) both; }
 .pod-av .av { width: 40px; height: 40px; }
+.pb-wins { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: 12px; }
+.pb-txt .pb-wins b { font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--ink); text-shadow: none; padding: 0; overflow: visible; }
+.rw-win { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; font-family: var(--display); font-size: 20px; color: var(--ink);
+  background: #ffe58a; border: 2.5px solid var(--ink); border-radius: 12px; padding: 5px 10px; animation: cardin .45s cubic-bezier(.2,1.4,.4,1) .4s both; }
+.rw-win span { font-family: var(--body); font-weight: 800; font-size: 13px; color: var(--muted); }
+.rw-win b { flex-basis: 100%; text-align: center; font-family: var(--body); font-weight: 800; font-size: 13px; color: #7a5cff; }
 </style>
 
 <div id="app">
@@ -729,7 +735,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 
   <div class="overlay" id="homeOv">
     <header class="pbar">
-      <button class="pb-me" id="pbMe" aria-label="Jouw profiel"><span id="pbAv"></span><span class="pb-txt"><b id="pbName"></b><span class="pb-lv"><i id="pbLvl">1</i><span class="xpbar"><span id="pbXp"></span></span></span></span></button>
+      <button class="pb-me" id="pbMe" aria-label="Jouw profiel"><span id="pbAv"></span><span class="pb-txt"><b id="pbName"></b><span class="pb-lv"><i id="pbLvl">1</i><span class="xpbar"><span id="pbXp"></span></span><span class="pb-wins" title="Party-wins">🏆<b id="pbWins">0</b></span></span></span></button>
       <button class="coins" id="pbCoins" aria-label="Munten, naar de winkel"><svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#ffcf3a" stroke="#2b2140" stroke-width="2.6"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="pbCoinN">0</b></button>
       <button class="icon-btn" id="setBtn" aria-label="Instellingen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -767,7 +773,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
       <div class="hp-title">Winkel</div>
       <div class="shop-cats" id="shopCats"></div>
       <div class="shop-grid" id="shopGrid"></div>
-      <p class="fine-w">Munten verdien je met spelen, opdrachten en je dagelijkse beloning. Sommige skins speel je vrij met levels.</p>
+      <p class="fine-w">Skins gaan open met party-wins 🏆 en koop je daarna met munten. Munten verdien je met spelen, levels, opdrachten en je dagelijkse beloning.</p>
     </section>
     <section class="hpanel" id="hpQuests" hidden>
       <div class="hp-title">Opdrachten</div>
@@ -2517,7 +2523,7 @@ function showPartyResult() {
   });
   rest.hidden = rows.length <= 3;
   $('prMe').textContent = `Jouw potje: ${score} ${score === 1 ? 'blok' : 'blokken'} · platform +${rises} · ${perfects} strak`;
-  const iWin = winners.some(w => w.me);
+  const iWin = rows.length >= 2 && winners.some(w => w.me);   // alleen tegen echte tegenstanders
   renderReward($('prReward'), grantRewards({ mode: 'puzzle', party: true, win: iWin, score, height: 0, medal: null, placed, perfects, record: false }));
   $('prOv').hidden = false; renderPartyResult();
   if (winners.some(w => w.me)) haptic('success');
@@ -3513,48 +3519,49 @@ function frame(t) {
   render(t);
   requestAnimationFrame(frame);
 }
-/* ---------- profiel: XP, levels, munten, skins, dagelijkse beloning, opdrachten, prestaties ----------
+/* ---------- profiel: XP, levels, wins, munten, skins, dagelijkse beloning, opdrachten, prestaties ----------
+   Skins gaan open met party-wins en koop je daarna met munten; levels geven munten.
    Stap 1: alles staat op dit apparaat (localStorage). Stap 2 zet hetzelfde profiel in Supabase (account met gebruikersnaam + wachtwoord). */
 const PROFILE_KEY = 'st_profile';
 const CATS = [['blocks', 'Blokken'], ['world', 'Wereld'], ['fx', 'Effecten'], ['avatar', 'Avatar'], ['namecol', 'Naamkleur'], ['frame', 'Rand']];
 /* alle skins. level = vrij te spelen op dat level, price = te koop met munten, beide leeg = standaard */
-const ITEMS = [
+const ITEMS = [   // wins = aantal party-wins om de skin vrij te spelen, price = daarna kopen met munten; beide leeg = standaard
   { id: 'b_classic', cat: 'blocks', name: 'Klassiek' },
-  { id: 'b_pastel', cat: 'blocks', name: 'Pastel', level: 3 },
-  { id: 'b_ocean', cat: 'blocks', name: 'Oceaan', price: 300 },
-  { id: 'b_candy', cat: 'blocks', name: 'Snoep', price: 450 },
-  { id: 'b_wood', cat: 'blocks', name: 'Hout', level: 8 },
-  { id: 'b_neon', cat: 'blocks', name: 'Neon', price: 700 },
-  { id: 'b_gold', cat: 'blocks', name: 'Goud', level: 15 },
+  { id: 'b_pastel', cat: 'blocks', name: 'Pastel', wins: 0, price: 200 },
+  { id: 'b_ocean', cat: 'blocks', name: 'Oceaan', wins: 1, price: 300 },
+  { id: 'b_candy', cat: 'blocks', name: 'Snoep', wins: 3, price: 450 },
+  { id: 'b_wood', cat: 'blocks', name: 'Hout', wins: 5, price: 500 },
+  { id: 'b_neon', cat: 'blocks', name: 'Neon', wins: 10, price: 700 },
+  { id: 'b_gold', cat: 'blocks', name: 'Goud', wins: 25, price: 1200 },
   { id: 'w_sunny', cat: 'world', name: 'Zonnig' },
-  { id: 'w_sunset', cat: 'world', name: 'Zonsondergang', level: 5 },
-  { id: 'w_desert', cat: 'world', name: 'Woestijn', price: 500 },
-  { id: 'w_night', cat: 'world', name: 'Sterrennacht', price: 750 },
-  { id: 'w_snow', cat: 'world', name: 'Sneeuw', level: 12 },
+  { id: 'w_sunset', cat: 'world', name: 'Zonsondergang', wins: 0, price: 300 },
+  { id: 'w_desert', cat: 'world', name: 'Woestijn', wins: 2, price: 500 },
+  { id: 'w_night', cat: 'world', name: 'Sterrennacht', wins: 5, price: 750 },
+  { id: 'w_snow', cat: 'world', name: 'Sneeuw', wins: 10, price: 900 },
   { id: 'f_puff', cat: 'fx', name: 'Wolkjes' },
-  { id: 'f_stars', cat: 'fx', name: 'Sterren', level: 6 },
-  { id: 'f_hearts', cat: 'fx', name: 'Hartjes', price: 300 },
-  { id: 'f_sparks', cat: 'fx', name: 'Vonken', price: 450 },
-  { id: 'f_confetti', cat: 'fx', name: 'Confetti', level: 10 },
+  { id: 'f_stars', cat: 'fx', name: 'Sterren', wins: 0, price: 200 },
+  { id: 'f_hearts', cat: 'fx', name: 'Hartjes', wins: 1, price: 300 },
+  { id: 'f_sparks', cat: 'fx', name: 'Vonken', wins: 3, price: 450 },
+  { id: 'f_confetti', cat: 'fx', name: 'Confetti', wins: 8, price: 600 },
   { id: 'a_happy', cat: 'avatar', name: 'Blij' },
   { id: 'a_wink', cat: 'avatar', name: 'Knipoog' },
-  { id: 'a_cool', cat: 'avatar', name: 'Cool', level: 4 },
-  { id: 'a_wow', cat: 'avatar', name: 'Wauw', price: 150 },
-  { id: 'a_grr', cat: 'avatar', name: 'Fanatiek', price: 200 },
-  { id: 'a_sleepy', cat: 'avatar', name: 'Slaapkop', price: 200 },
-  { id: 'a_star', cat: 'avatar', name: 'Sterrenogen', price: 350 },
-  { id: 'a_king', cat: 'avatar', name: 'Koning', level: 20 },
+  { id: 'a_cool', cat: 'avatar', name: 'Cool', wins: 0, price: 100 },
+  { id: 'a_wow', cat: 'avatar', name: 'Wauw', wins: 0, price: 150 },
+  { id: 'a_grr', cat: 'avatar', name: 'Fanatiek', wins: 1, price: 200 },
+  { id: 'a_sleepy', cat: 'avatar', name: 'Slaapkop', wins: 2, price: 200 },
+  { id: 'a_star', cat: 'avatar', name: 'Sterrenogen', wins: 4, price: 350 },
+  { id: 'a_king', cat: 'avatar', name: 'Koning', wins: 15, price: 1000 },
   { id: 'n_white', cat: 'namecol', name: 'Wit' },
-  { id: 'n_sky', cat: 'namecol', name: 'Lucht', price: 100 },
-  { id: 'n_mint', cat: 'namecol', name: 'Mint', price: 100 },
-  { id: 'n_pink', cat: 'namecol', name: 'Roze', price: 100 },
-  { id: 'n_gold', cat: 'namecol', name: 'Goud', level: 20 },
-  { id: 'n_rainbow', cat: 'namecol', name: 'Regenboog', price: 900 },
+  { id: 'n_sky', cat: 'namecol', name: 'Lucht', wins: 0, price: 100 },
+  { id: 'n_mint', cat: 'namecol', name: 'Mint', wins: 0, price: 100 },
+  { id: 'n_pink', cat: 'namecol', name: 'Roze', wins: 0, price: 100 },
+  { id: 'n_gold', cat: 'namecol', name: 'Goud', wins: 10, price: 600 },
+  { id: 'n_rainbow', cat: 'namecol', name: 'Regenboog', wins: 20, price: 1200 },
   { id: 'r_none', cat: 'frame', name: 'Geen' },
-  { id: 'r_bronze', cat: 'frame', name: 'Brons', level: 5 },
-  { id: 'r_silver', cat: 'frame', name: 'Zilver', level: 10 },
-  { id: 'r_gold', cat: 'frame', name: 'Goud', level: 20 },
-  { id: 'r_rainbow', cat: 'frame', name: 'Regenboog', price: 1000 },
+  { id: 'r_bronze', cat: 'frame', name: 'Brons', wins: 1, price: 250 },
+  { id: 'r_silver', cat: 'frame', name: 'Zilver', wins: 5, price: 500 },
+  { id: 'r_gold', cat: 'frame', name: 'Goud', wins: 12, price: 900 },
+  { id: 'r_rainbow', cat: 'frame', name: 'Regenboog', wins: 25, price: 1500 },
 ];
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
 const DEFAULT_EQ = { blocks: 'b_classic', world: 'w_sunny', fx: 'f_puff', avatar: 'a_happy', namecol: 'n_white', frame: 'r_none' };
@@ -3588,7 +3595,7 @@ const RAINBOW_CSS = 'linear-gradient(90deg,#ff5c8a,#ffb347,#ffe36b,#56d364,#3fc4
 const todayStr = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 function freshProfile() {
   return { v: 1, name: (store('st_name') || '').slice(0, 14) || defaultName, xp: 0, level: 1, coins: 0,
-    owned: ITEMS.filter(i => !i.level && !i.price).map(i => i.id), eq: { ...DEFAULT_EQ },
+    owned: ITEMS.filter(i => !i.price).map(i => i.id), eq: { ...DEFAULT_EQ },
     stats: { games: 0, puzzle: 0, race: 0, survival: 0, party: 0, partyWins: 0, blocks: 0, perfects: 0, bestStreak: 0, bestPuzzle: 0, bestSurvival: 0, raceGold: 0 },
     ach: {}, daily: { last: '', streak: 0 }, quests: { date: '', list: [] } };
 }
@@ -3617,9 +3624,7 @@ function addXP(n) {
   while (profile.xp >= xpNeed(profile.level)) {
     profile.xp -= xpNeed(profile.level); profile.level++;
     const coins = levelCoins(profile.level); profile.coins += coins;
-    const items = ITEMS.filter(i => i.level && i.level <= profile.level && !profile.owned.includes(i.id));
-    for (const i of items) profile.owned.push(i.id);
-    ups.push({ level: profile.level, coins, items });
+    ups.push({ level: profile.level, coins });
   }
   return ups;
 }
@@ -3779,7 +3784,8 @@ const ACHS = [
   { id: 'party1', name: 'Samen sterk', txt: 'Speel een party-potje', coins: 75, test: s => s.party >= 1 },
   { id: 'partyWin', name: 'Kampioen', txt: 'Win een party', coins: 150, test: s => s.partyWins >= 1 },
   { id: 'lvl10', name: 'Doorzetter', txt: 'Bereik level 10', coins: 200, test: (s, p) => p.level >= 10 },
-  { id: 'items8', name: 'Verzamelaar', txt: 'Verzamel 8 skins', coins: 150, test: (s, p) => p.owned.filter(id => ITEM[id] && (ITEM[id].level || ITEM[id].price)).length >= 8 },
+  { id: 'wins10', name: 'Partybeest', txt: 'Win 10 party-potjes', coins: 300, test: s => s.partyWins >= 10 },
+  { id: 'items8', name: 'Verzamelaar', txt: 'Verzamel 8 skins', coins: 150, test: (s, p) => p.owned.filter(id => ITEM[id] && ITEM[id].price).length >= 8 },
 ];
 function checkAchievements() {
   const got = [];
@@ -3793,7 +3799,9 @@ function grantRewards(r) {   // r: { mode, party, win, score, height, medal, pla
   const s = profile.stats;
   s.games++; s[r.mode] = (s[r.mode] || 0) + 1; s.blocks += r.placed; s.perfects += r.perfects;
   s.bestStreak = Math.max(s.bestStreak, runBestStreak);
+  const winsBefore = s.partyWins;
   if (r.party) { s.party++; if (r.win) s.partyWins++; }
+  const unlocked = ITEMS.filter(i => i.price && i.wins > winsBefore && i.wins <= s.partyWins);
   let xp = 0, coins = 0;
   if (r.mode === 'puzzle') { xp = 20 + 6 * r.score; coins = 5 + 2 * r.score; s.bestPuzzle = Math.max(s.bestPuzzle, r.score); }
   else if (r.mode === 'race') { const mb = { gold: 40, silver: 25, bronze: 12 }[r.medal] || 0; xp = 25 + mb + r.placed; coins = 8 + Math.round(mb / 2); if (r.medal === 'gold') s.raceGold++; }
@@ -3820,14 +3828,15 @@ function grantRewards(r) {   // r: { mode, party, win, score, height, medal, pla
   saveProfile(); renderProfileBar();
   for (const q of questsDone) toast('Opdracht klaar!', questText(q), 'quest');
   for (const a of achs) toast('Prestatie: ' + a.name, `+${a.coins} munten`, 'ach');
-  return { xp, coins, before, ups, achs };
+  return { xp, coins, before, ups, achs, win: !!(r.party && r.win), unlocked };
 }
 /* beloning tonen in een eindscherm */
 function renderReward(el, rw) {
   const lv = profile.level, need = xpNeed(lv);
   el.innerHTML = `<div class="rw-row"><span class="rw-xp">+${rw.xp} XP</span><span class="rw-coins">${COIN_SVG}+${rw.coins}</span></div>
     <div class="rw-lv"><i>${rw.before.level}</i><span class="xpbar"><span></span></span><em>${profile.xp}/${need}</em></div>`
-    + rw.ups.map(u => `<div class="rw-up">Level ${u.level}! <span>${COIN_SVG}+${u.coins}</span>${u.items.map(i => `<b>${i.name} vrijgespeeld</b>`).join('')}</div>`).join('');
+    + (rw.win ? `<div class="rw-win">🏆 +1 win <span>${profile.stats.partyWins} in totaal</span>${rw.unlocked.length ? `<b>Nu te koop: ${rw.unlocked.map(i => i.name).join(', ')}</b>` : ''}</div>` : '')
+    + rw.ups.map(u => `<div class="rw-up">Level ${u.level}! <span>${COIN_SVG}+${u.coins}</span></div>`).join('');
   el.hidden = false;
   const bar = el.querySelector('.xpbar span'), lvl = el.querySelector('.rw-lv i');
   bar.style.transition = 'none'; bar.style.width = (rw.before.xp / rw.before.need * 100) + '%';
@@ -3863,6 +3872,7 @@ function renderProfileBar() {
   $('pbLvl').textContent = profile.level;
   $('pbXp').style.width = (profile.xp / xpNeed(profile.level) * 100) + '%';
   $('pbCoinN').textContent = profile.coins;
+  $('pbWins').textContent = myWins();
   const dot = !dailyState().claimed || questClaimable();
   $('tabQuests').classList.toggle('dot', dot);
 }
@@ -3898,17 +3908,19 @@ function drawBlockPreviews(root) {
     Object.assign(COLORS, keep); BLOCK_STYLE = keepStyle;
   }
 }
+const myWins = () => profile.stats.partyWins || 0;
 function renderShop() {
   const tabs = $('shopCats'); tabs.textContent = '';
   for (const [k, l] of CATS) { const b = document.createElement('button'); b.textContent = l; b.className = k === shopCat ? 'on' : ''; b.onclick = () => { shopCat = k; renderShop(); }; tabs.append(b); }
   const grid = $('shopGrid'); grid.innerHTML = '';
   for (const i of ITEMS.filter(x => x.cat === shopCat)) {
     const own = profile.owned.includes(i.id), on = profile.eq[i.cat] === i.id;
-    const card = document.createElement('button'); card.className = 'sh-item' + (on ? ' on' : '') + (!own && i.level ? ' locked' : '');
+    const locked = !own && (i.wins || 0) > myWins();
+    const card = document.createElement('button'); card.className = 'sh-item' + (on ? ' on' : '') + (locked ? ' locked' : '');
     let act;
     if (on) act = '<span class="sh-act on">Gekozen</span>';
     else if (own) act = '<span class="sh-act">Kies</span>';
-    else if (i.level) act = `<span class="sh-act lock">🔒 Level ${i.level}</span>`;
+    else if (locked) act = `<span class="sh-act lock">🔒 ${myWins()}/${i.wins} wins</span>`;
     else act = `<span class="sh-act buy ${profile.coins < i.price ? 'poor' : ''}">${COIN_SVG}${i.price}</span>`;
     card.innerHTML = `<span class="sh-pv">${itemPreview(i)}</span><b>${i.name}</b>${act}`;
     card.onclick = () => shopClick(i, card);
@@ -3918,7 +3930,7 @@ function renderShop() {
 }
 function shopClick(i, card) {
   const own = profile.owned.includes(i.id);
-  if (!own && i.level) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); return; }
+  if (!own && (i.wins || 0) > myWins()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast(`Nog ${i.wins - myWins()} ${i.wins - myWins() === 1 ? 'win' : 'wins'} nodig`, 'Wins verdien je door party-potjes te winnen'); return; }
   if (!own) {
     if (profile.coins < i.price) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast('Te weinig munten', `Nog ${i.price - profile.coins} nodig`); return; }
     if (card.dataset.arm !== '1') { card.dataset.arm = '1'; card.querySelector('.sh-act').innerHTML = `Kopen? ${COIN_SVG}${i.price}`; card.classList.add('arm'); setTimeout(() => { if (card.isConnected) { card.dataset.arm = ''; renderShop(); } }, 2500); return; }
@@ -3980,7 +3992,7 @@ function renderRankTab() {
   const s = profile.stats;
   $('rankMine').innerHTML = [
     ['Puzzel', puzzleBest ? `${puzzleBest} blokken` : '—', '#c77dff'], ['Race', raceBest ? fmtTime(raceBest) : '—', '#4cc9f0'],
-    ['Overleven', best ? `${best.toFixed(1)} m` : '—', '#ff5d8f'], ['Party gewonnen', String(s.partyWins), '#ffd23f'],
+    ['Overleven', best ? `${best.toFixed(1)} m` : '—', '#ff5d8f'], ['Party-wins', String(s.partyWins), '#ffd23f'],
   ].map(([l, v, c]) => `<li style="--mc:${c}"><span>${l}</span><b>${v}</b></li>`).join('');
 }
 /* profiel */
@@ -3988,8 +4000,8 @@ function renderProfileTab() {
   const s = profile.stats;
   $('prfAv').innerHTML = avatarHTML(profile.eq.avatar, profile.eq.frame, 'big');
   $('prfName').value = profile.name;
-  $('prfLvl').textContent = `Level ${profile.level} · ${profile.xp}/${xpNeed(profile.level)} XP`;
-  $('prfStats').innerHTML = [[s.games, 'Potjes'], [s.blocks, 'Blokken'], [s.perfects, 'Strak'], [s.partyWins, 'Party-winst'], [s.bestStreak, 'Langste reeks'], [Object.keys(profile.ach).length + '/' + ACHS.length, 'Prestaties']]
+  $('prfLvl').textContent = `Level ${profile.level} · ${profile.xp}/${xpNeed(profile.level)} XP · 🏆 ${myWins()} ${myWins() === 1 ? 'win' : 'wins'}`;
+  $('prfStats').innerHTML = [[s.games, 'Potjes'], [s.blocks, 'Blokken'], [s.perfects, 'Strak'], [s.partyWins, 'Wins'], [s.bestStreak, 'Langste reeks'], [Object.keys(profile.ach).length + '/' + ACHS.length, 'Prestaties']]
     .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
   $('prfAch').innerHTML = ACHS.map(a => `<li class="${profile.ach[a.id] ? 'got' : ''}"><i>${profile.ach[a.id] ? '🏅' : '🔒'}</i><b>${a.name}</b><span>${a.txt}</span><em>${COIN_SVG}${a.coins}</em></li>`).join('');
 }
