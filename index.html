@@ -695,7 +695,6 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   .hscroll { grid-area: main; padding: 10px 32px 32px 28px; }
   .tabbar { grid-area: nav; flex-direction: column; justify-content: flex-start; gap: 6px; border-top: 0; border-right: 3px solid var(--ink);
     padding: 22px 14px 18px; box-shadow: 4px 0 0 rgba(43,33,64,.08); }
-  .tabbar::before { content: "Stormtoren"; font-family: var(--display); font-size: 30px; color: var(--ink); padding: 0 10px 18px; line-height: 1; }
   .tabbar button { flex: none; max-width: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; font-size: 16px; border-radius: 16px; color: #6a6488; }
   .tabbar button svg { width: 26px; height: 26px; }
   .tabbar button:hover { background: #f4f2fb; color: var(--ink); }
@@ -820,38 +819,51 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .btn:active { transform: translateY(3px); box-shadow: inset 0 -4px 0 rgba(43,33,64,.2), inset 0 3px 0 rgba(255,255,255,.55), 0 1px 0 var(--ink); }
 .btn.ghost { background: #fffaf0; box-shadow: inset 0 -6px 0 #eadfc8, 0 4px 0 var(--ink); }
 
-/* menubalk: zwevende crèmekleurige balk met getekende icoontjes; alleen het gekozen tabblad toont zijn naam */
-.tabbar { position: relative; width: auto; align-self: stretch; margin: 0 max(10px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 10px) max(10px, env(safe-area-inset-left, 0px));
-  background: #fdf6e7; border: 3px solid var(--ink); border-radius: 24px; padding: 0; gap: 0; overflow: visible;
-  box-shadow: inset 0 -7px 0 #eadcc0, 0 4px 0 var(--ink); }
-.tabbar::after { content: ""; position: absolute; left: 6px; right: 6px; top: -12px; height: 22px; background: var(--grass-cap) repeat-x left top / 36px 22px; pointer-events: none;
-  -webkit-mask: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%); mask: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%); }
-.tabbar button { max-width: none; border-radius: 0; padding: 12px 2px 13px; gap: 3px; justify-content: center; color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 14px; }
-.tabbar button + button { border-left: 2px solid rgba(43,33,64,.13); }
-.tabbar button:first-of-type { border-radius: 21px 0 0 21px; }
-.tabbar button:last-of-type { border-radius: 0 21px 21px 0; }
-.tabbar button svg.ti { width: 38px; height: 38px; stroke: none; filter: drop-shadow(0 2px 0 rgba(43,33,64,.18)); transition: transform .15s; }
-.tabbar button .tl { display: none; line-height: 1; }
-.tabbar button.on { background: #c4dc45; color: var(--ink); box-shadow: inset 0 -7px 0 #a3bb2c; }
-.tabbar button.on .tl { display: block; }
-.tabbar button.on svg.ti { transform: translateY(-2px) scale(1.06); }
-.tabbar button:active svg.ti { transform: scale(.92); }
-.tabbar button.dot::after { top: 6px; right: calc(50% - 24px); }
 
-/* pc: zijmenu in dezelfde stijl */
+/* ===== menubalk naar het voorbeeld: dikke crèmekleurige balk op een donkerdere plaat, grote 3D-icoontjes, sneeuwdak met besjes ===== */
+.tabbar { position: relative; z-index: 1; align-self: stretch; width: auto; display: flex; gap: 0; padding: 0; overflow: visible;
+  margin: 18px max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(12px, env(safe-area-inset-left, 0px));
+  background: #fbf6ea; border: 3.5px solid var(--ink); border-radius: 26px; box-shadow: none; }
+.tabbar::before { content: ""; position: absolute; z-index: -1; left: -3.5px; right: -3.5px; top: 12px; bottom: -12px;    /* de onderplaat (3D-dikte) */
+  background: #d9d1bf; border: 3.5px solid var(--ink); border-radius: 26px; }
+.tabbar::after { content: ""; position: absolute; left: -10px; right: -10px; top: -23px; height: 34px; pointer-events: none;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='34' viewBox='0 0 240 34'><path d='M0 9 Q12 2 26 8 Q38 1 52 7 Q60 3 70 8 Q86 1 100 9 Q112 3 124 8 Q140 0 156 8 Q166 3 178 9 Q192 2 206 8 Q220 2 240 9 V18 Q232 30 224 18 Q218 22 210 18 Q200 30 190 18 Q178 24 168 18 Q160 28 150 18 Q140 22 130 18 Q118 31 106 18 Q96 23 86 18 Q76 29 66 18 Q56 22 46 18 Q36 30 26 18 Q16 23 8 18 Q4 22 0 18 Z' fill='%23ffffff'/><path d='M0 9 Q12 2 26 8 Q38 1 52 7 Q60 3 70 8 Q86 1 100 9 Q112 3 124 8 Q140 0 156 8 Q166 3 178 9 Q192 2 206 8 Q220 2 240 9 M240 18 Q232 30 224 18 Q218 22 210 18 Q200 30 190 18 Q178 24 168 18 Q160 28 150 18 Q140 22 130 18 Q118 31 106 18 Q96 23 86 18 Q76 29 66 18 Q56 22 46 18 Q36 30 26 18 Q16 23 8 18 Q4 22 0 18' fill='none' stroke='%232b2140' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/><path d='M14 14 Q30 11 44 14 M120 13 Q136 10 150 13' stroke='%23dfe9f5' stroke-width='3' fill='none' stroke-linecap='round'/><g stroke='%232b2140' stroke-width='1.6'><path d='M58 6 L60 -1 M168 6 L166 -1 M172 7 L176 0' fill='none'/><circle cx='56' cy='7' r='3.4' fill='%23ff8a3d'/><circle cx='62' cy='8' r='3.4' fill='%23ff8a3d'/><circle cx='168' cy='8' r='3.4' fill='%23ff8a3d'/><circle cx='175' cy='7' r='3.4' fill='%23ff8a3d'/><circle cx='171.5' cy='2.5' r='3' fill='%23ff8a3d'/></g></svg>") repeat-x left top / 240px 34px; }
+.tb-bird { position: absolute; right: 22px; top: -46px; width: 46px; height: 37px; pointer-events: none; z-index: 2;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 48'><g stroke='%232b2140' stroke-width='2.4' stroke-linejoin='round'><path d='M22 40 L19 46 M30 40 L31 46' fill='none'/><path d='M44 20 Q58 26 54 34 Q46 30 40 28 Z' fill='%23707a8c'/><ellipse cx='28' cy='27' rx='17' ry='14' fill='%23e5525a'/><path d='M12 22 Q14 8 28 9 Q40 10 42 22 Q38 16 28 17 Q16 18 12 22 Z' fill='%23707a8c'/><path d='M26 22 Q38 20 46 30 Q36 36 26 30 Z' fill='%23a9b4c6'/><path d='M8 18 L1 20 L8 22 Z' fill='%23f2a93b'/></g><circle cx='14' cy='16' r='2' fill='%232b2140'/></svg>") no-repeat center / contain; transform: scaleX(-1); }
+.tabbar button, .tabbar button:first-of-type, .tabbar button:last-of-type { flex: 1; max-width: none; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 12px 2px 10px; min-height: 76px; background: #fbf6ea; border: 0; border-radius: 0; box-shadow: none; color: #111;
+  font-family: "Baloo 2", var(--body), sans-serif; font-weight: 800; font-size: 17px; letter-spacing: .1px; cursor: pointer; }
+.tabbar button:first-of-type { border-radius: 22px 0 0 22px; }
+.tabbar button:last-of-type { border-radius: 0 22px 22px 0; }
+.tabbar button + button { border-left: 2px solid #e6dfcf; }
+.tabbar button svg.ti { width: 52px; height: 52px; stroke: none; filter: none; transition: transform .18s cubic-bezier(.3,1.6,.5,1); }
+.tabbar button .tl { display: none; line-height: 1; margin-top: -2px; }
+.tabbar button.on { background: #c6d84a; }
+.tabbar button.on + button { border-left-color: #c6d84a; }
+.tabbar button.on .tl { display: block; }
+.tabbar button.on svg.ti { width: 48px; height: 48px; transform: translateY(-3px); }
+.tabbar button:active svg.ti { transform: scale(.9); }
+.tabbar button.dot::after { top: 8px; right: calc(50% - 28px); }
+@media (max-width: 380px) { .tabbar button svg.ti { width: 44px; height: 44px; } .tabbar button.on svg.ti { width: 40px; height: 40px; } .tabbar button { font-size: 15px; } }
+
+/* pc: dezelfde balk, staand als zijmenu */
 @media (min-width: 960px) and (min-height: 560px) {
-  .tabbar { margin: 14px 0 14px 14px; padding: 18px 10px 14px; gap: 8px; border-radius: 26px; box-shadow: inset -6px 0 0 #eadcc0, 4px 4px 0 var(--ink); border-right: 3px solid var(--ink); }
-  .tabbar::after { left: 10px; right: 10px; }
-  .tabbar::before { color: var(--ink); padding: 8px 10px 14px; }
-  .tabbar button, .tabbar button:first-of-type, .tabbar button:last-of-type { border-radius: 16px; padding: 8px 12px; gap: 12px; font-size: 18px; justify-content: flex-start; }
-  .tabbar button + button { border-left: 0; }
-  .tabbar button .tl { display: block; }
-  .tabbar button svg.ti { width: 40px; height: 40px; }
-  .tabbar button.on { box-shadow: inset 0 0 0 2.5px var(--ink), inset 0 -6px 0 #a3bb2c; }
-  .tabbar button:hover:not(.on) { background: #f4ead2; }
-  .tabbar button.dot::after { top: 50%; right: 12px; }
-  #hpPlay .modes .mode { padding-bottom: 22px; }
-  .hscroll { padding-top: 22px; }
+  .tabbar { flex-direction: column; justify-content: flex-start; align-self: start; margin: 34px 12px 26px 18px; border-radius: 26px; }
+  .tabbar::before { top: 12px; bottom: -12px; left: -3.5px; right: -3.5px; }
+  .tabbar::after { left: -10px; right: -10px; }
+  .tb-bird { right: 18px; }
+  .tabbar > .tb-head { display: none; }
+  .tabbar::marker { content: none; }
+  .tabbar button, .tabbar button:first-of-type, .tabbar button:last-of-type { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 16px; min-height: 0; border-radius: 0; }
+  .tabbar button:first-of-type { border-radius: 22px 22px 0 0; padding-top: 22px; }
+  .tabbar button:last-of-type { border-radius: 0 0 22px 22px; }
+  .tabbar button + button { border-left: 0; border-top: 2px solid #e6dfcf; }
+  .tabbar button.on + button { border-top-color: #c6d84a; }
+  .tabbar button .tl, .tabbar button.on .tl { display: block; font-size: 19px; }
+  .tabbar button svg.ti, .tabbar button.on svg.ti { width: 46px; height: 46px; }
+  .tabbar button.on svg.ti { transform: translateY(-2px) scale(1.05); }
+  .tabbar button:hover:not(.on) { background: #f3ecdb; }
+  .tabbar button.dot::after { top: 50%; right: 14px; transform: translateY(-50%); }
 }
 </style>
 
@@ -967,12 +979,50 @@ canvas.pv-blocks { width: 90px; height: 63px; }
       <div class="card acct" id="acctBox"></div>
     </section>
     </div>
-    <nav class="tabbar" aria-label="Menu">
-      <button data-tab="play" class="on"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="6" y="25" width="17" height="17" rx="3.5" fill="#3fc4f5"/><rect x="25" y="25" width="17" height="17" rx="3.5" fill="#ff5c8a"/><rect x="15.5" y="7" width="17" height="17" rx="3.5" fill="#ffd23f"/></g><g fill="#fff" opacity=".75"><rect x="9" y="28" width="6" height="2.6" rx="1.3"/><rect x="28" y="28" width="6" height="2.6" rx="1.3"/><rect x="18.5" y="10" width="6" height="2.6" rx="1.3"/></g><g fill="#000" opacity=".14"><rect x="7.3" y="37" width="14.4" height="3.7"/><rect x="26.3" y="37" width="14.4" height="3.7"/><rect x="16.8" y="19" width="14.4" height="3.7"/></g></svg><span class="tl">Spelen</span></button>
-      <button data-tab="shop"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="8" y="18" width="32" height="24" rx="3" fill="#f3ecdf"/><rect x="25" y="25" width="10" height="17" rx="2" fill="#6e9cf0"/><rect x="12" y="25" width="9" height="8" rx="1.5" fill="#bfe4ff"/><path d="M6 12 L10 6 H38 L42 12 V16 a4 4 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4 4 0 0 1 -9 0 Z" fill="#fff"/></g><path d="M10.3 7.5 H18 L15 16.5 a4 4 0 0 1 -7.6 -.6 L7.4 12.4 Z M24 7.5 H31 L33 16 a4.5 4.5 0 0 1 -9 0 Z M37.7 7.5 L40.6 12.4 V16 a4 4 0 0 1 -7.6 .4 Z" fill="#ff5c8a"/><path d="M6 12 L10 6 H38 L42 12 V16 a4 4 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4.5 4.5 0 0 1 -9 0 a4 4 0 0 1 -9 0 Z" fill="none" stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"/><circle cx="32.8" cy="34" r="1.3" fill="#2b2140"/></svg><span class="tl">Winkel</span></button>
-      <button data-tab="quests" id="tabQuests"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="9" y="8" width="30" height="35" rx="4" fill="#d9a066"/><rect x="13" y="13" width="22" height="26" rx="2" fill="#fffaf0"/><rect x="17" y="5" width="14" height="7" rx="2.5" fill="#c3c7e6"/></g><g fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 20.5l2.2 2.2 4-4.4" stroke="#2fb35a"/><path d="M16.5 30l2.2 2.2 4-4.4" stroke="#2fb35a"/><path d="M25.5 21h6M25.5 30.5h6" stroke="#2b2140" opacity=".45"/></g></svg><span class="tl">Opdrachten</span></button>
-      <button data-tab="rank"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"><rect x="17" y="18" width="14" height="24" rx="2" fill="#ffd23f"/><rect x="5" y="26" width="13" height="16" rx="2" fill="#c3d3e6"/><rect x="30" y="30" width="13" height="12" rx="2" fill="#e8a46a"/><path d="M24 4.5l2.3 4.8 5.2.6-3.9 3.6 1 5.1L24 16l-4.6 2.6 1-5.1-3.9-3.6 5.2-.6z" fill="#fff6c2"/></g><g fill="#2b2140" font-family="Lilita One,sans-serif" font-size="9" text-anchor="middle"><text x="24" y="31">1</text><text x="11.5" y="37">2</text><text x="36.5" y="39.5">3</text></g></svg><span class="tl">Ranglijst</span></button>
-      <button data-tab="profile"><svg class="ti" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="8" width="36" height="34" rx="9" fill="#ffd23f" stroke="#2b2140" stroke-width="2.8"/><rect x="11" y="12" width="12" height="4" rx="2" fill="#fff" opacity=".6"/><path d="M8 34 Q24 44 40 34 V36 a6 6 0 0 1 -6 6 H14 a6 6 0 0 1 -6 -6Z" fill="#000" opacity=".12"/><ellipse cx="18" cy="25" rx="2.8" ry="3.6" fill="#2b2140"/><ellipse cx="30" cy="25" rx="2.8" ry="3.6" fill="#2b2140"/><path d="M18 33q6 5 12 0" stroke="#2b2140" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg><span class="tl">Profiel</span></button>
+    <nav class="tabbar" aria-label="Menu"><span class="tb-bird" aria-hidden="true"></span>
+      <button data-tab="play" class="on"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
+<path d="M46 30 L52 34 V53 L46 55 Z" fill="#8f5a35"/>
+<rect x="14" y="28" width="32" height="27" rx="2" fill="#c3864f"/>
+<path d="M30 7 L52 25 L48 33 L30 18 L12 33 L8 25 Z" fill="#5d8fdc"/>
+<path d="M30 7 L52 25 L56 27 L34 9 Z" fill="#3f6cb8"/>
+<path d="M23 55 V44 a7 7 0 0 1 14 0 V55 Z" fill="#7cc35a"/>
+<circle cx="30" cy="32" r="4" fill="#bfe4ff"/></g>
+<circle cx="33.5" cy="49" r="1.3" fill="#2b2140"/><path d="M16 31 H44" stroke="#fff" stroke-width="2" opacity=".35"/></svg><span class="tl">Spelen</span></button>
+      <button data-tab="shop"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
+<path d="M48 24 L53 27 V53 L48 55 Z" fill="#c9c1b2"/>
+<rect x="12" y="24" width="36" height="31" rx="2" fill="#f2ece2"/>
+<rect x="30" y="33" width="13" height="22" rx="2" fill="#6e9cf0"/>
+<rect x="17" y="33" width="9" height="10" rx="1.5" fill="#bfe4ff"/>
+<path d="M10 14 L14 7 H46 L50 14 L54 17 V20 L50 18 Z" fill="#c43d5c"/>
+<path d="M10 14 L14 7 H46 L50 14 V19 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 Z" fill="#fff"/></g>
+<path d="M14.6 8.4 H22 L20 19.8 a5 5 0 0 1 -8.6 2 L11.4 14.3 Z M30 8.4 H37.2 L40 19 a5 5 0 0 1 -10 0 Z" fill="#ff5c7a"/>
+<path d="M10 14 L14 7 H46 L50 14 V19 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 a5 5 0 0 1 -10 0 Z" fill="none" stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M36.5 33 V55" stroke="#2b2140" stroke-width="2"/></svg><span class="tl">Winkel</span></button>
+      <button data-tab="quests" id="tabQuests"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
+<path d="M46 12 L51 15 V54 L46 56 Z" fill="#9a6440"/>
+<rect x="13" y="10" width="33" height="46" rx="4" fill="#d29a5c"/>
+<rect x="18" y="16" width="23" height="35" rx="2" fill="#fffaf0"/>
+<rect x="22" y="6" width="15" height="8" rx="2.5" fill="#c3c7e6"/></g>
+<g fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 25l2.6 2.6 4.6-5" stroke="#3fb35a"/><path d="M22 37l2.6 2.6 4.6-5" stroke="#3fb35a"/></g>
+<path d="M31.5 26h6M31.5 38h6" stroke="#2b2140" stroke-width="2.6" stroke-linecap="round" opacity=".4"/></svg><span class="tl">Opdrachten</span></button>
+      <button data-tab="rank"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round" fill="none">
+<path d="M17 15 a8 8 0 0 0 0 16 h3"/><path d="M45 15 a8 8 0 0 1 0 16 h-3"/></g>
+<g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
+<path d="M18 9 H46 Q46 33 32 37 Q18 33 18 9 Z" fill="#ffcf3a"/>
+<path d="M38 9 H46 Q46 30 35 36.5 Q41 28 38 9 Z" fill="#e5a400"/>
+<rect x="28" y="37" width="8" height="8" fill="#e5a400"/>
+<path d="M20 45 H44 L46 54 H18 Z" fill="#8f5a35"/>
+<path d="M44 45 L49 47 L50 53 L46 54 Z" fill="#6b3f22"/></g>
+<path d="M30 16 l1.9 4 4.3.5-3.2 2.9.9 4.2-3.9-2.2-3.9 2.2.9-4.2-3.2-2.9 4.3-.5z" fill="#fff6c2"/></svg><span class="tl">Ranglijst</span></button>
+      <button data-tab="profile"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
+<path d="M48 12 L53 15 V53 L48 55 Z" fill="#8f5a35"/>
+<rect x="10" y="10" width="38" height="45" rx="3" fill="#c3864f"/>
+<rect x="16" y="16" width="26" height="33" rx="2" fill="#9fdcff"/>
+<rect x="19" y="23" width="20" height="20" rx="5" fill="#ffd23f"/></g>
+<path d="M16 41 Q22 36 29 41 T42 40 V49 H16 Z" fill="#6fd65b" opacity=".9"/>
+<rect x="19" y="23" width="20" height="20" rx="5" fill="#ffd23f" stroke="#2b2140" stroke-width="2.4"/>
+<ellipse cx="25.5" cy="32" rx="1.7" ry="2.2" fill="#2b2140"/><ellipse cx="32.5" cy="32" rx="1.7" ry="2.2" fill="#2b2140"/>
+<path d="M25.5 37 q3.5 3 7 0" stroke="#2b2140" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="36" cy="20" r="2.2" fill="#ffe36b"/></svg><span class="tl">Profiel</span></button>
     </nav>
   </div>
   <div class="overlay" id="dailyOv" hidden>
