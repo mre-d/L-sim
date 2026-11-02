@@ -978,6 +978,11 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .fs-btn.on .fs-out { display: block; }
 .fs-btn:hover { background: rgba(255,255,255,.75); color: var(--ink); }
 .fs-btn:active { transform: scale(.9); }
+
+/* app-modus op iPhone (Zet op beginscherm): iOS telt de statusbalk niet mee in 100%, dus de volle schermhoogte gebruiken */
+@media (display-mode: standalone) { html, body { height: 100vh; } #app, .title-ov { bottom: auto; height: 100vh; } }
+html.standalone, html.standalone body { height: 100vh; }
+html.standalone #app, html.standalone .title-ov { bottom: auto; height: 100vh; }
 </style>
 
 <div id="app">
@@ -1278,6 +1283,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 
 <script src="https://cdn.jsdelivr.net/npm/planck@1.4.2/dist/planck.min.js"></script>
 <script>
+if (window.navigator.standalone) document.documentElement.classList.add('standalone');   // iPhone-app via beginscherm
 (() => {
 'use strict';
 
