@@ -3530,7 +3530,8 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
   // laser: dikke ronde streep met inktrand en bewegende witte stippen
   if (mode === 'puzzle' && laserY !== null && !opt.shared) {
     const hot = Math.max(laserHot, laserFail);
-    const ex = Math.max(Math.max(6, Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL, Math.min(-left, right) - 42);   // altijd tot de schermranden, ook als de camera uitzoomt
+    const ex = Math.max(-left, right);   // tot voorbij de schermranden (left/right liggen al 20 px buiten beeld)
+    const edge = Math.min(-left, right) - 20;   // de echte schermrand: daar staan de zenders, half buiten beeld
     ctx.lineCap = 'round';
     ctx.strokeStyle = `rgba(255,92,138,${(0.25 + 0.35 * hot).toFixed(3)})`; ctx.lineWidth = 14;
     ctx.beginPath(); ctx.moveTo(-ex, laserY); ctx.lineTo(ex, laserY); ctx.stroke();
@@ -3539,12 +3540,12 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
     ctx.strokeStyle = '#ffd1e0'; ctx.lineWidth = 2; ctx.setLineDash([2, 12]); ctx.lineDashOffset = -t * 0.03;
     ctx.beginPath(); ctx.moveTo(-ex, laserY); ctx.lineTo(ex, laserY); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = 'butt';
     for (const s2 of [-1, 1]) {
-      const x = s2 * ex;
+      const x = s2 * (edge + 2);
       ctx.fillStyle = '#ffffff'; ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
       rr(ctx, x - 9, laserY - 11, 18, 22, 6); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#ff5c8a'; ctx.beginPath(); ctx.arc(x, laserY, 4.5, 0, 7); ctx.fill(); ctx.stroke();
     }
-    outlinedText('LASER', -ex + 14, laserY - 8, 10, '#ff5c8a', 'left');
+    outlinedText('LASER', -edge + 16, laserY - 8, 10, '#ff5c8a', 'left');
   }
 
   // ringen en deeltjes
