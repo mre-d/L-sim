@@ -1468,7 +1468,7 @@ const sfx = {
    Eenheden in de physics-wereld: 1 = één vakje (CELL px). y wijst omlaag, net als op het scherm.
    Waarom Box2D: Matter.js duwde blokken soms in één stap 15 px in elkaar, liet schuine blokken wegkruipen
    en bevroor slapende blokken. Box2D stapelt stabiel, wekt slapende blokken correct en kruipt niet. */
-const { World, Vec2, Box, Chain, Transform, AABB, testOverlap } = planck;
+const { World, Vec2, Box, Chain, Transform, AABB, testOverlap, WeldJoint } = planck;
 const HZ = 120, STEP_S = 1 / HZ, V60 = 1;   // V60 = 1: stuk.speed staat al in px per 1/60 s
 const GRAVITY = 30;                          // vakjes per s²
 const INSET = 0.035;                         // physics-vorm ~1 px per kant kleiner dan wat je ziet: gaten zijn net iets vergevingsgezinder
@@ -1888,6 +1888,39 @@ function handleContacts() {
 /* zacht raster: een blok dat net recht is geland en bijna stil ligt, krijgt in de eerste 0,9 s een klein
    zijwaarts duwtje richting het raster. Via snelheid (niet door te teleporteren), zodat Box2D botsingen
    gewoon blijft oplossen en er nooit iets in een buurblok schuift. */
+/* lijm: een blok dat tot rust komt wordt vastgezet aan de blokken (en het platform) waarop/waartegen het ligt.
+   Zo blijft een toren één stevig geheel en kun je uitbouwen. Bij een harde klap of te veel trekkracht breekt de lijm. */
+const GLUE_FORCE = 2600, GLUE_TORQUE = 2600;   // breekgrens (Box2D-eenheden; een blok weegt ~105)
+function glue(b) {
+  const d = b.pd; d.glued = true;
+  if (!b.body) return;
+  for (let ce = b.body.getContactList(); ce; ce = ce.next) {
+    const c = ce.contact, other = ce.other;
+    if (!c.isTouching()) continue;
+    const op = other.getUserData();
+    if (other !== groundBody && !(op && op.pd && op.pd.settled && !op.pd.lost)) continue;
+    let dup = false;
+    for (let je = b.body.getJointList(); je; je = je.next) if (je.other === other) { dup = true; break; }
+    if (dup) continue;
+    const pa = b.body.getPosition(), pb = other === groundBody ? pa : other.getPosition();
+    const j = WeldJoint({ frequencyHz: 0, dampingRatio: 0, collideConnected: true }, b.body, other, Vec2((pa.x + pb.x) / 2, (pa.y + pb.y) / 2));
+    world.createJoint(j);
+  }
+}
+let glueBreaks = 0;
+function checkGlue(dt) {
+  const inv = 1 / STEP_S;
+  for (let j = world.getJointList(); j; ) {
+    const next = j.getNext();
+    const f = j.getReactionForce(inv).length(), t = Math.abs(j.getReactionTorque(inv));
+    if (f > GLUE_FORCE || t > GLUE_TORQUE) {
+      const A = j.getBodyA().getUserData(), B = j.getBodyB().getUserData();
+      world.destroyJoint(j); glueBreaks++;
+      for (const P of [A, B]) if (P && P.pd) { P.pd.glued = false; P.pd.settled = false; P.pd.still = 0; }   // mag later opnieuw vastlijmen
+    }
+    j = next;
+  }
+}
 function gridNudge(b, d) {
   const q = Math.PI / 2, aErr = Math.abs(b.angle - Math.round(b.angle / q) * q);
   if (now - d.landT < 1.5) d.maxErr = Math.max(d.maxErr, aErr);
@@ -3004,6 +3037,7 @@ function update(dt) {
     if (n === 8) acc = 0;
     updateRise(dt);
     for (const b of pieces) syncPiece(b);
+    checkGlue(dt);
     handleContacts();
     for (const b of pieces.slice()) {
       const d = b.pd;
@@ -3017,6 +3051,7 @@ function update(dt) {
       if (b.isSleeping || (b.speed * V60 < 0.12 && Math.abs(b.angularVelocity) * V60 < 0.004)) d.still++;
       else { d.still = 0; if (d.settled && b.speed * V60 > 1.6) d.settled = false; }
       if (!d.settled && d.still > 16) { d.settled = true; if (!d.ever && state === 'play') { d.ever = true; onSettle(b); } }
+      if (d.settled && !d.glued && state === 'play') glue(b);
     }
     if (state === 'play' && mode === 'puzzle') puzzleCheck(dt);
     if (state === 'play' && mode === 'race') raceCheck(dt);
