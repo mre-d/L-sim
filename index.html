@@ -1890,7 +1890,7 @@ function handleContacts() {
    gewoon blijft oplossen en er nooit iets in een buurblok schuift. */
 /* lijm: een blok dat tot rust komt wordt vastgezet aan de blokken (en het platform) waarop/waartegen het ligt.
    Zo blijft een toren één stevig geheel en kun je uitbouwen. Bij een harde klap of te veel trekkracht breekt de lijm. */
-const GLUE_FORCE = 2600, GLUE_TORQUE = 2600;   // breekgrens (Box2D-eenheden; een blok weegt ~105)
+const GLUE_FORCE = 2100, GLUE_TORQUE = 2100;   // breekgrens (Box2D-eenheden; een blok weegt ~105)
 function glue(b) {
   const d = b.pd; d.glued = true;
   if (!b.body) return;
