@@ -1891,8 +1891,9 @@ function handleContacts() {
 function gridNudge(b, d) {
   const q = Math.PI / 2, aErr = Math.abs(b.angle - Math.round(b.angle / q) * q);
   if (now - d.landT < 1.5) d.maxErr = Math.max(d.maxErr, aErr);
-  // ook later (na botsingen) blijven stilliggende, rechte blokken richting het raster geduwd zolang ze wakker zijn
-  if (!b.body || !b.body.isAwake()) return;
+  // alleen vlak na het eigen landen: later (als er iets op landt) niet meer duwen, anders schuift een blok
+  // dat op een smal richeltje ligt telkens een stukje opzij
+  if (!b.body || !b.body.isAwake() || now - d.landT > 1.0) return;
   if (aErr > 0.02 || b.speed > 1.2 || Math.abs(b.angularVelocity) > 0.02) return;
   const tx = snapX(d.offs, b.position.x, Math.round(b.angle / q) * q), dx = tx - b.position.x;
   if (Math.abs(dx) < 0.3 || Math.abs(dx) > 12) return;
