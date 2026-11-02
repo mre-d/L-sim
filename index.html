@@ -968,6 +968,16 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .pb-lv { min-width: 0; width: 100%; }
 .pb-lv .xpbar { flex: 1 1 auto; min-width: 20px; width: auto; }
 .pb-lv i, .pb-lv .pb-wins { flex: 0 0 auto; }
+
+/* subtiel knopje voor volledig scherm */
+.fs-btn { flex: none; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 11px; cursor: pointer;
+  background: rgba(255,255,255,.35); color: rgba(43,33,64,.75); transition: background .15s, color .15s, transform .1s; }
+.fs-btn[hidden] { display: none; }
+.fs-btn svg { width: 18px; height: 18px; }
+.fs-btn .fs-out, .fs-btn.on .fs-in { display: none; }
+.fs-btn.on .fs-out { display: block; }
+.fs-btn:hover { background: rgba(255,255,255,.75); color: var(--ink); }
+.fs-btn:active { transform: scale(.9); }
 </style>
 
 <div id="app">
@@ -1022,6 +1032,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
     <header class="pbar">
       <button class="pb-me" id="pbMe" aria-label="Jouw profiel"><span id="pbAv"></span><span class="pb-txt"><b id="pbName"></b><span class="pb-lv"><i id="pbLvl">1</i><span class="xpbar"><span id="pbXp"></span></span><span class="pb-wins" title="Party-wins">🏆<b id="pbWins">0</b></span></span></span></button>
       <button class="coins" id="pbCoins" aria-label="Munten, naar de winkel"><svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#ffcf3a" stroke="#2b2140" stroke-width="2.6"/><circle cx="12" cy="12" r="5.6" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="pbCoinN">0</b></button>
+      <button class="fs-btn" id="fsBtn" aria-label="Volledig scherm" title="Volledig scherm" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="fs-in" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-out" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
       <button class="icon-btn" id="setBtn" aria-label="Instellingen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
@@ -2075,6 +2086,23 @@ function renderSettings() {
   for (const row of document.querySelectorAll('.set-row[data-key]')) row.setAttribute('aria-checked', settings[row.dataset.key] ? 'true' : 'false');
 }
 for (const row of document.querySelectorAll('.set-row[data-key]')) row.onclick = () => { initAudio(); setSetting(row.dataset.key, !settings[row.dataset.key]); sfx.move(); };
+/* volledig scherm (pc, Android, iPad); op een iPhone kan dat alleen via "Zet op beginscherm" */
+(() => {
+  const el = document.documentElement, btn = $('fsBtn');
+  const can = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) && !(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches);
+  if (!can) return;
+  btn.hidden = false;
+  const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const sync = () => btn.classList.toggle('on', isFs());
+  btn.onclick = () => {
+    haptic('light');
+    try {
+      if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else { const r = (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); }
+    } catch (e) {}
+  };
+  document.addEventListener('fullscreenchange', sync); document.addEventListener('webkitfullscreenchange', sync);
+})();
 $('setBtn').onclick = () => { initAudio(); renderSettings(); $('homeOv').hidden = true; $('setOv').hidden = false; $('setBack').focus(); };
 $('setBack').onclick = () => { $('setOv').hidden = true; goHome(); };
 $('setIntro').onclick = () => { for (const m of ['puzzle', 'race', 'survival']) store('st_seen_' + m, '0'); showToastIn($('setIntro'), 'Uitleg komt weer bij elke modus'); };
