@@ -871,6 +871,36 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   #homeOv .tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; }
   #homeOv .hscroll { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }
 }
+
+/* ===== spelknoppen naar het voorbeeld: volle kaart op een donkerdere plaat, sneeuwdak, alleen tekst ===== */
+#hpPlay .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 14px; width: 100%; margin-top: 14px; }
+#hpPlay .modes .mode { position: relative; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  min-height: 116px; padding: 22px 8px 16px; margin: 0; border: 0; border-radius: 22px; background: none; box-shadow: none; overflow: visible; color: #fff; }
+#hpPlay .modes .mode::before { content: ""; position: absolute; inset: 0; z-index: -1; display: block; width: auto; height: auto; top: 0; left: 0; right: 0;
+  background: var(--card); border: 3.5px solid var(--ink); border-radius: 22px; -webkit-mask: none; mask: none; }
+#hpPlay .modes .mode::after { content: ""; position: absolute; z-index: -2; left: 0; right: -4px; top: 9px; bottom: -9px;   /* de onderplaat */
+  background: var(--card-d); border: 3.5px solid var(--ink); border-radius: 22px; }
+#hpPlay .modes .mode .ico, #hpPlay .modes .mode .go { display: none; }
+#hpPlay .modes .mode > span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#hpPlay .modes .mode b { font-family: "Baloo 2", var(--body), sans-serif; font-weight: 800; font-size: 27px; line-height: .95; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--t1); text-shadow: none; }
+#hpPlay .modes .mode span span { font-family: "Baloo 2", var(--body), sans-serif; font-weight: 700; font-size: 17px; line-height: 1.1; color: var(--t2); text-shadow: none; opacity: 1; margin: 0; }
+#hpPlay .modes .mode em { font-family: "Baloo 2", var(--body), sans-serif; font-size: 12px; font-weight: 800; letter-spacing: .4px; color: var(--t2); opacity: .9; margin-top: 2px; }
+#hpPlay .modes .mode:not(.locked):active { transform: translate(2px, 5px); }
+#hpPlay .modes .mode:not(.locked):active::after { top: 4px; bottom: -4px; right: -1px; }
+#hpPlay .modes .mode .snowcap { position: absolute; z-index: 1; pointer-events: none; }
+#hpPlay .modes .mode .snowcap svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#hpPlay .modes .mode .card-bird { position: absolute; top: -30px; right: 12px; width: 40px; height: 32px; z-index: 2; pointer-events: none; }
+#hpPlay .modes .mode:nth-child(odd) .card-bird { right: auto; left: 30px; transform: scaleX(-1); }
+@media (max-width: 360px) { #hpPlay .modes .mode b { font-size: 22px; } #hpPlay .modes .mode span span { font-size: 15px; } }
+@media (min-width: 960px) and (min-height: 560px) {
+  #hpPlay .modes { grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 26px; }
+  #hpPlay .modes .mode, #hpPlay .modes #partyBtn { min-height: 150px; padding: 26px 12px 18px; grid-template-columns: none; width: auto; border-radius: 22px; }
+  #hpPlay .modes .mode b { font-size: 32px; }
+  #hpPlay .modes .mode span span { font-size: 18px; }
+  #hpPlay .modes .mode:hover { transform: translateY(-3px); box-shadow: none; }
+  #hpPlay .modes .mode:hover::after { bottom: -12px; top: 12px; }
+}
 </style>
 
 <div id="app">
@@ -934,27 +964,27 @@ canvas.pv-blocks { width: 90px; height: 63px; }
     <div class="title" id="title"></div>
     <p class="tag">Stapel blokken op een klif midden in de storm. Kies hoe je wilt spelen.</p>
     <div class="modes">
-      <button class="mode" data-mode="puzzle" style="--mc:#c77dff">
+      <button class="mode" data-mode="puzzle" style="--mc:#c77dff;--card:#9a6bd2;--card-d:#74489f;--t1:#fff3c4;--t2:#efe2ff">
         <span class="ico"><svg viewBox="0 0 40 40"><rect x="15" y="10" width="10" height="26" fill="#8d97c4"/><rect x="5" y="16" width="10" height="10" fill="#ffd166"/><rect x="25" y="20" width="10" height="10" fill="#c77dff"/><path d="M2 6h36" stroke="#ff5d8f" stroke-width="2.4" stroke-dasharray="4 3"/></svg></span>
-        <span><b>Puzzel</b><span>Zoveel mogelijk blokken onder de laser</span><em id="recPuzzle"></em></span>
+        <span><b>Puzzel</b><span>Onder de laser</span><em id="recPuzzle"></em></span>
         <span class="go">Spelen</span>
       </button>
-      <button class="mode" data-mode="race" style="--mc:#4cc9f0">
+      <button class="mode" data-mode="race" style="--mc:#4cc9f0;--card:#4ea9dc;--card-d:#2f7fae;--t1:#ffffff;--t2:#dff3ff">
         <span class="ico"><svg viewBox="0 0 40 40"><rect x="10" y="22" width="8" height="12" fill="#4cc9f0"/><rect x="18" y="14" width="8" height="20" fill="#3ddc97"/><rect x="26" y="26" width="6" height="8" fill="#ff9f43"/><rect x="4" y="5" width="4" height="4" fill="#fff"/><rect x="8" y="9" width="4" height="4" fill="#fff"/><rect x="12" y="5" width="4" height="4" fill="#fff"/><rect x="16" y="9" width="4" height="4" fill="#fff"/><rect x="20" y="5" width="4" height="4" fill="#fff"/><rect x="24" y="9" width="4" height="4" fill="#fff"/><rect x="28" y="5" width="4" height="4" fill="#fff"/><rect x="32" y="9" width="4" height="4" fill="#fff"/></svg></span>
-        <span><b>Race</b><span>Zo snel mogelijk naar de finishlijn</span><em id="recRace"></em></span>
+        <span><b>Race</b><span>Naar de finish</span><em id="recRace"></em></span>
         <span class="go">Spelen</span>
       </button>
-      <button class="mode" data-mode="survival" style="--mc:#ff5d8f">
+      <button class="mode" data-mode="survival" style="--mc:#ff5d8f;--card:#c9534f;--card-d:#9a3633;--t1:#f6d36b;--t2:#ffe2c2">
         <span class="ico"><svg viewBox="0 0 40 40"><rect x="10" y="26" width="20" height="8" fill="#4d7cfe"/><rect x="14" y="16" width="12" height="10" fill="#ff5d8f"/><rect x="16" y="6" width="8" height="10" fill="#ffd166"/></svg></span>
-        <span><b>Overleven</b><span>Zo hoog mogelijk met 3 levens</span><em id="recSurvival"></em></span>
+        <span><b>Overleven</b><span>Met 3 levens</span><em id="recSurvival"></em></span>
         <span class="go">Spelen</span>
       </button>
-    </div>
-    <button class="mode party" id="partyBtn">
+      <button class="mode party" id="partyBtn" style="--mc:#ffcf3a;--card:#c6d84a;--card-d:#9cb02b;--t1:#151515;--t2:#5f6f17">
       <span class="ico"><svg viewBox="0 0 40 40"><rect x="5" y="20" width="8" height="14" fill="#ff5c8a"/><rect x="16" y="12" width="8" height="22" fill="#ffd23f"/><rect x="27" y="17" width="8" height="17" fill="#3fc4f5"/><circle cx="9" cy="13" r="3.5" fill="#2b2140"/><circle cx="20" cy="5.5" r="3.5" fill="#2b2140"/><circle cx="31" cy="10" r="3.5" fill="#2b2140"/></svg></span>
-      <span><b>Party</b><span>Speel samen met vrienden via een code</span></span>
+      <span><b>Party</b><span>Met vrienden</span></span>
       <span class="go">Samen</span>
     </button>
+    </div>
     <div class="controls" id="startControls"></div>
     </section>
     <section class="hpanel" id="hpShop" hidden>
@@ -4479,11 +4509,22 @@ async function renderLeaderboard() {
 }
 
 
-/* sneeuwdak op de menubalk: precies zo breed als de balk en aan de uiteinden om de ronde hoeken heen gebogen */
+/* sneeuwdak (menubalk en spelkaarten): precies zo breed als het vlak en aan de uiteinden om de ronde hoeken heen gebogen */
 function buildSnowCap() {
-  const tb = document.querySelector('.tabbar'), el = tb && tb.querySelector('.tb-snow');
-  if (!el) return;
-  const bw = tb.offsetWidth; if (!bw) return;
+  const tb = document.querySelector('.tabbar');
+  if (tb) drawSnow(tb.querySelector('.tb-snow'), tb.offsetWidth, [0.2, 0.58]);
+  document.querySelectorAll('#hpPlay .modes .mode').forEach((card, i) => {
+    let el = card.querySelector('.snowcap');
+    if (!el) {
+      el = document.createElement('span'); el.className = 'snowcap'; el.setAttribute('aria-hidden', 'true'); card.prepend(el);
+      if (i === 0 || i === 3) { const bd = document.createElement('span'); bd.className = 'card-bird'; bd.setAttribute('aria-hidden', 'true'); bd.style.background = getComputedStyle(document.querySelector('.tb-bird')).backgroundImage + ' no-repeat center / contain'; card.prepend(bd); }
+    }
+    el.style.left = '-6px'; el.style.top = '-16px'; el.style.height = '46px';
+    drawSnow(el, card.offsetWidth, i % 2 ? [0.7] : [0.18, 0.62]);
+  });
+}
+function drawSnow(el, bw, berryAt) {
+  if (!el || !bw) return;
   const P = 6, W = bw + 2 * P, T = 16;            // T = bovenrand van de balk in het sneeuw-plaatje
   const L = P + 0.5, R = W - P - 0.5, hump = i => 6.5 + ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1 * 4;
   let top = `M${L} ${T + 18} C${L - 0.5} ${T + 6} ${L + 6} ${T - 5} ${L + 20} ${T - 5}`;
@@ -4495,12 +4536,12 @@ function buildSnowCap() {
   bot += ` Q${R - 4} ${T + 12} ${R - 12} ${T + 9}`;
   for (let i = 0; i < m; i++) { const x0 = R - 12 - i * st, deep = i % 3 === 1 ? 13 : i % 2 ? 4 : 8; bot += ` Q${(x0 - st / 2).toFixed(1)} ${T + 9 + deep} ${(x0 - st).toFixed(1)} ${T + 9}`; }
   bot += ` Q${L + 4} ${T + 12} ${L} ${T + 18} Z`;
-  const berries = [0.2, 0.58].map(f => { const x = L + (R - L) * f; return `<path d="M${x} ${T - 7} l-2 -6 M${x + 5} ${T - 7} l2 -6" stroke="#2b2140" stroke-width="1.6" fill="none"/><circle cx="${x - 2}" cy="${T - 5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 4.5}" cy="${T - 4.5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 1.5}" cy="${T - 10}" r="3.2" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/>`; }).join('');
+  const berries = berryAt.map(f => { const x = L + (R - L) * f; return `<path d="M${x} ${T - 7} l-2 -6 M${x + 5} ${T - 7} l2 -6" stroke="#2b2140" stroke-width="1.6" fill="none"/><circle cx="${x - 2}" cy="${T - 5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 4.5}" cy="${T - 4.5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 1.5}" cy="${T - 10}" r="3.2" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/>`; }).join('');
   el.style.width = W + 'px';
   el.innerHTML = `<svg viewBox="0 0 ${W} 46" preserveAspectRatio="none"><path d="${top}${bot}" fill="#fff" stroke="#2b2140" stroke-width="3" stroke-linejoin="round"/>`
     + `<path d="M${L + 14} ${T + 1} H${R - 14}" stroke="#dfe9f5" stroke-width="3" stroke-linecap="round" stroke-dasharray="26 34"/>${berries}</svg>`;
 }
-try { new ResizeObserver(buildSnowCap).observe(document.querySelector('.tabbar')); } catch (e) { addEventListener('resize', buildSnowCap); }
+try { const ro = new ResizeObserver(buildSnowCap); ro.observe(document.querySelector('.tabbar')); ro.observe(document.querySelector('#hpPlay .modes')); } catch (e) { addEventListener('resize', buildSnowCap); }
 buildSnowCap();
 
 applySkins(false);
