@@ -3530,7 +3530,7 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
   // laser: dikke ronde streep met inktrand en bewegende witte stippen
   if (mode === 'puzzle' && laserY !== null && !opt.shared) {
     const hot = Math.max(laserHot, laserFail);
-    const ex = Math.max(6, Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL;
+    const ex = Math.max(Math.max(6, Math.max(...curDef.runs.flat().map(Math.abs)) + 3.5) * CELL, Math.min(-left, right) - 42);   // altijd tot de schermranden, ook als de camera uitzoomt
     ctx.lineCap = 'round';
     ctx.strokeStyle = `rgba(255,92,138,${(0.25 + 0.35 * hot).toFixed(3)})`; ctx.lineWidth = 14;
     ctx.beginPath(); ctx.moveTo(-ex, laserY); ctx.lineTo(ex, laserY); ctx.stroke();
