@@ -826,9 +826,10 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   background: #fbf6ea; border: 3.5px solid var(--ink); border-radius: 26px; box-shadow: none; }
 .tabbar::before { content: ""; position: absolute; z-index: -1; left: -3.5px; right: -3.5px; top: 12px; bottom: -12px;    /* de onderplaat (3D-dikte) */
   background: #d9d1bf; border: 3.5px solid var(--ink); border-radius: 26px; }
-.tabbar::after { content: ""; position: absolute; left: -10px; right: -10px; top: -23px; height: 34px; pointer-events: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='34' viewBox='0 0 240 34'><path d='M0 9 Q12 2 26 8 Q38 1 52 7 Q60 3 70 8 Q86 1 100 9 Q112 3 124 8 Q140 0 156 8 Q166 3 178 9 Q192 2 206 8 Q220 2 240 9 V18 Q232 30 224 18 Q218 22 210 18 Q200 30 190 18 Q178 24 168 18 Q160 28 150 18 Q140 22 130 18 Q118 31 106 18 Q96 23 86 18 Q76 29 66 18 Q56 22 46 18 Q36 30 26 18 Q16 23 8 18 Q4 22 0 18 Z' fill='%23ffffff'/><path d='M0 9 Q12 2 26 8 Q38 1 52 7 Q60 3 70 8 Q86 1 100 9 Q112 3 124 8 Q140 0 156 8 Q166 3 178 9 Q192 2 206 8 Q220 2 240 9 M240 18 Q232 30 224 18 Q218 22 210 18 Q200 30 190 18 Q178 24 168 18 Q160 28 150 18 Q140 22 130 18 Q118 31 106 18 Q96 23 86 18 Q76 29 66 18 Q56 22 46 18 Q36 30 26 18 Q16 23 8 18 Q4 22 0 18' fill='none' stroke='%232b2140' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/><path d='M14 14 Q30 11 44 14 M120 13 Q136 10 150 13' stroke='%23dfe9f5' stroke-width='3' fill='none' stroke-linecap='round'/><g stroke='%232b2140' stroke-width='1.6'><path d='M58 6 L60 -1 M168 6 L166 -1 M172 7 L176 0' fill='none'/><circle cx='56' cy='7' r='3.4' fill='%23ff8a3d'/><circle cx='62' cy='8' r='3.4' fill='%23ff8a3d'/><circle cx='168' cy='8' r='3.4' fill='%23ff8a3d'/><circle cx='175' cy='7' r='3.4' fill='%23ff8a3d'/><circle cx='171.5' cy='2.5' r='3' fill='%23ff8a3d'/></g></svg>") repeat-x left top / 240px 34px; }
-.tb-bird { position: absolute; right: 22px; top: -46px; width: 46px; height: 37px; pointer-events: none; z-index: 2;
+.tabbar::after { content: none; }
+.tb-snow { position: absolute; left: -9.5px; top: -19.5px;   /* gemeten vanaf de binnenkant van de 3,5px-rand */ height: 46px; pointer-events: none; z-index: 1; display: block; }
+.tb-snow svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.tb-bird { position: absolute; right: 22px; top: -44px; width: 46px; height: 37px; pointer-events: none; z-index: 2;
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 48'><g stroke='%232b2140' stroke-width='2.4' stroke-linejoin='round'><path d='M22 40 L19 46 M30 40 L31 46' fill='none'/><path d='M44 20 Q58 26 54 34 Q46 30 40 28 Z' fill='%23707a8c'/><ellipse cx='28' cy='27' rx='17' ry='14' fill='%23e5525a'/><path d='M12 22 Q14 8 28 9 Q40 10 42 22 Q38 16 28 17 Q16 18 12 22 Z' fill='%23707a8c'/><path d='M26 22 Q38 20 46 30 Q36 36 26 30 Z' fill='%23a9b4c6'/><path d='M8 18 L1 20 L8 22 Z' fill='%23f2a93b'/></g><circle cx='14' cy='16' r='2' fill='%232b2140'/></svg>") no-repeat center / contain; transform: scaleX(-1); }
 .tabbar button, .tabbar button:first-of-type, .tabbar button:last-of-type { flex: 1; max-width: none; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; padding: 12px 2px 10px; min-height: 76px; background: #fbf6ea; border: 0; border-radius: 0; box-shadow: none; color: #111;
@@ -850,7 +851,6 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 @media (min-width: 960px) and (min-height: 560px) {
   .tabbar { flex-direction: column; justify-content: flex-start; align-self: start; margin: 34px 12px 26px 18px; border-radius: 26px; }
   .tabbar::before { top: 12px; bottom: -12px; left: -3.5px; right: -3.5px; }
-  .tabbar::after { left: -10px; right: -10px; }
   .tb-bird { right: 18px; }
   .tabbar > .tb-head { display: none; }
   .tabbar::marker { content: none; }
@@ -979,7 +979,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
       <div class="card acct" id="acctBox"></div>
     </section>
     </div>
-    <nav class="tabbar" aria-label="Menu"><span class="tb-bird" aria-hidden="true"></span>
+    <nav class="tabbar" aria-label="Menu"><span class="tb-snow" aria-hidden="true"></span><span class="tb-bird" aria-hidden="true"></span>
       <button data-tab="play" class="on"><svg class="ti" viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="38" cy="56" rx="21" ry="4.5" fill="#000" opacity=".1"/><g stroke="#2b2140" stroke-width="2.6" stroke-linejoin="round">
 <path d="M46 30 L52 34 V53 L46 55 Z" fill="#8f5a35"/>
 <rect x="14" y="28" width="32" height="27" rx="2" fill="#c3864f"/>
@@ -4471,6 +4471,31 @@ async function renderLeaderboard() {
     });
   } catch (e) { const list = box.querySelector('.lb-list'); if (list) list.innerHTML = `<li class="lb-wait">${niceErr(e)}</li>`; }
 }
+
+
+/* sneeuwdak op de menubalk: precies zo breed als de balk en aan de uiteinden om de ronde hoeken heen gebogen */
+function buildSnowCap() {
+  const tb = document.querySelector('.tabbar'), el = tb && tb.querySelector('.tb-snow');
+  if (!el) return;
+  const bw = tb.offsetWidth; if (!bw) return;
+  const P = 6, W = bw + 2 * P, T = 16;            // T = bovenrand van de balk in het sneeuw-plaatje
+  const L = P + 0.5, R = W - P - 0.5, hump = i => 6.5 + ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1 * 4;
+  let top = `M${L} ${T + 18} C${L - 0.5} ${T + 6} ${L + 6} ${T - 5} ${L + 20} ${T - 5}`;
+  const n = Math.max(2, Math.round((R - L - 40) / 28)), step = (R - L - 40) / n;
+  for (let i = 0; i < n; i++) { const x0 = L + 20 + i * step; top += ` Q${(x0 + step / 2).toFixed(1)} ${(T - 5 - hump(i)).toFixed(1)} ${(x0 + step).toFixed(1)} ${(T - 5 + (i % 2 ? 1 : 0)).toFixed(1)}`; }
+  top += ` C${R - 6} ${T - 5} ${R + 0.5} ${T + 6} ${R} ${T + 18}`;
+  // onderkant met druppels, van rechts terug naar links
+  let bot = '', m = Math.max(3, Math.round((R - L - 24) / 22)), st = (R - L - 24) / m;
+  bot += ` Q${R - 4} ${T + 12} ${R - 12} ${T + 9}`;
+  for (let i = 0; i < m; i++) { const x0 = R - 12 - i * st, deep = i % 3 === 1 ? 13 : i % 2 ? 4 : 8; bot += ` Q${(x0 - st / 2).toFixed(1)} ${T + 9 + deep} ${(x0 - st).toFixed(1)} ${T + 9}`; }
+  bot += ` Q${L + 4} ${T + 12} ${L} ${T + 18} Z`;
+  const berries = [0.2, 0.58].map(f => { const x = L + (R - L) * f; return `<path d="M${x} ${T - 7} l-2 -6 M${x + 5} ${T - 7} l2 -6" stroke="#2b2140" stroke-width="1.6" fill="none"/><circle cx="${x - 2}" cy="${T - 5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 4.5}" cy="${T - 4.5}" r="3.6" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/><circle cx="${x + 1.5}" cy="${T - 10}" r="3.2" fill="#ff8a3d" stroke="#2b2140" stroke-width="1.6"/>`; }).join('');
+  el.style.width = W + 'px';
+  el.innerHTML = `<svg viewBox="0 0 ${W} 46" preserveAspectRatio="none"><path d="${top}${bot}" fill="#fff" stroke="#2b2140" stroke-width="3" stroke-linejoin="round"/>`
+    + `<path d="M${L + 14} ${T + 1} H${R - 14}" stroke="#dfe9f5" stroke-width="3" stroke-linecap="round" stroke-dasharray="26 34"/>${berries}</svg>`;
+}
+try { new ResizeObserver(buildSnowCap).observe(document.querySelector('.tabbar')); } catch (e) { addEventListener('resize', buildSnowCap); }
+buildSnowCap();
 
 applySkins(false);
 $('pName').value = profile.name;
