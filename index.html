@@ -4616,7 +4616,7 @@ let titleUp = true;
   const pAcct = Promise.race([new Promise(r => setTimeout(r, 2500)), (async () => { for (let i = 0; i < 25 && ACCOUNTS_OK && !profile.cloud; i++) await new Promise(r => setTimeout(r, 100)); })()]);
   [pImg, pFonts, pAcct].forEach(pr => pr.then(tick));
   Promise.all([pImg, pFonts, pAcct, new Promise(r => setTimeout(r, 700))]).then(() => {
-    $('ttWho').textContent = profile.cloud ? `Ingelogd als ${profile.name}` : ACCOUNTS_OK ? 'Spelen als gast' : '';
+    $('ttWho').textContent = profile.cloud ? `Ingelogd als ${profile.name}` : '';   // als gast: niets
     $('ttLoad').hidden = true; $('ttGo').hidden = false;
     const start = () => {
       if (!titleUp) return; titleUp = false;
