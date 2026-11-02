@@ -12,6 +12,9 @@ const dir = __dirname;
 const IN = process.argv[2] || path.join(dir, 'index.html'), OUT = process.argv[3] || path.join(dir, 'site', 'index.html');   // optioneel: eigen in- en uitvoerbestand
 let html = fs.readFileSync(IN, 'utf8');
 const head = fs.readFileSync(path.join(dir, 'site_head.html'), 'utf8');
+// 0. afbeeldingen uit assets/ meeleveren in het bestand zelf (dan blijft het één bestand om te uploaden)
+html = html.replace(/assets\/([a-z0-9_-]+)\.(webp|png|jpg)/g, (m, f, ext) =>
+  `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,` + fs.readFileSync(path.join(dir, 'assets', `${f}.${ext}`)).toString('base64'));
 
 // 1. inline <script> (zonder src) verdoezelen
 let scripts = 0;

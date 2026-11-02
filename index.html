@@ -901,6 +901,45 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   #hpPlay .modes .mode:hover { transform: translateY(-3px); box-shadow: none; }
   #hpPlay .modes .mode:hover::after { bottom: -12px; top: 12px; }
 }
+
+/* ===== titelscherm: de art, met langzaam inzoomen, drijvende wolkjes en fonkelingen; onderaan de startknop ===== */
+.title-ov { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #6cc4f5; cursor: pointer; user-select: none; -webkit-user-select: none; transition: opacity .55s ease, transform .55s ease; }
+.title-ov.out { opacity: 0; transform: scale(1.06); pointer-events: none; }
+.title-ov[hidden] { display: none; }
+.tt-blur { position: absolute; inset: -40px; background: center / cover; filter: blur(26px) saturate(1.15); opacity: .9; }
+.tt-art { position: absolute; top: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 45%;
+  animation: ttZoom 26s ease-in-out infinite alternate; box-shadow: 0 0 60px rgba(0,0,0,.25); }
+@keyframes ttZoom { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.06); } }
+.tt-cloud { position: absolute; width: 260px; height: 90px; border-radius: 90px; background: rgba(255,255,255,.55); filter: blur(10px); pointer-events: none; animation: ttDrift linear infinite; }
+.tt-cloud::before, .tt-cloud::after { content: ""; position: absolute; border-radius: 50%; background: inherit; }
+.tt-cloud::before { width: 120px; height: 120px; left: 40px; top: -55px; } .tt-cloud::after { width: 90px; height: 90px; left: 130px; top: -35px; }
+.tt-cloud.c1 { top: 34%; animation-duration: 46s; animation-delay: -10s; }
+.tt-cloud.c2 { top: 58%; animation-duration: 62s; animation-delay: -38s; transform: scale(.75); opacity: .8; }
+.tt-cloud.c3 { top: 14%; animation-duration: 54s; animation-delay: -24s; transform: scale(.6); opacity: .7; }
+@keyframes ttDrift { from { left: -320px; } to { left: 100%; } }
+.tt-sparks i { position: absolute; width: 14px; height: 14px; pointer-events: none; animation: ttTwinkle 3.2s ease-in-out infinite;
+  background: radial-gradient(circle, #fff 0 18%, transparent 20%), linear-gradient(transparent 44%, #fff 44% 56%, transparent 56%), linear-gradient(90deg, transparent 44%, #fff 44% 56%, transparent 56%); }
+.tt-sparks i:nth-child(1) { left: 22%; top: 9%; animation-delay: 0s; } .tt-sparks i:nth-child(2) { left: 78%; top: 13%; animation-delay: .8s; }
+.tt-sparks i:nth-child(3) { left: 50%; top: 27%; animation-delay: 1.6s; } .tt-sparks i:nth-child(4) { left: 16%; top: 44%; animation-delay: 2.2s; }
+.tt-sparks i:nth-child(5) { left: 84%; top: 48%; animation-delay: 1.1s; } .tt-sparks i:nth-child(6) { left: 60%; top: 66%; animation-delay: 2.7s; }
+@keyframes ttTwinkle { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 50% { opacity: .95; transform: scale(1) rotate(45deg); } }
+.tt-bottom { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 20px; }
+.tt-who { font-family: "Baloo 2", var(--body), sans-serif; font-weight: 800; font-size: 15px; color: #fff; background: rgba(43,33,64,.55); border-radius: 999px; padding: 4px 14px; min-height: 1em; }
+.tt-who:empty { visibility: hidden; }
+.tt-load { display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: "Baloo 2", var(--body), sans-serif; font-weight: 800; color: #fff; text-shadow: 0 2px 0 rgba(43,33,64,.6); }
+.tt-load > span { width: 200px; height: 14px; border-radius: 99px; background: #fbf6ea; border: 3px solid var(--ink); overflow: hidden; }
+.tt-load i { display: block; height: 100%; width: 0; background: #c6d84a; transition: width .3s ease; }
+.tt-go { position: relative; z-index: 0; display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 230px; padding: 14px 34px 16px; border: 0; background: none; cursor: pointer;
+  font-family: "Baloo 2", var(--body), sans-serif; color: #151515; animation: ttPulse 1.6s ease-in-out infinite; }
+.tt-go[hidden] { display: none; }
+.tt-go::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #c6d84a; border: 3.5px solid var(--ink); border-radius: 22px; }
+.tt-go::after { content: ""; position: absolute; z-index: -2; left: 0; right: -4px; top: 9px; bottom: -9px; background: #9cb02b; border: 3.5px solid var(--ink); border-radius: 22px; }
+.tt-go b { font-weight: 800; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: 1px; }
+.tt-go span { font-weight: 700; font-size: 16px; color: #4f5d12; }
+.tt-go:active { transform: translate(2px, 5px); animation: none; }
+@keyframes ttPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@media (min-width: 700px) { .tt-bottom { bottom: 6vh; } }
+@media (prefers-reduced-motion: reduce) { .tt-art, .tt-cloud, .tt-sparks i, .tt-go { animation: none; } }
 </style>
 
 <div id="app">
@@ -1066,6 +1105,17 @@ canvas.pv-blocks { width: 90px; height: 63px; }
       <div class="over-h dp-title">Dagelijkse beloning</div>
       <div id="dailyPopBox"></div>
       <button class="link-btn soft" id="dailyLater">Later</button>
+    </div>
+  </div>
+  <div class="title-ov" id="titleOv" role="dialog" aria-label="Stormtoren">
+    <div class="tt-blur" aria-hidden="true"></div>
+    <img class="tt-art" src="assets/titel.webp" alt="Stormtoren" draggable="false">
+    <div class="tt-cloud c1" aria-hidden="true"></div><div class="tt-cloud c2" aria-hidden="true"></div><div class="tt-cloud c3" aria-hidden="true"></div>
+    <div class="tt-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="tt-bottom">
+      <div class="tt-who" id="ttWho"></div>
+      <div class="tt-load" id="ttLoad"><span><i id="ttBar"></i></span><b>Laden…</b></div>
+      <button class="tt-go" id="ttGo" hidden><b>Spelen</b><span>Tik om te starten</span></button>
     </div>
   </div>
   <div id="toasts" aria-live="polite"></div>
@@ -4308,6 +4358,7 @@ $('prfName').addEventListener('change', () => {
 /* dagelijkse beloning als pop-up bij het openen van de homepage (één keer per dag) */
 let dailyShownFor = '';
 function maybeShowDaily() {
+  if (titleUp) return;
   if (dailyState().claimed || dailyShownFor === todayStr() || $('homeOv').hidden) return;
   dailyShownFor = todayStr();
   const close = () => { $('dailyOv').hidden = true; };
@@ -4547,7 +4598,34 @@ buildSnowCap();
 applySkins(false);
 $('pName').value = profile.name;
 restoreSession();
-ensureQuests(); renderProfileBar(); showTab('play'); setTimeout(maybeShowDaily, 600);
+ensureQuests(); renderProfileBar(); showTab('play');
+
+/* ---------- titelscherm: alleen bij het opstarten; laadt alles klaar en ontgrendelt het geluid bij de eerste tik ---------- */
+let titleUp = true;
+(() => {
+  const ov = $('titleOv'), bar = $('ttBar');
+  if (store('st_dev_notitle') === '1') { ov.hidden = true; titleUp = false; return; }   // alleen voor tests
+  let done = 0; const steps = 3, tick = () => { done++; bar.style.width = Math.round(done / steps * 100) + '%'; };
+  const img = ov.querySelector('.tt-art');
+  ov.querySelector('.tt-blur').style.backgroundImage = `url("${img.getAttribute('src')}")`;   // vervaagde rand op brede schermen, uit hetzelfde plaatje
+  const pImg = img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; });
+  const pFonts = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
+  const pAcct = Promise.race([new Promise(r => setTimeout(r, 2500)), (async () => { for (let i = 0; i < 25 && ACCOUNTS_OK && !profile.cloud; i++) await new Promise(r => setTimeout(r, 100)); })()]);
+  [pImg, pFonts, pAcct].forEach(pr => pr.then(tick));
+  Promise.all([pImg, pFonts, pAcct, new Promise(r => setTimeout(r, 700))]).then(() => {
+    $('ttWho').textContent = profile.cloud ? `Ingelogd als ${profile.name}` : ACCOUNTS_OK ? 'Spelen als gast' : '';
+    $('ttLoad').hidden = true; $('ttGo').hidden = false;
+    const start = () => {
+      if (!titleUp) return; titleUp = false;
+      initAudio(); tone(523.25, 0.12, 'triangle', 0.1); tone(784, 0.18, 'triangle', 0.08, null, 0.09); haptic('medium');
+      ov.classList.add('out'); setTimeout(() => { ov.hidden = true; maybeShowDaily(); }, 560);
+      removeEventListener('keydown', onKey);
+    };
+    const onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); start(); } };
+    ov.addEventListener('click', start); addEventListener('keydown', onKey);
+  });
+})();
+if (!titleUp) setTimeout(maybeShowDaily, 600);
 resize();
 renderHearts(false);
 window.__storm = () => ({ kind: curDef.kind, pillarSig: curDef.blocks.map(b => b.join(',')).join(';'), firstQ: queue.slice(0, 2).join(''), state, mode, lives, placed, ax: active ? active.x : null, ay: active ? active.y : null, at: active ? active.type : null, result,  bodies: pieces.map(b => ({ t: b.pd.type, x: +b.position.x.toFixed(1), y: +b.position.y.toFixed(1), a: +(b.angle * 180 / Math.PI).toFixed(1), lost: b.pd.lost })) });
