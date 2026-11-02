@@ -1472,7 +1472,8 @@ const { World, Vec2, Box, Chain, Transform, AABB, testOverlap } = planck;
 const HZ = 120, STEP_S = 1 / HZ, V60 = 1;   // V60 = 1: stuk.speed staat al in px per 1/60 s
 const GRAVITY = 30;                          // vakjes per s²
 const INSET = 0.035;                         // physics-vorm ~1 px per kant kleiner dan wat je ziet: gaten zijn net iets vergevingsgezinder
-const TOL_MOVE = 0.045;                      // vallend blok mag ~1,5 px langs een rand schuren
+const TOL_MOVE = 0.045;                      // vallend blok mag ~1,5 px langs een rand van het platform schuren
+const TOL_DYN = 0.09;                        // ...en ~3 px langs losse blokken (die liggen nooit op de pixel precies); bij het landen lost dropActive dat op
 const CORE_INSET = 0.06;                     // vangnet in de pilaar ligt ~2 px binnen de rand
 const world = new World({ gravity: Vec2(0, GRAVITY) });
 const pieces = [];                           // alle stukken in de wereld
@@ -1639,7 +1640,7 @@ for (const type of TYPES) {
     return { cx: (ax + bx) / 2, cy: (ay + by) / 2, hx: (bx - ax) / 2, hy: (by - ay) / 2 };
   });
   const shapesFor = tol => rects.map(r => Box(Math.max(0.02, r.hx - tol), Math.max(0.02, r.hy - tol), Vec2(r.cx, r.cy), 0));
-  GEOM[type] = { mx, my, rects, test: { move: shapesFor(TOL_MOVE), strict: shapesFor(0) } };
+  GEOM[type] = { mx, my, rects, test: { move: shapesFor(TOL_DYN), strict: shapesFor(0) } };
 }
 
 /* een "stuk": draagt de spelgegevens (pd) en spiegelt na elke physics-stap positie, hoek, grenzen en snelheid in px */
