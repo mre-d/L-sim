@@ -2987,7 +2987,8 @@ function resize() {
   W = cv.clientWidth || innerWidth; H = cv.clientHeight || innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   // speelveld = de ruimte tussen de bovenbalk en de knoppen onderin, zodat de toren nooit achter de knoppen valt
-  SCALE = Math.min(W / (CELL * 12.5), (H - VIEW_TOP - VIEW_BOT) / (CELL * 19.5));
+  const viewCells = W < H ? 15 : 12.5;   // telefoon rechtop: camera iets verder weg, zodat je meer van de toren ziet
+  SCALE = Math.min(W / (CELL * viewCells), (H - VIEW_TOP - VIEW_BOT) / (CELL * 19.5));
   K = SCALE * DPR;
   const s = Math.max(8, Math.ceil(CELL * K)); SPR_S = s;
   for (const t of TYPES) {
