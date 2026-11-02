@@ -945,6 +945,28 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .tt-go:active { transform: translate(1px, 4px); }
 @keyframes ttPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 .tt-who { order: 3; margin-top: 30px; font-size: 13px; padding: 3px 12px; background: rgba(43,33,64,.45); }
+
+/* homepage met de art: logo bovenaan, schilderachtige achtergrond achter de menuschermen */
+#homeOv, #partyOv, #setOv { background: #8fd3ff url(assets/achtergrond.webp) center bottom / cover no-repeat; }
+.home-logo { display: block; width: min(340px, 86%); height: auto; margin: 4px auto -2px; filter: drop-shadow(0 6px 10px rgba(43,33,64,.22));
+  animation: logoIn .6s cubic-bezier(.2,1.4,.4,1) both; user-select: none; -webkit-user-drag: none; }
+@keyframes logoIn { from { opacity: 0; transform: translateY(-14px) scale(.92); } }
+#hpPlay .tag { color: #1d3b5c; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+@media (min-width: 960px) and (min-height: 560px) {
+  #homeOv { background-position: center 75%; }
+  .home-logo { width: min(460px, 60%); }
+}
+@media (min-width: 960px) and (min-height: 560px) and (max-height: 840px) { .home-logo { width: min(360px, 50%); } }
+@media (prefers-reduced-motion: reduce) { .home-logo { animation: none; } }
+
+/* smalle schermen: XP-balk niet laten wegvallen in de profielbalk */
+.pb-lv .xpbar { min-width: 34px; }
+@media (max-width: 380px) { .pb-lv { gap: 4px; } .pb-lv i { min-width: 22px; height: 20px; font-size: 12px; } .pb-txt { min-width: 0; overflow: hidden; } .pbar { gap: 7px; } .pb-me { padding-right: 9px; gap: 8px; } .coins { padding: 4px 10px 4px 6px; font-size: 16px; } .pb-txt b { font-size: 16px; } }
+
+.pb-txt { flex: 1 1 auto; min-width: 0; }
+.pb-lv { min-width: 0; width: 100%; }
+.pb-lv .xpbar { flex: 1 1 auto; min-width: 20px; width: auto; }
+.pb-lv i, .pb-lv .pb-wins { flex: 0 0 auto; }
 </style>
 
 <div id="app">
@@ -1005,7 +1027,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
     </header>
     <div class="hscroll" id="hScroll">
     <section class="hpanel" id="hpPlay">
-    <div class="title" id="title"></div>
+    <img class="home-logo" src="assets/logo.webp" alt="Stormtoren" draggable="false">
     <p class="tag">Stapel blokken op een klif midden in de storm. Kies hoe je wilt spelen.</p>
     <div class="modes">
       <button class="mode" data-mode="puzzle" style="--mc:#c77dff;--card:#9a6bd2;--card-d:#74489f;--t1:#fff3c4;--t2:#efe2ff">
@@ -1374,7 +1396,7 @@ const HEART_SVG = '<svg class="heart" viewBox="0 0 26 24"><path d="M13 22S2 15.2
   const words = ['STORM', 'TOREN'];
   const cols = ['#3fc4f5','#ffd23f','#b46cff','#ff8c42','#4d7dff','#56d364','#ff5c8a'];
   let n = 0;
-  $('title').innerHTML = words.map(w => '<div class="row">' + [...w].map(ch => {
+  if ($('title')) $('title').innerHTML = words.map(w => '<div class="row">' + [...w].map(ch => {
     const c = cols[n % cols.length], r = (Math.random()*10-5).toFixed(1), d = (n*0.06 + 0.1).toFixed(2); n++;
     return `<i style="background:${c};--r0:${r*3}deg;transform:rotate(${r}deg);animation-delay:${d}s">${ch}</i>`;
   }).join('') + '</div>').join('');
