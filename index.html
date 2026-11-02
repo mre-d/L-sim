@@ -908,21 +908,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .title-ov[hidden] { display: none; }
 .tt-blur { position: absolute; inset: -40px; background: center / cover; filter: blur(26px) saturate(1.15); opacity: .9; }
 .tt-art { position: absolute; top: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 45%;
-  animation: ttZoom 26s ease-in-out infinite alternate; box-shadow: 0 0 60px rgba(0,0,0,.25); }
-@keyframes ttZoom { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.06); } }
-.tt-cloud { position: absolute; width: 260px; height: 90px; border-radius: 90px; background: rgba(255,255,255,.55); filter: blur(10px); pointer-events: none; animation: ttDrift linear infinite; }
-.tt-cloud::before, .tt-cloud::after { content: ""; position: absolute; border-radius: 50%; background: inherit; }
-.tt-cloud::before { width: 120px; height: 120px; left: 40px; top: -55px; } .tt-cloud::after { width: 90px; height: 90px; left: 130px; top: -35px; }
-.tt-cloud.c1 { top: 34%; animation-duration: 46s; animation-delay: -10s; }
-.tt-cloud.c2 { top: 58%; animation-duration: 62s; animation-delay: -38s; transform: scale(.75); opacity: .8; }
-.tt-cloud.c3 { top: 14%; animation-duration: 54s; animation-delay: -24s; transform: scale(.6); opacity: .7; }
-@keyframes ttDrift { from { left: -320px; } to { left: 100%; } }
-.tt-sparks i { position: absolute; width: 14px; height: 14px; pointer-events: none; animation: ttTwinkle 3.2s ease-in-out infinite;
-  background: radial-gradient(circle, #fff 0 18%, transparent 20%), linear-gradient(transparent 44%, #fff 44% 56%, transparent 56%), linear-gradient(90deg, transparent 44%, #fff 44% 56%, transparent 56%); }
-.tt-sparks i:nth-child(1) { left: 22%; top: 9%; animation-delay: 0s; } .tt-sparks i:nth-child(2) { left: 78%; top: 13%; animation-delay: .8s; }
-.tt-sparks i:nth-child(3) { left: 50%; top: 27%; animation-delay: 1.6s; } .tt-sparks i:nth-child(4) { left: 16%; top: 44%; animation-delay: 2.2s; }
-.tt-sparks i:nth-child(5) { left: 84%; top: 48%; animation-delay: 1.1s; } .tt-sparks i:nth-child(6) { left: 60%; top: 66%; animation-delay: 2.7s; }
-@keyframes ttTwinkle { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 50% { opacity: .95; transform: scale(1) rotate(45deg); } }
+  box-shadow: 0 0 60px rgba(0,0,0,.25); }   /* rustig en scherp: geen inzoom-effect */
 .tt-bottom { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 20px; }
 .tt-who { font-family: "Baloo 2", var(--body), sans-serif; font-weight: 800; font-size: 15px; color: #fff; background: rgba(43,33,64,.55); border-radius: 999px; padding: 4px 14px; min-height: 1em; }
 .tt-who:empty { visibility: hidden; }
@@ -939,7 +925,7 @@ canvas.pv-blocks { width: 90px; height: 63px; }
 .tt-go:active { transform: translate(2px, 5px); animation: none; }
 @keyframes ttPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 @media (min-width: 700px) { .tt-bottom { bottom: 6vh; } }
-@media (prefers-reduced-motion: reduce) { .tt-art, .tt-cloud, .tt-sparks i, .tt-go { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tt-go { animation: none; } }
 </style>
 
 <div id="app">
@@ -1110,8 +1096,6 @@ canvas.pv-blocks { width: 90px; height: 63px; }
   <div class="title-ov" id="titleOv" role="dialog" aria-label="Stormtoren">
     <div class="tt-blur" aria-hidden="true"></div>
     <img class="tt-art" src="assets/titel.webp" alt="Stormtoren" draggable="false">
-    <div class="tt-cloud c1" aria-hidden="true"></div><div class="tt-cloud c2" aria-hidden="true"></div><div class="tt-cloud c3" aria-hidden="true"></div>
-    <div class="tt-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="tt-bottom">
       <div class="tt-who" id="ttWho"></div>
       <div class="tt-load" id="ttLoad"><span><i id="ttBar"></i></span><b>Laden…</b></div>
