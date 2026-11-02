@@ -1708,6 +1708,7 @@ let state = 'menu', paused = false;
 let active = null, bag = [], queue = [];
 let lives = 3, placed = 0, perfects = 0, streak = 0, curH = 0, maxH = 0, nextMilestone = 5, recordBeaten = false;
 let best = parseFloat(store('st_best') || '0') || 0;
+let camZoom = 1;
 let spawnTimer = 0, camY = -4*CELL, shake = 0, flashA = 0, hurtA = 0, overTimer = 0, now = 0;
 let wind = { phase: 'calm', t: 10, dir: 1, nudgeT: 0, vis: 0 };
 let lightningT = rand(8, 18);
@@ -2019,7 +2020,7 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (!ptr || e.pointerId !== ptr.id) return;
   const dx = e.clientX - ptr.lx; ptr.lx = e.clientX; ptr.acc += dx;
-  const step = CELL * SCALE * 0.8;
+  const step = CELL * SCALE * camZoom * 0.8;
   while (ptr.acc > step) { tryMove(1); ptr.acc -= step; }
   while (ptr.acc < -step) { tryMove(-1); ptr.acc += step; }
   const tdx = e.clientX - ptr.x0, tdy = e.clientY - ptr.y0;
@@ -2987,8 +2988,7 @@ function resize() {
   W = cv.clientWidth || innerWidth; H = cv.clientHeight || innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   // speelveld = de ruimte tussen de bovenbalk en de knoppen onderin, zodat de toren nooit achter de knoppen valt
-  const viewCells = W < H ? 15 : 12.5;   // telefoon rechtop: camera iets verder weg, zodat je meer van de toren ziet
-  SCALE = Math.min(W / (CELL * viewCells), (H - VIEW_TOP - VIEW_BOT) / (CELL * 19.5));
+  SCALE = Math.min(W / (CELL * 12.5), (H - VIEW_TOP - VIEW_BOT) / (CELL * 19.5));
   K = SCALE * DPR;
   const s = Math.max(8, Math.ceil(CELL * K)); SPR_S = s;
   for (const t of TYPES) {
@@ -3114,6 +3114,14 @@ function update(dt) {
   const target = mode === 'puzzle' && laserY !== null ? (laserY - 4 * CELL) / 2 : Math.min(landedTop(), 0) - 4 * CELL;
   laserHot *= Math.exp(-dt * 5); laserFail *= Math.exp(-dt * 2);
   camY += (target - camY) * (1 - Math.exp(-dt * 2.4));
+  // uitzoomen naarmate de toren breder wordt: de verste blokken (links of rechts van het midden) + 2 vakjes marge passen in beeld
+  {
+    let reach = 0;
+    for (const b of pieces) if (b.pd.landed && !b.pd.lost && b.position.y < SEA_Y) reach = Math.max(reach, -b.bounds.min.x, b.bounds.max.x);
+    const viewHalf = W / (2 * SCALE);                       // halve schermbreedte in wereld-pixels bij zoom 1
+    const zTarget = state === 'menu' ? 1 : clamp(viewHalf / (reach + 2 * CELL), 0.62, 1);
+    camZoom += (zTarget - camZoom) * (1 - Math.exp(-dt * 1.6));
+  }
   shake *= Math.exp(-dt * 11); flashA *= Math.exp(-dt * 5); hurtA *= Math.exp(-dt * 3);
 
   // weer
@@ -3439,7 +3447,7 @@ function drawSharedLaser(t, left, right) {
   }
 }
 function drawViews(t) {
-  const full = { x: 0, y: 0, w: W, h: H, k: K };
+  const full = { x: 0, y: 0, w: W, h: H, k: K * camZoom };   // camZoom: uitzoomen als de toren breed wordt
   const pv = partyView();
   const landscape = W > H * 1.05;
   hud.classList.toggle('compact', pv && landscape);
