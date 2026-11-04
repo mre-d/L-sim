@@ -3219,13 +3219,24 @@ function updateWind(dt) {
 }
 
 /* ---------- render ---------- */
-function drawGuideBeam(t, gx0, gx1, gy0) {   // witte straal onder het vallende blok
-  const gg = ctx.createLinearGradient(0, gy0, 0, gy0 + 14 * CELL);
-  gg.addColorStop(0, 'rgba(255,255,255,.4)'); gg.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = gg; ctx.fillRect(gx0, gy0, gx1 - gx0, 14 * CELL);
+/* witte straal onder het vallende blok: per kolom vanaf het onderste vakje van die kolom, zodat hij de vorm van het blok volgt */
+function drawGuideBeam(t, cx, cy, offs, angle) {
+  const qa = Math.round(angle / (Math.PI / 2)) * (Math.PI / 2), ca = Math.round(Math.cos(qa)), sa = Math.round(Math.sin(qa)), L = 14 * CELL;
+  const cols = new Map();
+  for (const o of offs) {
+    const rx = o.x * ca - o.y * sa, ry = o.x * sa + o.y * ca, k = Math.round(rx / CELL * 2);
+    const c = cols.get(k); if (!c || ry + CELL / 2 > c.bot) cols.set(k, { x0: rx - CELL / 2, bot: ry + CELL / 2 });
+  }
+  const list = [...cols.values()].sort((a, b) => a.x0 - b.x0);
+  for (const c of list) {
+    const y0 = cy + c.bot, gg = ctx.createLinearGradient(0, y0, 0, y0 + L);
+    gg.addColorStop(0, 'rgba(255,255,255,.4)'); gg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gg; ctx.fillRect(cx + c.x0, y0, CELL, L);
+  }
+  const a = list[0], b = list[list.length - 1];
   ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.6; ctx.setLineDash([3, 6]); ctx.lineCap = 'round';
   ctx.lineDashOffset = -t * 0.02;
-  ctx.beginPath(); ctx.moveTo(gx0, gy0); ctx.lineTo(gx0, gy0 + 14 * CELL); ctx.moveTo(gx1, gy0); ctx.lineTo(gx1, gy0 + 14 * CELL); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + a.x0, cy + a.bot); ctx.lineTo(cx + a.x0, cy + a.bot + L); ctx.moveTo(cx + b.x0 + CELL, cy + b.bot); ctx.lineTo(cx + b.x0 + CELL, cy + b.bot + L); ctx.stroke();
   ctx.setLineDash([]); ctx.lineCap = 'butt';
 }
 function stepFx(particles, rings, dt) {
@@ -3562,14 +3573,8 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
 
   // geleidestraal van het actieve blok
   if (active && state === 'play' && settings.guide) {
-    const p = active, ca = Math.cos(p.angle), sa = Math.sin(p.angle);
-    let mnx = 1e9, mxx = -1e9, mxy = -1e9;
-    for (const o of p.offs) {
-      const rx = o.x * ca - o.y * sa, ry = o.x * sa + o.y * ca;
-      mnx = Math.min(mnx, rx - CELL / 2); mxx = Math.max(mxx, rx + CELL / 2); mxy = Math.max(mxy, ry + CELL / 2);
-    }
-    const dx = p.visX - p.x;
-    drawGuideBeam(t, p.x + mnx + dx, p.x + mxx + dx, p.y + mxy);
+    const p = active;
+    drawGuideBeam(t, p.visX, p.y, p.offs, p.angle);
   }
 
   // blokken
@@ -3664,13 +3669,8 @@ function drawOppWorld(t, vp, o, opt = {}) {
   };
   // geleidestraal onder het vallende blok
   if (o.act && settings.guide && TYPE_PD[o.act.t]) {
-    const q = o.act, qa = Math.round(q.a / (Math.PI / 2)) * (Math.PI / 2), ca = Math.cos(qa), sa = Math.sin(qa);
-    let mnx = 1e9, mxx = -1e9, mxy = -1e9;
-    for (const f of TYPE_PD[q.t].offs) {
-      const rx = f.x * ca - f.y * sa, ry = f.x * sa + f.y * ca;
-      mnx = Math.min(mnx, rx - CELL / 2); mxx = Math.max(mxx, rx + CELL / 2); mxy = Math.max(mxy, ry + CELL / 2);
-    }
-    drawGuideBeam(t, q.x + mnx, q.x + mxx, q.y + mxy);
+    const q = o.act;
+    drawGuideBeam(t, q.x, q.y, TYPE_PD[q.t].offs, q.a);
   }
   ctx.globalAlpha = 0.18;
   for (const q of o.pieces) { const d = TYPE_PD[q.t]; ctx.save(); ctx.translate(q.x + 3, q.y + 4); ctx.rotate(q.a); blit(d, 'shadow'); ctx.restore(); }
