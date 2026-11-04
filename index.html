@@ -3949,6 +3949,43 @@ function drawIslandsStone() {
     }
   }
 }
+/* één vakje van een houten paal/stam; een paal kan meerdere kolommen breed zijn (curDef.poleAt) */
+function drawLogCell(sx, sy, x, y, has, off, T) {
+  const col = Math.round(sx + 0.5), pa = curDef.poleAt;
+  const same = d => pa ? pa[col + d] === pa[col] && has(sx + d, sy) : false;
+  let gl = 0, gr = 0; while (same(gl - 1) && gl > -8) gl--; while (same(gr + 1) && gr < 8) gr++;   // breedte van deze paal
+  const lE = gl === 0, rE = gr === 0, n = Math.round(col * 31 + (sy * CELL - off) / CELL * 17);
+  const C = CELL, inkA = 'rgba(42,33,64,.55)';
+  ctx.fillStyle = '#c47f45'; ctx.fillRect(x - 0.3, y - 0.3, C + 0.6, C + 0.6);                      // kernhout
+  if (lE) { ctx.fillStyle = '#7a4424'; ctx.fillRect(x, y - 0.3, C * 0.17, C + 0.6); ctx.fillStyle = '#e09a5c'; ctx.fillRect(x + C * 0.17, y - 0.3, C * 0.12, C + 0.6); }
+  if (rE) { ctx.fillStyle = '#9a5a2e'; ctx.fillRect(x + C * 0.66, y - 0.3, C * 0.16, C + 0.6); ctx.fillStyle = '#5e331b'; ctx.fillRect(x + C * 0.82, y - 0.3, C * 0.18, C + 0.6); }
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 0.3, y - 0.3, C + 0.6, C + 0.6); ctx.clip();
+  ctx.strokeStyle = inkA; ctx.lineWidth = 1.8; ctx.lineCap = 'round';   // staande nerf, licht golvend
+  for (const f of [0.42, 0.6]) {
+    if ((f < 0.3 && lE) || (f > 0.66 && rE)) continue;
+    const gx = x + C * f + (srnd(n + f * 10) - 0.5) * 4, w = (srnd(n + f * 20) - 0.5) * 5;
+    ctx.beginPath(); ctx.moveTo(gx, y); ctx.bezierCurveTo(gx + w, y + C * 0.33, gx - w, y + C * 0.66, gx, y + C); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(42,33,64,.7)'; ctx.lineWidth = 2;               // kerfjes in de schors
+  if (lE && srnd(n + 3) > 0.35) { const yy = y + C * (0.2 + 0.6 * srnd(n + 4)); ctx.beginPath(); ctx.moveTo(x + 2, yy); ctx.lineTo(x + C * 0.15, yy + 3); ctx.stroke(); }
+  if (rE && srnd(n + 5) > 0.35) { const yy = y + C * (0.2 + 0.6 * srnd(n + 6)); ctx.beginPath(); ctx.moveTo(x + C - 2, yy); ctx.lineTo(x + C * 0.85, yy + 3); ctx.stroke(); }
+  if (srnd(n + 7) > 0.72) {                                                  // knoest
+    const kx = x + C * (lE ? 0.5 : 0.4), ky = y + C * (0.3 + 0.4 * srnd(n + 8));
+    ctx.fillStyle = '#7a4424'; ctx.beginPath(); ctx.ellipse(kx, ky, C * 0.11, C * 0.08, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = S_INK; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = '#4a2814'; ctx.beginPath(); ctx.ellipse(kx, ky, C * 0.04, C * 0.03, 0, 0, 7); ctx.fill();
+  }
+  if (T) {                                                                   // doorgezaagd uiteinde met jaarringen
+    const ch = C * 0.26, span = (gr - gl + 1) * C;
+    const mx = x + C / 2 + (gl + gr) / 2 * C;
+    ctx.fillStyle = '#f2c98f'; ctx.fillRect(x, y, C, ch);
+    ctx.strokeStyle = 'rgba(122,68,36,.75)'; ctx.lineWidth = 1.5;
+    for (const k of [0.22, 0.45, 0.7]) { ctx.beginPath(); ctx.ellipse(mx, y + ch / 2, span / 2 * k, ch / 2 * k * 1.3, 0, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = '#7a4424'; ctx.fillRect(x, y + ch - 2, C, 4);
+    ctx.fillStyle = 'rgba(42,33,64,.8)'; ctx.fillRect(x, y + ch + 1, C, 1.6);
+  }
+  ctx.restore(); ctx.lineCap = 'butt';
+}
 function drawStaticStone() {
   const cells = drawOff === null ? staticCells : baseCells.map(([x, y]) => [x, y + drawOff]);
   const off = (drawOff === null ? groundOff() : drawOff) * CELL;
@@ -3971,13 +4008,8 @@ function drawStaticStone() {
     if (R) { ctx.fillStyle = pal[2]; ctx.fillRect(x + CELL * 0.9, y, CELL * 0.1, CELL); }
     const n = Math.round(sx * 31 + sy * 17 - off / CELL * 17);
     ctx.strokeStyle = S_INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (wood) {   // houtnerf
-      const col = Math.round(sx + 0.5), same = d => curDef.poleAt && curDef.poleAt[col + d] === curDef.poleAt[col] && has(sx + d, sy);
-      if (!same(1)) { ctx.fillStyle = pal[2]; ctx.fillRect(x + CELL * 0.7, y, CELL * 0.3, CELL); }
-      if (!same(-1)) { ctx.fillStyle = pal[1]; ctx.fillRect(x + CELL * 0.1, y, CELL * 0.14, CELL); }
-      ctx.strokeStyle = 'rgba(42,33,64,.6)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x + 4, y + CELL * 0.3); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.18, x + CELL - 4, y + CELL * 0.36);
-      ctx.moveTo(x + 4, y + CELL * 0.78); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.66, x + CELL - 4, y + CELL * 0.84); ctx.stroke();
+    if (wood) {   // boomstam: schors aan de zijkanten, staande nerf, knoesten, jaarringen bovenop
+      drawLogCell(sx, sy, x, y, has, off, T);
     } else if (!slab) {   // gemetselde steen: voegen als grillige barsten, om-en-om verspringend
       ctx.lineWidth = 2.2;
       if (has(sx, sy + 1)) jagLine(x + 2, y + CELL, x + CELL - 2, y + CELL, n + 3, 4, 5);
@@ -4007,9 +4039,10 @@ function drawStaticStone() {
   ctx.beginPath();
   for (const loop of staticLoops) { loop.forEach(([x, y], i) => i ? ctx.lineTo(x * CELL, y * CELL + off) : ctx.moveTo(x * CELL, y * CELL + off)); ctx.closePath(); }
   ctx.strokeStyle = S_INK; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
-  // mos op elke vrije bovenkant
+  // mos op elke vrije bovenkant (niet op de doorgezaagde stammen)
   for (const [sx, sy] of cells) {
     if (has(sx, sy - 1)) continue;
+    if (Math.abs(sy * CELL - off) >= 0.5 && isWood(sx)) continue;
     const x = sx * CELL, y = sy * CELL, l = has(sx - 1, sy) && !has(sx - 1, sy - 1) ? 0 : 2, r = has(sx + 1, sy) && !has(sx + 1, sy - 1) ? 0 : 2;
     mossDrips(x - l, x + CELL + r, y, Math.round(sx * 7 + sy * 3), 7);
     ctx.strokeStyle = S_INK; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
