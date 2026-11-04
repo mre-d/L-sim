@@ -3363,9 +3363,9 @@ function drawSharedScene(t, opps) {
   const left = -ox / k - 20, right = (cw - ox) / k + 20, bottom = (ch - oy) / k + 20;
   const full = { x: 0, y: 0, w: W, h: H, k };
   list.forEach((o, i) => { o.offX = (i - (n - 1) / 2) * TOWER_GAP; o.skx = o.self ? mySk() : o.sk || mySk(); });
-  drawWorldBands(t, list, ox, k);
+  if (!usePuzzleBg()) drawWorldBands(t, list, ox, k);
   ctx.setTransform(k, 0, 0, k, ox, oy);
-  drawHills(t, left, right, bottom);
+  if (!usePuzzleBg()) drawHills(t, left, right, bottom);
   drawSea(t, left, right, bottom, 0);
   // namen eerst (achter de blokken), zodat een vallend blok er gewoon voorlangs gaat
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -3477,7 +3477,7 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
   const ox = vx + vw / 2 + (opt.offX || 0) * K + sx, oy = vy + vh * 0.5 + vdy - (opt.cam !== undefined ? opt.cam : camY) * K + sy;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20, top = (vy - oy) / K - 20;
-  if (!opt.shared) drawHills(t, left, right, bottom);
+  if (!opt.shared && !usePuzzleBg()) drawHills(t, left, right, bottom);
   // subtiel raster boven het platform
   {
     const gTop = Math.max(top, Math.min(landedTop(), 0) - 16 * CELL);
@@ -3723,10 +3723,21 @@ function drawBackdrop(g, t, th, sunCX) {
   }
 
 }
+/* TEST: eigen schilderij als achtergrond tijdens Puzzel (solo en party). Zet PUZZLE_BG_ON op false om terug te gaan. */
+const PUZZLE_BG_ON = true, puzzleBgImg = new Image();
+puzzleBgImg.src = 'assets/puzzel_bg.webp';
+const usePuzzleBg = () => PUZZLE_BG_ON && mode === 'puzzle' && state !== 'menu' && puzzleBgImg.complete && puzzleBgImg.naturalWidth > 0;
+function drawPuzzleBg(g) {   // schermvullend (cover), iets groter getekend zodat hij licht mee kan schuiven met de camera
+  const cw = cv.width, ch = cv.height, iw = puzzleBgImg.naturalWidth, ih = puzzleBgImg.naturalHeight;
+  const s = Math.max(cw / iw, ch / ih) * 1.08, w = iw * s, h = ih * s;
+  const py = clamp(-camY * 0.04 * K, 0, h - ch);   // hoger bouwen = achtergrond zakt een klein beetje
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.drawImage(puzzleBgImg, (cw - w) / 2, ch - h + py, w, h);
+}
 function render(t) {
   const cw = cv.width, ch = cv.height;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawBackdrop(ctx, t, THEME, cw * 0.18);
+  if (usePuzzleBg()) drawPuzzleBg(ctx); else drawBackdrop(ctx, t, THEME, cw * 0.18);
 
   drawViews(t);
 
