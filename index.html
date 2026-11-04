@@ -558,7 +558,7 @@ svg.coin { width: 1.15em; height: 1.15em; flex: none; vertical-align: -.2em; }
   box-shadow: 0 5px 0 var(--ink); cursor: pointer; font-family: var(--body); color: var(--ink); touch-action: manipulation; }
 .sh-item:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 .sh-item.on { background: #fff7d1; border-color: var(--ink); box-shadow: 0 5px 0 var(--ink), inset 0 0 0 3px var(--gold); }
-.sh-item.locked .sh-pv { filter: grayscale(.85) opacity(.55); }
+.sh-item.locked .sh-pv { filter: saturate(.5) opacity(.7); }
 .sh-item.shake { animation: shake .35s; }
 @keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
 .sh-item b { font-family: var(--display); font-weight: 400; font-size: 16px; line-height: 1; }
@@ -571,11 +571,36 @@ svg.coin { width: 1.15em; height: 1.15em; flex: none; vertical-align: -.2em; }
 .sh-act.lock { background: #e9e5f7; color: var(--muted); border-color: rgba(43,33,64,.3); }
 .sh-item.arm .sh-act { background: #ff8c42; color: #fff; }
 canvas.pv-blocks { width: 90px; height: 63px; }
-.pv-world { width: 92px; height: 58px; border-radius: 12px; border: 2.5px solid var(--ink); position: relative; overflow: hidden; display: block; }
-.pv-world i { position: absolute; left: 14px; top: 9px; width: 16px; height: 16px; border-radius: 50%; }
-.pv-world b { position: absolute; left: 19px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: inherit; filter: brightness(.55); }
-.pv-world em { position: absolute; right: 8px; bottom: 23px; width: 40px; height: 14px; border-radius: 20px 20px 0 0; }
-.pv-fx { font-size: 40px; line-height: 1; }
+.pv-scene { width: 92px; height: 58px; border-radius: 12px; border: 2.5px solid var(--ink); display: block; box-sizing: border-box; }
+.sh-item { position: relative; }
+.sh-badge { position: absolute; top: -9px; right: -6px; z-index: 1; background: #ee4f86; color: #fff; font-family: var(--display); font-size: 13px; line-height: 1;
+  padding: 3px 7px 4px; border-radius: 999px; border: 2.5px solid var(--ink); transform: rotate(6deg); }
+/* uitgelicht: grote kaart boven de tabbladen */
+#shopFeat { width: 100%; padding-top: 10px; }
+.sh-feat { position: relative; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px 12px 11px;
+  background: linear-gradient(135deg, #fff3c4, #ffd98a); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 5px 0 var(--ink);
+  cursor: pointer; color: var(--ink); font-family: var(--body); touch-action: manipulation; }
+.sh-feat:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.sh-feat.on { box-shadow: 0 5px 0 var(--ink), inset 0 0 0 3px var(--gold); }
+.sh-feat.shake { animation: shake .35s; }
+.sh-feat.arm .sh-act { background: #ff8c42; color: #fff; }
+.sh-feat .sh-pv { flex: none; width: 104px; height: 70px; border-radius: 14px; background: rgba(255,255,255,.65); border: 2.5px solid var(--ink); overflow: hidden; }
+.sh-feat .sh-pv .pv-scene { width: 100%; height: 100%; border: 0; border-radius: 0; }
+.ft-tag { position: absolute; top: -13px; left: 14px; background: #ee4f86; color: #fff; font-family: var(--display); font-size: 14px; line-height: 1;
+  padding: 4px 10px 5px; border-radius: 999px; border: 2.5px solid var(--ink); }
+.ft-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ft-txt b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1; }
+.ft-txt small { font-weight: 700; font-size: 12.5px; color: #6b6488; line-height: 1.2; }
+.ft-pr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 5px; }
+.ft-pr s { display: inline-flex; align-items: center; gap: 3px; font-weight: 800; font-size: 14px; opacity: .55; }
+/* tabblad Speler */
+.sh-me { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 4px;
+  background: rgba(255,255,255,.9); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); color: var(--ink); }
+.sh-me .av { width: 52px; height: 52px; flex: none; }
+.sh-me > span { display: flex; flex-direction: column; min-width: 0; }
+.sh-me small { font-weight: 800; font-size: 12px; color: #6b6488; }
+.sh-sub { font-family: var(--display); font-size: 20px; color: #fff; text-shadow: 0 2px 0 var(--ink), 0 0 2px var(--ink); margin: 14px 2px 6px; }
+#shopBody { width: 100%; }
 .pv-name { font-family: var(--display); font-size: 20px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   text-shadow: -1.5px 0 var(--ink), 1.5px 0 var(--ink), 0 -1.5px var(--ink), 0 2px var(--ink); padding: 2px 4px; }
 
@@ -1072,9 +1097,10 @@ html.standalone #app, html.standalone .title-ov { bottom: auto; height: 100vh; }
     </section>
     <section class="hpanel" id="hpShop" hidden>
       <div class="hp-title">Winkel</div>
+      <div id="shopFeat"></div>
       <div class="shop-cats" id="shopCats"></div>
-      <div class="shop-grid" id="shopGrid"></div>
-      <p class="fine-w">Skins gaan open met party-wins 🏆 en koop je daarna met munten. Munten verdien je met spelen, levels, opdrachten en je dagelijkse beloning.</p>
+      <div id="shopBody"></div>
+      <p class="fine-w">Skins gaan open met party-wins 🏆 en koop je daarna met munten. Elke dag is er één uitgelicht: met korting en zonder wins. Munten verdien je met spelen, levels, opdrachten en je dagelijkse beloning.</p>
     </section>
     <section class="hpanel" id="hpQuests" hidden>
       <div class="hp-title">Opdrachten</div>
@@ -1362,66 +1388,136 @@ const useArtBg = () => ART_BG_ON && artBgImg.complete && artBgImg.naturalWidth >
 const P_INK = '#3a2546';
 const rgbOf = c => c[0] === '#' ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).slice(0, 3).map(Number);
 function mix(a, b, t) { const A = rgbOf(a), B = rgbOf(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
-/* stenen blok: dikke donkere rand met ronde buitenhoeken, verzadigde kleur, lichte bovenkant, donkere onderkant, barsten en schilfers */
+/* ---------- steensoorten (blok-skins) ----------
+   Elke skin is een materiaal: kleur per stuk + eigen versiering. drawPiecePaint tekent het stenen blok:
+   dikke donkere rand met ronde buitenhoeken, lichte bovenkant, donkere onderkant, barsten, en daarna het materiaal-detail. */
+const each7 = f => Object.fromEntries(Object.keys(SHAPES).map(k => [k, f(k)]));
 const STONE_COLORS = { I: '#8fd3cd', O: '#f3cf3d', T: '#ee4f86', L: '#f3803a', J: '#c8418f', S: '#a6d65a', Z: '#e9506a' };
-function drawPiecePaint(c, type, s, ox, oy, color, plain) {
-  const cells = SHAPES[type], set = new Set(cells.map(([x, y]) => x + ',' + y));
-  const has = (x, y) => set.has(x + ',' + y);
-  if (!plain && color === BASE_CLASSIC[type]) color = STONE_COLORS[type];   // standaard-skin: de stenen kleuren
-  const ink = '#2a2140', o = Math.max(1.5, s * 0.085), r = s * 0.22;
+const MATS = {
+  b_rock:    { seed: 1, col: STONE_COLORS },
+  b_moss:    { seed: 2, col: each7(k => mix(STONE_COLORS[k], '#6b7f58', 0.3)), moss: true },
+  b_sand:    { seed: 3, col: { I: '#e9c38c', O: '#f2d49c', T: '#d79a6a', L: '#e6ae74', J: '#c98f63', S: '#ecc890', Z: '#d99a6c' }, layers: true, crackK: 0.5 },
+  b_marble:  { seed: 4, col: each7(k => mix('#f3eee8', STONE_COLORS[k], 0.16)), veins: true, crackK: 0.25 },
+  b_ice:     { seed: 5, col: each7(k => mix('#c4ecf7', STONE_COLORS[k], 0.18)), ink: '#2d4a6b', alpha: 0.86, glint: true, crackK: 0.4 },
+  b_crystal: { seed: 6, col: { I: '#4fe0e0', O: '#ffd83a', T: '#ff4f9e', L: '#ff8a2a', J: '#a24fff', S: '#5fe06a', Z: '#ff3f5f' }, facets: true, crackK: 0 },
+  b_lava:    { seed: 7, col: each7(() => '#47394a'), ink: '#1a1218', glow: true },
+  b_gold:    { seed: 8, col: each7(k => ['#f2c23a', '#f7cd48', '#ebb52f'][k.charCodeAt(0) % 3]), sparkle: true, crackK: 0.4 },
+};
+const PSTONE = { seed: 9, col: each7(() => '#9fb3bf'), plain: true };   // versteende blokken (Puzzel)
+let MAT = MATS.b_rock;   // materiaal van je eigen gekozen blok-skin
+function drawPiecePaint(c, type, s, ox, oy, m) {
+  const cells = SHAPES[type], set = new Set(cells.map(([x, y]) => x + ',' + y)), has = (x, y) => set.has(x + ',' + y);
+  const ink = m.ink || '#2a2140', o = Math.max(1.5, s * 0.085), r = s * 0.22, color = m.col[type];
   const light = mix(color, '#ffffff', 0.35), dark = mix(color, '#2a1b4a', 0.38), darkR = mix(color, '#2a1b4a', 0.2);
-  const rnd = k => { const v = Math.sin(k * 12.9898 + type.charCodeAt(0) * 78.233) * 43758.5453; return v - Math.floor(v); };
+  const rnd = k => { const v = Math.sin(k * 12.9898 + type.charCodeAt(0) * 78.233 + m.seed * 3.1) * 43758.5453; return v - Math.floor(v); };
   const corners = (x, y) => {   // alleen bolle buitenhoeken rond maken
     const L = !has(x - 1, y), R = !has(x + 1, y), T = !has(x, y - 1), B = !has(x, y + 1);
     return [T && L ? 1 : 0, T && R ? 1 : 0, B && R ? 1 : 0, B && L ? 1 : 0];
   };
   // 1. silhouet
   c.fillStyle = ink;
-  for (const [x, y] of cells) { const k = corners(x, y); c.beginPath(); c.roundRect(ox + x * s, oy + y * s, s, s, k.map(v => v * r)); c.fill(); }
-  // 2. kleurvlak per vakje, aan de buren vastgegroeid
+  for (const [x, y] of cells) { c.beginPath(); c.roundRect(ox + x * s, oy + y * s, s, s, corners(x, y).map(v => v * r)); c.fill(); }
+  // 2. kleurvlak per vakje, aan de buren vastgegroeid, met het materiaal-patroon erin
   for (const [x, y] of cells) {
     const L = has(x - 1, y) ? 0 : o, R = has(x + 1, y) ? 0 : o, T = has(x, y - 1) ? 0 : o, B = has(x, y + 1) ? 0 : o;
-    const X = ox + x * s + L, Y = oy + y * s + T, w = s - L - R, h = s - T - B, k = corners(x, y), ri = Math.max(0, r - o);
-    c.save(); c.beginPath(); c.roundRect(X, Y, w, h, k.map(v => v * ri)); c.clip();
-    c.fillStyle = color; c.fillRect(X, Y, w, h);
-    if (B) { c.fillStyle = dark; c.fillRect(X, Y + h - s * 0.17, w, s * 0.17); }
-    if (R) { c.fillStyle = darkR; c.fillRect(X + w - s * 0.09, Y, s * 0.09, h); }
-    if (T) { c.fillStyle = light; c.fillRect(X, Y, w, s * 0.11); }
-    if (L) { c.fillStyle = mix(color, '#ffffff', 0.18); c.fillRect(X, Y, s * 0.07, h); }
-    // schilfers en putjes
-    const n = x * 7 + y * 13;
-    c.fillStyle = 'rgba(255,255,255,.35)';
-    if (rnd(n + 1) > 0.45) { const cx = X + w * (0.2 + 0.5 * rnd(n + 2)), cy = Y + h * (0.25 + 0.4 * rnd(n + 3)), z = s * 0.07;
-      c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + z * 1.6, cy + z * 0.3); c.lineTo(cx + z * 0.5, cy + z * 1.2); c.closePath(); c.fill(); }
-    c.fillStyle = mix(color, '#2a1b4a', 0.3);
-    for (let q = 0; q < 2; q++) if (rnd(n + 10 + q) > 0.5) { c.beginPath(); c.arc(X + w * (0.15 + 0.7 * rnd(n + 20 + q)), Y + h * (0.2 + 0.55 * rnd(n + 30 + q)), s * 0.03, 0, 7); c.fill(); }
+    const X = ox + x * s + L, Y = oy + y * s + T, w = s - L - R, h = s - T - B, ri = Math.max(0, r - o), n = x * 7 + y * 13;
+    const cx0 = ox + x * s, cy0 = oy + y * s;   // vakje zonder rand, zodat patronen doorlopen
+    c.save(); c.beginPath(); c.roundRect(X, Y, w, h, corners(x, y).map(v => v * ri)); c.clip();
+    if (m.alpha) { c.fillStyle = '#ffffff'; c.fillRect(X, Y, w, h); c.globalAlpha = m.alpha; }
+    c.fillStyle = color; c.fillRect(X, Y, w, h); c.globalAlpha = 1;
+    if (m.layers) {   // zandsteen: golvende lagen
+      c.strokeStyle = mix(color, '#7a4a2a', 0.28); c.lineWidth = s * 0.05;
+      for (let q = 1; q < 4; q++) { const yy = cy0 + s * q / 4 + (rnd(n + q) - 0.5) * s * 0.06;
+        c.beginPath(); c.moveTo(cx0, yy); c.bezierCurveTo(cx0 + s * 0.3, yy - s * 0.06, cx0 + s * 0.7, yy + s * 0.06, cx0 + s, yy); c.stroke(); }
+    }
+    if (m.veins) {   // marmer: grijze en goudachtige adertjes
+      c.lineCap = 'round';
+      for (let q = 0; q < 2; q++) {
+        c.strokeStyle = q ? 'rgba(176,140,90,.55)' : 'rgba(90,86,110,.45)'; c.lineWidth = s * (q ? 0.025 : 0.04);
+        c.beginPath(); c.moveTo(cx0 - 2, cy0 + s * (0.2 + 0.6 * rnd(n + q * 5)));
+        c.bezierCurveTo(cx0 + s * 0.35, cy0 + s * rnd(n + 7 + q), cx0 + s * 0.6, cy0 + s * rnd(n + 9 + q), cx0 + s + 2, cy0 + s * (0.2 + 0.6 * rnd(n + 11 + q))); c.stroke();
+      }
+      c.lineCap = 'butt';
+    }
+    if (m.facets) {   // kristal: geslepen vlakken i.p.v. licht/donker-randen
+      const mx = X + w / 2, my = Y + h / 2, z = Math.min(w, h) * 0.24;
+      const tri = (pts, f) => { c.fillStyle = f; c.beginPath(); pts.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.closePath(); c.fill(); };
+      tri([[X, Y], [X + w, Y], [mx + z, my - z], [mx - z, my - z]], mix(color, '#ffffff', 0.4));
+      tri([[X, Y], [mx - z, my - z], [mx - z, my + z], [X, Y + h]], mix(color, '#ffffff', 0.18));
+      tri([[X + w, Y], [X + w, Y + h], [mx + z, my + z], [mx + z, my - z]], mix(color, '#2a1b4a', 0.22));
+      tri([[X, Y + h], [mx - z, my + z], [mx + z, my + z], [X + w, Y + h]], mix(color, '#2a1b4a', 0.38));
+      c.fillStyle = mix(color, '#ffffff', 0.12); c.fillRect(mx - z, my - z, 2 * z, 2 * z);
+      c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath(); c.moveTo(mx - z * 0.7, my - z * 0.5); c.lineTo(mx - z * 0.2, my - z * 0.9); c.lineTo(mx - z * 0.35, my - z * 0.25); c.closePath(); c.fill();
+    } else {
+      if (B) { c.fillStyle = dark; c.fillRect(X, Y + h - s * 0.17, w, s * 0.17); }
+      if (R) { c.fillStyle = darkR; c.fillRect(X + w - s * 0.09, Y, s * 0.09, h); }
+      if (T) { c.fillStyle = light; c.fillRect(X, Y, w, s * 0.11); }
+      if (L) { c.fillStyle = mix(color, '#ffffff', 0.18); c.fillRect(X, Y, s * 0.07, h); }
+    }
+    if (m.glint) {   // ijs: schuine glansstrepen
+      c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.moveTo(X + w * 0.15, Y + h); c.lineTo(X + w * 0.35, Y + h); c.lineTo(X + w * 0.75, Y); c.lineTo(X + w * 0.55, Y); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.3)'; c.beginPath(); c.moveTo(X + w * 0.45, Y + h); c.lineTo(X + w * 0.52, Y + h); c.lineTo(X + w * 0.92, Y); c.lineTo(X + w * 0.85, Y); c.closePath(); c.fill();
+    }
+    if (m.glow && rnd(n + 3) > 0.4) {   // lava: gloeiende plekjes
+      const gx = X + w * (0.25 + 0.5 * rnd(n + 4)), gy = Y + h * (0.3 + 0.4 * rnd(n + 5)), g = c.createRadialGradient(gx, gy, 0, gx, gy, s * 0.3);
+      g.addColorStop(0, 'rgba(255,170,60,.9)'); g.addColorStop(1, 'rgba(255,90,30,0)'); c.fillStyle = g; c.fillRect(X, Y, w, h);
+    }
+    if (!m.facets && !m.glow && !m.glint) {   // schilfers en putjes
+      c.fillStyle = 'rgba(255,255,255,.35)';
+      if (rnd(n + 1) > 0.45) { const px = X + w * (0.2 + 0.5 * rnd(n + 2)), py = Y + h * (0.25 + 0.4 * rnd(n + 3)), z = s * 0.07;
+        c.beginPath(); c.moveTo(px, py); c.lineTo(px + z * 1.6, py + z * 0.3); c.lineTo(px + z * 0.5, py + z * 1.2); c.closePath(); c.fill(); }
+      c.fillStyle = mix(color, '#2a1b4a', 0.3);
+      for (let q = 0; q < 2; q++) if (rnd(n + 10 + q) > 0.5) { c.beginPath(); c.arc(X + w * (0.15 + 0.7 * rnd(n + 20 + q)), Y + h * (0.2 + 0.55 * rnd(n + 30 + q)), s * 0.03, 0, 7); c.fill(); }
+    }
     c.restore();
   }
-  // 3. barsten: grillige voegen tussen sommige vakjes + een barst vanaf de rand
-  c.strokeStyle = ink; c.lineWidth = Math.max(1, s * 0.05); c.lineCap = 'round'; c.lineJoin = 'round';
+  // 3. barsten: grillige voegen tussen sommige vakjes + een barst vanaf de rand (lava: gloeiende barsten)
+  const k = m.crackK === undefined ? 1 : m.crackK;
   const jag = (x0, y0, x1, y1, seed, steps) => {
     c.beginPath(); c.moveTo(x0, y0);
-    for (let q = 1; q < steps; q++) { const f = q / steps, nx = -(y1 - y0), ny = x1 - x0, L = Math.hypot(nx, ny) || 1, d = (rnd(seed + q) - 0.5) * s * 0.22;
-      c.lineTo(x0 + (x1 - x0) * f + nx / L * d, y0 + (y1 - y0) * f + ny / L * d); }
+    for (let q = 1; q < steps; q++) { const f = q / steps, nx = -(y1 - y0), ny = x1 - x0, Ln = Math.hypot(nx, ny) || 1, d = (rnd(seed + q) - 0.5) * s * 0.22;
+      c.lineTo(x0 + (x1 - x0) * f + nx / Ln * d, y0 + (y1 - y0) * f + ny / Ln * d); }
     c.lineTo(x1, y1); c.stroke();
   };
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (m.glow) { c.strokeStyle = '#ff9a2e'; c.shadowColor = '#ff6a00'; c.shadowBlur = s * 0.35; c.lineWidth = Math.max(1, s * 0.07); }
+  else { c.strokeStyle = ink; c.lineWidth = Math.max(1, s * 0.05); }
   for (const [x, y] of cells) {
     const n = x * 31 + y * 17;
-    if (has(x + 1, y) && rnd(n + 50) > 0.35) { const X = ox + (x + 1) * s, Y = oy + y * s; jag(X, Y + s * 0.1, X, Y + s * 0.9, n + 60, 4); }
-    if (has(x, y + 1) && rnd(n + 70) > 0.35) { const X = ox + x * s, Y = oy + (y + 1) * s; jag(X + s * 0.1, Y, X + s * 0.9, Y, n + 80, 4); }
+    if (has(x + 1, y) && rnd(n + 50) > 1 - 0.65 * k) { const X = ox + (x + 1) * s, Y = oy + y * s; jag(X, Y + s * 0.1, X, Y + s * 0.9, n + 60, 4); }
+    if (has(x, y + 1) && rnd(n + 70) > 1 - 0.65 * k) { const X = ox + x * s, Y = oy + (y + 1) * s; jag(X + s * 0.1, Y, X + s * 0.9, Y, n + 80, 4); }
   }
-  if (!plain) {   // één losse barst die vanaf de buitenrand het blok in loopt, met een zijtak
+  if (m.glow) {
+    for (const [x, y] of cells) { const n = x * 5 + y * 11, X = ox + x * s, Y = oy + y * s; jag(X + s * 0.2, Y + s * (0.3 + 0.3 * rnd(n)), X + s * 0.8, Y + s * (0.4 + 0.3 * rnd(n + 1)), n + 90, 4); }
+    c.shadowBlur = 0;
+  } else if (!m.plain && k > 0.3) {   // één losse barst die vanaf de buitenrand het blok in loopt, met een zijtak
     const [x, y] = cells[Math.floor(rnd(99) * cells.length)], X = ox + x * s, Y = oy + y * s;
     const sx = X + s * (0.3 + 0.4 * rnd(101)), sy = has(x, y - 1) ? Y + s * 0.5 : Y + o, mx = sx + s * (rnd(102) - 0.5) * 0.4, my = Y + s * 0.5;
     c.beginPath(); c.moveTo(sx, sy); c.lineTo(mx, my); c.lineTo(mx + s * 0.18, my + s * 0.22); c.moveTo(mx, my); c.lineTo(mx - s * 0.2, my + s * 0.12); c.stroke();
   }
   c.lineCap = 'butt'; c.lineJoin = 'miter';
-  if (!plain && BLOCK_STYLE && BLOCK_STYLE !== 'neon') { c.save(); c.globalAlpha = 0.45; drawBlockStyle(c, cells, has, s, ox, oy, color); c.restore(); }
+  // 4. extra's over het blok heen
+  if (m.moss) {   // mosplukken op elke bovenkant, hangend over de rand
+    c.strokeStyle = ink; c.lineWidth = Math.max(1, s * 0.05);
+    for (const [x, y] of cells) {
+      if (has(x, y - 1)) continue;
+      const X = ox + x * s, Y = oy + y * s, n = x * 3 + y;
+      c.fillStyle = '#7fa04c'; c.beginPath(); c.moveTo(X + s * 0.08, Y + o * 0.5);
+      for (let i = 0; i < 3; i++) { const a = X + s * (0.08 + 0.28 * i), b = X + s * (0.08 + 0.28 * (i + 1)), d = s * (0.14 + 0.14 * rnd(n + i)); c.quadraticCurveTo((a + b) / 2, Y + o + d, b, Y + o * 0.5); }
+      c.quadraticCurveTo(X + s * 0.5, Y - s * 0.12, X + s * 0.08, Y + o * 0.5); c.fill(); c.stroke();
+      c.fillStyle = '#c4cf72'; c.fillRect(X + s * 0.25, Y - s * 0.02, s * 0.35, s * 0.05);
+    }
+  }
+  if (m.sparkle) {   // goud: glinsters
+    for (let i = 0; i < 2; i++) {
+      const [x, y] = cells[Math.floor(rnd(200 + i) * cells.length)], px = ox + (x + 0.3 + 0.4 * rnd(210 + i)) * s, py = oy + (y + 0.3 + 0.3 * rnd(220 + i)) * s, z = s * 0.16;
+      c.fillStyle = '#fffbe0'; c.beginPath(); c.moveTo(px, py - z); c.quadraticCurveTo(px, py, px + z, py); c.quadraticCurveTo(px, py, px, py + z); c.quadraticCurveTo(px, py, px - z, py); c.quadraticCurveTo(px, py, px, py - z); c.fill();
+    }
+  }
 }
-const BASE_CLASSIC = { I: '#3fc4f5', O: '#ffd23f', T: '#b46cff', L: '#ff8c42', J: '#4d7dff', S: '#56d364', Z: '#ff5c8a' };
 function drawPieceRaw(c, type, s, ox, oy, mode) {
-  if (mode === 'paint') return drawPiecePaint(c, type, s, ox, oy, COLORS[type]);
-  if (mode === 'pstone') return drawPiecePaint(c, type, s, ox, oy, '#9fb3bf', true);
+  if (mode === 'paint') return drawPiecePaint(c, type, s, ox, oy, MAT);
+  if (mode === 'pstone') return drawPiecePaint(c, type, s, ox, oy, PSTONE);
   const cells = SHAPES[type], set = new Set(cells.map(([x, y]) => x + ',' + y));
   const has = (x, y) => set.has(x + ',' + y);
   if (mode === 'white' || mode === 'shadow') {
@@ -1465,8 +1561,6 @@ function drawPieceRaw(c, type, s, ox, oy, mode) {
     rr(c, X + s * 0.2, Y + s * 0.22, s * 0.22, s * 0.09, s * 0.045); c.fill();
     c.beginPath(); c.arc(X + s * 0.5, Y + s * 0.265, s * 0.045, 0, 7); c.fill();
   }
-  // 7. extra laag van de gekozen blok-skin (strepen, hout, neon…)
-  if (mode === 'color') drawBlockStyle(c, cells, has, s, ox, oy, color);
 }
 
 /* ---------- DOM ---------- */
@@ -2488,11 +2582,11 @@ function drawMoss(d, angle, grow) {
     const x0 = x - CELL / 2 - l, x1 = x + CELL / 2 + r, gy = y - CELL / 2 - 3, gh = 4 + 5 * g;
     ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.lineTo(x1, gy + gh - 3);
     for (let i = 3; i > 0; i--) { const bx1 = x0 + (x1 - x0) * (i - 1) / 3, bx0 = x0 + (x1 - x0) * i / 3; ctx.quadraticCurveTo((bx0 + bx1) / 2, gy + gh + 4 * g, bx1, gy + gh - 3); }
-    ctx.closePath(); ctx.fillStyle = PAINT ? '#7fa04c' : '#6fd65b'; ctx.fill();
-    ctx.strokeStyle = PAINT ? P_INK : INK; ctx.lineWidth = PAINT ? 1.8 : 2.2; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
-    ctx.fillStyle = PAINT ? '#c4cf72' : '#a8f08f'; ctx.fillRect(x0 + 3, gy + 1.5, x1 - x0 - 6, 2.2);
+    ctx.closePath(); ctx.fillStyle = PAINT ? pc('#7fa04c') : '#6fd65b'; ctx.fill();
+    ctx.strokeStyle = PAINT ? pc(P_INK) : INK; ctx.lineWidth = PAINT ? 1.8 : 2.2; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
+    ctx.fillStyle = PAINT ? pc('#c4cf72') : '#a8f08f'; ctx.fillRect(x0 + 3, gy + 1.5, x1 - x0 - 6, 2.2);
     if (g > 0.6) {   // sprietjes
-      ctx.strokeStyle = PAINT ? '#4f6b34' : INK; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+      ctx.strokeStyle = PAINT ? pc('#4f6b34') : INK; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
       const h = 4 * (g - 0.6) / 0.4;
       ctx.beginPath(); ctx.moveTo(x - 8, gy); ctx.lineTo(x - 10, gy - h); ctx.moveTo(x + 6, gy); ctx.lineTo(x + 8, gy - h * 0.8); ctx.stroke(); ctx.lineCap = 'butt';
     }
@@ -3253,6 +3347,7 @@ function stepFx(particles, rings, dt) {
     else if (q.t === 'star') { q.vx *= Math.exp(-dt * 6); q.vy *= Math.exp(-dt * 6); }
     else if (q.t === 'heart') { q.vx *= Math.exp(-dt * 3); q.vy = q.vy * Math.exp(-dt * 3) - 30 * dt; q.rot += q.vr * 0.3 * dt; }
     else if (q.t === 'spark') { q.vy += 700 * dt; }
+    else if (q.t === 'fly') { q.vx = q.vx * Math.exp(-dt * 2.5) + Math.sin(q.life * 5 + q.ph) * 30 * dt; q.vy = q.vy * Math.exp(-dt * 2.5) - 12 * dt; }
     else if (q.t === 'leaf') { q.vy = Math.min(q.vy + 140 * dt, 55); q.vx = q.vx * Math.exp(-dt * 2) + Math.sin(q.life * 6 + q.ph) * 40 * dt; q.rot += q.vr * dt; }
     else { q.vy += 900 * dt; if (q.rot !== undefined) q.rot += q.vr * dt; }
     q.x += q.vx * dt; q.y += q.vy * dt;
@@ -3273,7 +3368,7 @@ function drawFx(particles, rings) {
     if (q.t === 'dust') {   // cartoon-stofwolkje: wit bolletje met inktrandje
       const rr2 = q.size * (0.7 + k * 0.8);
       ctx.globalAlpha = 1 - k * k;
-      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = 'rgba(43,33,64,.35)'; ctx.lineWidth = 1.2;
+      ctx.fillStyle = PAINT ? '#fff1e4' : '#ffffff'; ctx.strokeStyle = PAINT ? 'rgba(150,100,140,.4)' : 'rgba(43,33,64,.35)'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.arc(q.x, q.y, rr2, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
     }
     else if (q.t === 'leaf') {
@@ -3291,6 +3386,19 @@ function drawFx(particles, rings) {
     else if (q.t === 'spark') {
       ctx.globalAlpha = 1 - k; ctx.strokeStyle = q.color; ctx.lineWidth = q.size; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x - q.vx * 0.03, q.y - q.vy * 0.03); ctx.stroke(); ctx.lineCap = 'butt'; ctx.globalAlpha = 1;
+    }
+    else if (q.t === 'fly') {   // vuurvliegje: gloeiend bolletje dat aan- en uitflakkert
+      const a = (1 - k * k) * (0.65 + 0.35 * Math.sin(q.life * 14 + q.ph)), R = q.size * 4, g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, R);
+      g.addColorStop(0, `rgba(255,250,170,${a.toFixed(3)})`); g.addColorStop(0.35, `rgba(255,225,90,${(a * 0.55).toFixed(3)})`); g.addColorStop(1, 'rgba(255,200,60,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, R, 0, 7); ctx.fill();
+      ctx.fillStyle = `rgba(255,251,224,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.size * 0.7, 0, 7); ctx.fill();
+    }
+    else if (q.t === 'gravel') {   // steengruis: hoekig scherfje met inktrand
+      const z = q.size;
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.globalAlpha = 1 - k * k;
+      ctx.fillStyle = q.color; ctx.strokeStyle = P_INK; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-z, -z * 0.4); ctx.lineTo(z * 0.3, -z); ctx.lineTo(z, z * 0.2); ctx.lineTo(-z * 0.2, z); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore(); ctx.globalAlpha = 1;
     }
     else if (q.t === 'drop') { ctx.fillStyle = `rgba(255,255,255,${(1 - k).toFixed(3)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - k * 0.5), 0, 7); ctx.fill(); }
     else if (q.t === 'star') {
@@ -3344,7 +3452,8 @@ const SK_KEYS = { b: 'blocks', w: 'world', f: 'fx', a: 'avatar', n: 'namecol', r
 function mySk() { const e = profile.eq; return { b: e.blocks, w: e.world, f: e.fx, a: e.avatar, n: e.namecol, r: e.frame }; }
 function peerSk(p) {
   const raw = p && p.presence && p.presence.sk && typeof p.presence.sk === 'object' ? p.presence.sk : {}, out = {};
-  for (const [k, cat] of Object.entries(SK_KEYS)) { const id = raw[k]; out[k] = typeof id === 'string' && ITEM[id] && ITEM[id].cat === cat ? id : DEFAULT_EQ[cat]; }
+  for (const [k, cat] of Object.entries(SK_KEYS)) { const id = migrateId(raw[k]);   // spelers met een oudere versie sturen nog oude skin-namen
+    out[k] = typeof id === 'string' && ITEM[id] && ITEM[id].cat === cat ? id : DEFAULT_EQ[cat]; }
   return out;
 }
 /* blok-sprites in een andere skin (gebouwd op dezelfde schaal als die van jezelf) */
@@ -3352,17 +3461,17 @@ const skinSprCache = new Map();
 function skinSprites(id) {
   if (id === profile.eq.blocks) return sprites;
   let set = skinSprCache.get(id); if (set) return set;
-  const keep = { ...COLORS }, keepStyle = BLOCK_STYLE, sk = BLOCK_SKINS[id] || BLOCK_SKINS.b_classic;
-  Object.assign(COLORS, sk.colors); BLOCK_STYLE = sk.style || null;
+  const keep = { ...COLORS }, keepMat = MAT;
+  MAT = MATS[id] || MATS.b_rock; Object.assign(COLORS, MAT.col);
   set = {};
   for (const t of TYPES) { const bx = pieceBox(t), c = document.createElement('canvas'); c.width = bx.w * SPR_S; c.height = bx.h * SPR_S; drawPieceRaw(c.getContext('2d'), t, SPR_S, 0, 0, 'color'); const pc = document.createElement('canvas'); pc.width = c.width; pc.height = c.height; drawPieceRaw(pc.getContext('2d'), t, SPR_S, 0, 0, 'paint'); set[t] = { color: c, paint: pc, white: sprites[t].white, shadow: sprites[t].shadow, stone: sprites[t].stone, pstone: sprites[t].pstone }; }
-  Object.assign(COLORS, keep); BLOCK_STYLE = keepStyle;
+  Object.assign(COLORS, keep); MAT = keepMat;
   skinSprCache.set(id, set); return set;
 }
-const skinColor = (id, t) => ((BLOCK_SKINS[id] || BLOCK_SKINS.b_classic).colors[t] || '#ffffff');
-let oppFX = 'f_puff';   // effect-skin van de tegenstander waarvan we nu een floep tekenen
+const skinColor = (id, t) => ((MATS[id] || MATS.b_rock).col[t] || '#ffffff');
+let oppFX = 'f_dust';   // effect-skin van de tegenstander waarvan we nu een floep tekenen
 function oppPopBurst(c, q, sk) {   // zelfde floep als bij jezelf, maar in de wereld van de tegenstander, in zijn eigen effect-skin, en wat zachter
-  fxOut = c.parts; oppFX = sk ? sk.f : 'f_puff';
+  fxOut = c.parts; oppFX = sk ? sk.f : 'f_dust';
   puff(q.x, q.y, 1); puff(q.x, q.y, 0.6); sparkle(q.x, q.y, '#ffffff', 10); sparkle(q.x, q.y, sk ? skinColor(sk.b, q.t) : COLORS[q.t] || '#ffffff', 8);
   fxOut = particles;
   c.rings.push({ x: q.x, y: q.y, r: 8, life: 0, max: 0.35, color: '255,255,255', w: 4 });
@@ -3485,7 +3594,7 @@ function drawWorldBands(t, list, ox, k) {
   list.forEach((o, i) => {
     const a = i === 0 ? -f * 2 : (xs[i - 1] + xs[i]) / 2, b = i === list.length - 1 ? cw + f * 2 : (xs[i] + xs[i + 1]) / 2;
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, cw, ch);
-    drawBackdrop(g, t, WORLDS[o.skx.w] || WORLDS.w_sunny, Math.max(a + 50 * DPR, xs[i] - (b - a) * 0.28));
+    drawBackdrop(g, t, WORLDS[o.skx.w] || WORLDS.w_golden, Math.max(a + 50 * DPR, xs[i] - (b - a) * 0.28));
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'destination-in';
     const m = g.createLinearGradient(a - f, 0, b + f, 0), L = b - a + 2 * f;
     m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(Math.min(0.49, 2 * f / L), 'rgba(0,0,0,1)'); m.addColorStop(Math.max(0.51, 1 - 2 * f / L), 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
@@ -3645,7 +3754,7 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
 
 /* andermans toren, getekend uit wat hij doorstuurt */
 function drawOppWorld(t, vp, o, opt = {}) {
-  const oppSpr = skinSprites(o.sk ? o.sk.b : 'b_classic'), myTheme = THEME;
+  const oppSpr = skinSprites(o.sk ? o.sk.b : 'b_rock'), myTheme = THEME;
   if (!opt.shared && o.sk) THEME = WORLDS[o.sk.w] || THEME;   // eigen kader: heuvels en zee in zijn wereld
   const K = vp.k, vx = vp.x * DPR, vy = vp.y * DPR, vw = vp.w * DPR, vh = vp.h * DPR;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
@@ -3708,14 +3817,14 @@ function drawColumnFrame(vp, o, i) {
 /* mini-toren rechtsboven (A): eerst achtergrond, daarna rand en naam */
 function drawMiniFrame(vp, o, before) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  if (before && PAINT) {   // schilderij-thema: zelfde schilderij, 'cover' in het kader
-    const iw = artBgImg.naturalWidth, ih = artBgImg.naturalHeight, s = Math.max(vp.w / iw, vp.h / ih);
+  if (before && PAINT) {   // schilderij-thema: het schilderij in de lucht van die speler, 'cover' in het kader
+    const img = skyArt(WORLDS[o.sk ? o.sk.w : 'w_golden'] || WORLDS.w_golden), iw = img.width, ih = img.height, s = Math.max(vp.w / iw, vp.h / ih);
     ctx.save(); rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.clip();
-    ctx.drawImage(artBgImg, vp.x + (vp.w - iw * s) / 2, vp.y + vp.h - ih * s, iw * s, ih * s);
+    ctx.drawImage(img, vp.x + (vp.w - iw * s) / 2, vp.y + vp.h - ih * s, iw * s, ih * s);
     ctx.restore(); return;
   }
   if (before) {
-    const th = WORLDS[o.sk ? o.sk.w : 'w_sunny'] || WORLDS.w_sunny, g = ctx.createLinearGradient(0, vp.y, 0, vp.y + vp.h);
+    const th = WORLDS[o.sk ? o.sk.w : 'w_golden'] || WORLDS.w_golden, g = ctx.createLinearGradient(0, vp.y, 0, vp.y + vp.h);
     g.addColorStop(0, th.sky[0]); g.addColorStop(0.6, th.sky[1]); g.addColorStop(1, th.sky[2]);
     rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.fillStyle = g; ctx.fill();
     ctx.save(); rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.clip();
@@ -3800,18 +3909,103 @@ function drawBackdrop(g, t, th, sunCX) {
   }
 
 }
+/* ---------- lucht-sfeer ----------
+   Het schilderij wordt per lucht één keer omgekleurd (kleurmatrix per pixel, zoals CSS-filters, maar ook op iPhones
+   waar canvas-filters ontbreken) en bewaard. Daarna alleen nog de bewegende extra's: sterren, regen + bliksem, blaadjes. */
+function colorMatrix(ops) {   // 3x4-matrix (laatste kolom = verschuiving op de 0..255-schaal), ops in volgorde toegepast
+  const mul = (A, B) => { const R = [];
+    for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) R[i * 4 + j] = A[i * 4] * B[j] + A[i * 4 + 1] * B[4 + j] + A[i * 4 + 2] * B[8 + j];
+      R[i * 4 + 3] = A[i * 4] * B[3] + A[i * 4 + 1] * B[7] + A[i * 4 + 2] * B[11] + A[i * 4 + 3]; }
+    return R; };
+  let M = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+  for (const [op, v] of ops) {
+    let A; const a = 1 - v;
+    if (op === 'bri') A = [v, 0, 0, 0, 0, v, 0, 0, 0, 0, v, 0];
+    else if (op === 'con') { const o = 127.5 * (1 - v); A = [v, 0, 0, o, 0, v, 0, o, 0, 0, v, o]; }
+    else if (op === 'sat') A = [0.213 + 0.787 * v, 0.715 - 0.715 * v, 0.072 - 0.072 * v, 0, 0.213 - 0.213 * v, 0.715 + 0.285 * v, 0.072 - 0.072 * v, 0, 0.213 - 0.213 * v, 0.715 - 0.715 * v, 0.072 + 0.928 * v, 0];
+    else if (op === 'gray') A = [0.2126 + 0.7874 * a, 0.7152 - 0.7152 * a, 0.0722 - 0.0722 * a, 0, 0.2126 - 0.2126 * a, 0.7152 + 0.2848 * a, 0.0722 - 0.0722 * a, 0, 0.2126 - 0.2126 * a, 0.7152 - 0.7152 * a, 0.0722 + 0.9278 * a, 0];
+    else if (op === 'sepia') A = [0.393 + 0.607 * a, 0.769 - 0.769 * a, 0.189 - 0.189 * a, 0, 0.349 - 0.349 * a, 0.686 + 0.314 * a, 0.168 - 0.168 * a, 0, 0.272 - 0.272 * a, 0.534 - 0.534 * a, 0.131 + 0.869 * a, 0];
+    else if (op === 'hue') { const rad = v * Math.PI / 180, c = Math.cos(rad), sn = Math.sin(rad);
+      A = [0.213 + c * 0.787 - sn * 0.213, 0.715 - c * 0.715 - sn * 0.715, 0.072 - c * 0.072 + sn * 0.928, 0,
+           0.213 - c * 0.213 + sn * 0.143, 0.715 + c * 0.285 + sn * 0.140, 0.072 - c * 0.072 - sn * 0.283, 0,
+           0.213 - c * 0.213 - sn * 0.787, 0.715 - c * 0.715 + sn * 0.715, 0.072 + c * 0.928 + sn * 0.072, 0]; }
+    else continue;
+    M = mul(A, M);
+  }
+  return M;
+}
+const skyCache = new Map();
+function skyArt(th) {   // het (omgekleurde) schilderij voor deze lucht; zonder art gewoon het origineel
+  if (!th || !th.art || !useArtBg()) return artBgImg;
+  let c = skyCache.get(th); if (c) return c;
+  c = document.createElement('canvas'); c.width = artBgImg.naturalWidth; c.height = artBgImg.naturalHeight;
+  const g = c.getContext('2d'); g.drawImage(artBgImg, 0, 0);
+  try {
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data, M = colorMatrix(th.art.ops);
+    for (let i = 0; i < d.length; i += 4) {
+      const R = d[i], G = d[i + 1], B = d[i + 2];
+      d[i] = M[0] * R + M[1] * G + M[2] * B + M[3]; d[i + 1] = M[4] * R + M[5] * G + M[6] * B + M[7]; d[i + 2] = M[8] * R + M[9] * G + M[10] * B + M[11];
+    }
+    g.putImageData(im, 0, 0);
+  } catch (e) { return artBgImg; }
+  if (th.art.tint) { g.fillStyle = th.art.tint; g.fillRect(0, 0, c.width, c.height); }
+  skyCache.set(th, c); return c;
+}
+const hash01 = i => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+function drawSkyFx(g, th, t, cw, ch, unit) {   // bewegende extra's in schermpixels, achter de toren (unit: schaal, voor voorbeeldplaatjes)
+  const u = unit || Math.min(cw, ch) / 400;
+  if (th.night) {
+    for (let i = 0; i < 70; i++) {
+      const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 0.002 + i * 1.7));
+      g.fillStyle = `rgba(255,255,240,${(a * 0.9).toFixed(3)})`; g.beginPath(); g.arc(hash01(i) * cw, hash01(i + 99) * ch * 0.6, (0.6 + hash01(i + 7) * 1.3) * u, 0, 7); g.fill();
+    }
+    const mx = cw * 0.78, my = ch * 0.13, mr = 22 * u, gl = g.createRadialGradient(mx, my, mr, mx, my, mr * 3.2);
+    gl.addColorStop(0, 'rgba(255,250,220,.35)'); gl.addColorStop(1, 'rgba(255,250,220,0)'); g.fillStyle = gl; g.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
+    g.fillStyle = '#fff6d6'; g.beginPath(); g.arc(mx, my, mr, 0, 7); g.fill();
+    g.fillStyle = 'rgba(200,190,160,.5)'; g.beginPath(); g.arc(mx - mr * 0.3, my + mr * 0.2, mr * 0.2, 0, 7); g.arc(mx + mr * 0.3, my - mr * 0.3, mr * 0.13, 0, 7); g.fill();
+  }
+  if (th.rain) {
+    const W = cw * 1.2;
+    g.strokeStyle = 'rgba(200,215,255,.4)'; g.lineWidth = 1.3 * u; g.beginPath();
+    for (let i = 0; i < 120; i++) {
+      const sp = 0.6 + hash01(i) * 0.5, x = ((hash01(i + 5) * W - t * 0.25 * sp * u) % W + W) % W, y = (hash01(i + 9) * ch + t * 0.9 * sp * u) % ch;
+      g.moveTo(x, y); g.lineTo(x - 5 * u, y + 16 * u);
+    }
+    g.stroke();
+    const cyc = 8000, ph = t % cyc, n = Math.floor(t / cyc);   // elke 8 s een bliksemflits
+    if (ph < 320) {
+      g.fillStyle = `rgba(230,235,255,${(0.22 * (1 - ph / 320)).toFixed(3)})`; g.fillRect(0, 0, cw, ch);
+      if (ph < 200) {
+        let x = (0.2 + 0.6 * hash01(n)) * cw, y = 0;
+        g.strokeStyle = '#fffbe0'; g.lineWidth = 3 * u; g.lineJoin = 'round'; g.shadowColor = '#cfe0ff'; g.shadowBlur = 16 * u;
+        g.beginPath(); g.moveTo(x, y);
+        for (let q = 1; q <= 5; q++) { x += (hash01(n * 7 + q) - 0.5) * 50 * u; y = ch * 0.07 * q; g.lineTo(x, y); }
+        g.stroke(); g.shadowBlur = 0; g.lineJoin = 'miter';
+      }
+    }
+  }
+  if (th.leaves) {
+    for (let i = 0; i < 22; i++) {
+      const H = ch * 1.1, y = (hash01(i) * H + t * 0.04 * (0.6 + hash01(i + 3)) * u) % H - ch * 0.05, x = hash01(i + 1) * cw + Math.sin(t * 0.0012 + i) * 30 * u;
+      g.save(); g.translate(x, y); g.rotate(t * 0.002 + i);
+      g.fillStyle = ['#e0662a', '#f2a23a', '#c8452a'][i % 3]; g.strokeStyle = '#5a2a1a'; g.lineWidth = 1 * u;
+      g.beginPath(); g.ellipse(0, 0, 8 * u, 4 * u, 0, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.moveTo(-7 * u, 0); g.lineTo(7 * u, 0); g.stroke();
+      g.restore();
+    }
+  }
+}
 function drawArtBg(g) {   // schermvullend (cover), iets groter getekend zodat hij licht mee kan schuiven met de camera
-  const cw = cv.width, ch = cv.height, iw = artBgImg.naturalWidth, ih = artBgImg.naturalHeight;
+  const cw = cv.width, ch = cv.height, img = skyArt(THEME), iw = img.width, ih = img.height;
   const s = Math.max(cw / iw, ch / ih) * 1.08, w = iw * s, h = ih * s;
   const py = clamp(-camY * 0.04 * K, 0, h - ch);   // hoger bouwen = achtergrond zakt een klein beetje
   g.setTransform(1, 0, 0, 1, 0, 0);
-  g.drawImage(artBgImg, (cw - w) / 2, ch - h + py, w, h);
+  g.drawImage(img, (cw - w) / 2, ch - h + py, w, h);
 }
 function render(t) {
   const cw = cv.width, ch = cv.height;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   PAINT = useArtBg();
-  if (PAINT) drawArtBg(ctx); else drawBackdrop(ctx, t, THEME, cw * 0.18);
+  if (PAINT) { drawArtBg(ctx); drawSkyFx(ctx, THEME, t, cw, ch); } else drawBackdrop(ctx, t, THEME, cw * 0.18);
 
   drawViews(t);
 
@@ -3870,9 +4064,9 @@ function drawIslands() {
     for (let i = n; i >= 1; i--) pts.push([x1 - spread * i / n + (jag(b2 * 5 + i + 40) - 0.5) * 10, top0 + i * depth / n]);
     pts.push([x1 - 2, top0]);
     ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
-    ctx.fillStyle = PAINT ? '#9c7488' : '#b97f55'; ctx.fill();
+    ctx.fillStyle = PAINT ? pc('#9c7488') : '#b97f55'; ctx.fill();
     ctx.save(); ctx.clip();
-    ctx.fillStyle = PAINT ? '#74536f' : '#9a6442';                 // schaduwkant
+    ctx.fillStyle = PAINT ? pc('#74536f') : '#9a6442';                 // schaduwkant
     ctx.fillRect(x1 - Math.max(10, w * 0.28), top0, w, depth + 20);
     ctx.strokeStyle = PAINT ? 'rgba(58,37,70,.3)' : 'rgba(43,33,64,.25)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';   // gesteentelagen
     for (let i = 1; i < 5; i++) { const yy = top0 + i * depth / 5.5; ctx.beginPath(); ctx.moveTo(x0 + 6 + jag(i) * 10, yy); ctx.lineTo(x0 + w * 0.45 + jag(i + 9) * 16, yy + 6); ctx.stroke(); }
@@ -3883,7 +4077,7 @@ function drawIslands() {
     }
     ctx.restore(); ctx.lineCap = 'butt';
     ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
-    ctx.strokeStyle = PAINT ? P_INK : INK; ctx.lineWidth = PAINT ? 2.5 : 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
+    ctx.strokeStyle = PAINT ? pc(P_INK) : INK; ctx.lineWidth = PAINT ? 2.5 : 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
     if (PAINT && a === curDef.runs[0][0]) {   // klein watervalletje uit de rotswand
       const t = performance.now(), fw = Math.max(7, w * 0.08), fx = x0 + w * 0.2, fy = top0 + depth * 0.14, fh = SEA_Y + 30 - fy;
       ctx.fillStyle = P_INK; ctx.beginPath(); ctx.ellipse(fx + fw / 2, fy, fw * 0.75, fw * 0.45, 0, 0, 7); ctx.fill();
@@ -3904,30 +4098,30 @@ function drawStatic() {
   if (curDef.holes) for (let r = 0; r < PILLAR_ROWS; r++) for (const c of [-1, 0]) {
     if (curDef.blocks.some(b => b[0] === c && b[1] === r)) continue;
     const x = (c - 0.5) * CELL, y = -(r + 1) * CELL + off;
-    ctx.fillStyle = PAINT ? '#5a4466' : '#5a4c7a'; ctx.fillRect(x, y, CELL, CELL);
-    ctx.fillStyle = PAINT ? '#45324f' : '#3e3360'; ctx.fillRect(x, y, CELL, 7);
+    ctx.fillStyle = PAINT ? pc('#5a4466') : '#5a4c7a'; ctx.fillRect(x, y, CELL, CELL);
+    ctx.fillStyle = PAINT ? pc('#45324f') : '#3e3360'; ctx.fillRect(x, y, CELL, 7);
     ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(c === -1 ? x : x + CELL - 8, y, 8, CELL);
   }
   // vulling per vakje
   for (const [sx, sy] of cells) {
     const x = sx * CELL, y = sy * CELL, slab = Math.abs(sy * CELL - off) < 0.5;
     if (slab) {   // aarde
-      ctx.fillStyle = PAINT ? '#a07e7c' : '#c98a5a'; ctx.fillRect(x, y, CELL, CELL);
-      ctx.fillStyle = PAINT ? '#7f606e' : '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
+      ctx.fillStyle = PAINT ? pc('#a07e7c') : '#c98a5a'; ctx.fillRect(x, y, CELL, CELL);
+      ctx.fillStyle = PAINT ? pc('#7f606e') : '#ad7148'; ctx.fillRect(x, y + CELL * 0.62, CELL, CELL * 0.38);
       ctx.fillStyle = 'rgba(43,33,64,.25)';
       ctx.beginPath(); ctx.arc(x + CELL * (0.3 + ((sx * 7) % 3) * 0.2), y + CELL * 0.55, 2.2, 0, 7); ctx.fill();
     } else if (curDef.wood || (curDef.trunk !== undefined && Math.abs(sx - (curDef.trunk - 0.5)) < 0.01)) {   // houten stam / palen
       const col = Math.round(sx + 0.5), same = d => curDef.poleAt && curDef.poleAt[col + d] === curDef.poleAt[col] && has(sx + d, sy);
-      ctx.fillStyle = PAINT ? '#7a5045' : '#8b5a3a'; ctx.fillRect(x, y, CELL, CELL);
-      if (!same(1)) { ctx.fillStyle = PAINT ? '#58383f' : '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL); }   // schaduwkant alleen rechts van de paal
-      if (!same(-1)) { ctx.fillStyle = PAINT ? '#a07258' : '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL); }
+      ctx.fillStyle = PAINT ? pc('#7a5045') : '#8b5a3a'; ctx.fillRect(x, y, CELL, CELL);
+      if (!same(1)) { ctx.fillStyle = PAINT ? pc('#58383f') : '#6f4329'; ctx.fillRect(x + CELL * 0.62, y, CELL * 0.38, CELL); }   // schaduwkant alleen rechts van de paal
+      if (!same(-1)) { ctx.fillStyle = PAINT ? pc('#a07258') : '#a8724c'; ctx.fillRect(x + CELL * 0.12, y, CELL * 0.14, CELL); }
       ctx.strokeStyle = 'rgba(43,33,64,.45)'; ctx.lineWidth = 2; ctx.lineCap = 'round';          // houtnerf en ringen
       ctx.beginPath(); ctx.moveTo(x + 4, y + CELL * 0.35); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.22, x + CELL - 4, y + CELL * 0.4);
       ctx.moveTo(x + 4, y + CELL * 0.82); ctx.quadraticCurveTo(x + CELL / 2, y + CELL * 0.7, x + CELL - 4, y + CELL * 0.88); ctx.stroke(); ctx.lineCap = 'butt';
       if (((sy * 7) | 0) % 3 === 0) { ctx.fillStyle = 'rgba(43,33,64,.35)'; ctx.beginPath(); ctx.ellipse(x + CELL * 0.4, y + CELL * 0.58, 3, 2, 0, 0, 7); ctx.fill(); }
     } else {      // gemetselde steen
-      ctx.fillStyle = PAINT ? '#b39cac' : '#c3c7e6'; ctx.fillRect(x, y, CELL, CELL);
-      ctx.fillStyle = PAINT ? '#917b96' : '#a5a9d0'; ctx.fillRect(x, y + CELL * 0.7, CELL, CELL * 0.3);
+      ctx.fillStyle = PAINT ? pc('#b39cac') : '#c3c7e6'; ctx.fillRect(x, y, CELL, CELL);
+      ctx.fillStyle = PAINT ? pc('#917b96') : '#a5a9d0'; ctx.fillRect(x, y + CELL * 0.7, CELL, CELL * 0.3);
       ctx.fillStyle = 'rgba(43,33,64,.35)';
       ctx.fillRect(x, y + CELL - 2, CELL, 2);
       const r = Math.round(-sy + off / CELL);
@@ -3937,7 +4131,7 @@ function drawStatic() {
   }
   // naden tussen twee palen die tegen elkaar staan
   if (curDef.poleAt) {
-    ctx.fillStyle = PAINT ? P_INK : INK;
+    ctx.fillStyle = PAINT ? pc(P_INK) : INK;
     for (const [sx, sy] of cells) {
       const col = Math.round(sx + 0.5);
       if (!has(sx + 1, sy) || curDef.poleAt[col + 1] === curDef.poleAt[col] || Math.abs(sy * CELL - off) < 0.5) continue;
@@ -3947,7 +4141,7 @@ function drawStatic() {
   // inktrand om het hele silhouet
   ctx.beginPath();
   for (const loop of staticLoops) { loop.forEach(([x, y], i) => i ? ctx.lineTo(x * CELL, y * CELL + off) : ctx.moveTo(x * CELL, y * CELL + off)); ctx.closePath(); }
-  ctx.strokeStyle = PAINT ? P_INK : INK; ctx.lineWidth = PAINT ? 2.5 : 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
+  ctx.strokeStyle = PAINT ? pc(P_INK) : INK; ctx.lineWidth = PAINT ? 2.5 : 3; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
   // gras op elke vrije bovenkant, met bolle plukjes die over de rand hangen
   for (const [sx, sy] of cells) {
     if (has(sx, sy - 1)) continue;
@@ -3962,11 +4156,11 @@ function drawStatic() {
       ctx.quadraticCurveTo((bx0 + bx1) / 2, gy + gh + 5, bx1, gy + gh - 3);
     }
     ctx.closePath();
-    ctx.fillStyle = PAINT ? '#7fa04c' : '#6fd65b'; ctx.fill();
-    ctx.strokeStyle = PAINT ? P_INK : INK; ctx.lineWidth = PAINT ? 2 : 2.5; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
-    ctx.fillStyle = PAINT ? '#c4cf72' : '#a8f08f'; ctx.fillRect(x0 + 3, gy + 1.5, x1 - x0 - 6, 2.5);
+    ctx.fillStyle = PAINT ? pc('#7fa04c') : '#6fd65b'; ctx.fill();
+    ctx.strokeStyle = PAINT ? pc(P_INK) : INK; ctx.lineWidth = PAINT ? 2 : 2.5; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineJoin = 'miter';
+    ctx.fillStyle = PAINT ? pc('#c4cf72') : '#a8f08f'; ctx.fillRect(x0 + 3, gy + 1.5, x1 - x0 - 6, 2.5);
     // sprietjes
-    ctx.strokeStyle = PAINT ? '#4f6b34' : INK; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    ctx.strokeStyle = PAINT ? pc('#4f6b34') : INK; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
     for (const f of [0.25, 0.7]) { const bx = x + CELL * f; ctx.beginPath(); ctx.moveTo(bx, gy); ctx.lineTo(bx - 2, gy - 5); ctx.moveTo(bx + 2, gy); ctx.lineTo(bx + 4, gy - 4); ctx.stroke(); }
     ctx.lineCap = 'butt';
   }
@@ -3990,6 +4184,14 @@ function drawFinish(t, left, right) {
 }
 
 /* wolkenzee i.p.v. water (schilderij-stijl): bolle wolken die langzaam drijven, warm aangelicht van boven */
+/* kleur van eiland, stenen en gras in de schilderij-stijl, bij een donkere lucht (onweer, nacht) mee verdonkerd */
+const shadeCache = new Map();
+function pc(c) {
+  const sh = THEME.shade; if (!sh) return c;
+  const k = c + sh; let v = shadeCache.get(k);
+  if (!v) { v = mix(c, sh[0], sh[1]); shadeCache.set(k, v); }
+  return v;
+}
 function drawCloudSea(t, left, right, bottom, layer) {
   const base = SEA_Y + (layer ? 8 : -12), R = layer ? 24 : 32, step = R * 1.3, drift = t * (layer ? 0.004 : -0.0025);
   const puffs = [];
@@ -4002,11 +4204,12 @@ function drawCloudSea(t, left, right, bottom, layer) {
   ctx.rect(left - 60, base, right - left + 120, bottom - base + 80);
   if (layer) {
     const g = ctx.createLinearGradient(0, base - R, 0, base + 220);
-    g.addColorStop(0, '#ffe6d4'); g.addColorStop(0.25, '#f2bccb'); g.addColorStop(1, '#9d7dbb');
+    const cl = THEME.clouds || CLOUDS_GOLDEN;
+    g.addColorStop(0, cl[0]); g.addColorStop(0.25, cl[1]); g.addColorStop(1, cl[2]);
     ctx.fillStyle = g; ctx.fill();
-    ctx.fillStyle = 'rgba(255,246,232,.55)';   // zonnige bovenkant van elke wolk
+    ctx.fillStyle = cl[4];   // aangelichte bovenkant van elke wolk
     ctx.beginPath(); for (const [x, y, r] of puffs) { ctx.moveTo(x - r * 0.2 + r * 0.55, y - r * 0.3); ctx.arc(x - r * 0.2, y - r * 0.3, r * 0.55, 0, 7); } ctx.fill();
-  } else { ctx.fillStyle = 'rgba(214,160,196,.92)'; ctx.fill(); }
+  } else { ctx.fillStyle = (THEME.clouds || CLOUDS_GOLDEN)[3]; ctx.fill(); }
 }
 function drawSea(t, left, right, bottom, layer) {
   if (SEA_Y - 30 > bottom) return;
@@ -4063,25 +4266,30 @@ if (store('st_epoch') !== RESET_EPOCH) {
   best = 0; puzzleBest = 0; raceBest = 0; renderHomeRecords();
   store('st_epoch', RESET_EPOCH);
 }
-const CATS = [['blocks', 'Blokken'], ['world', 'Wereld'], ['fx', 'Effecten'], ['avatar', 'Avatar'], ['namecol', 'Naamkleur'], ['frame', 'Rand']];
-/* alle skins. level = vrij te spelen op dat level, price = te koop met munten, beide leeg = standaard */
-const ITEMS = [   // wins = aantal party-wins om de skin vrij te spelen, price = daarna kopen met munten; beide leeg = standaard
-  { id: 'b_classic', cat: 'blocks', name: 'Klassiek' },
-  { id: 'b_pastel', cat: 'blocks', name: 'Pastel', wins: 0, price: 200 },
-  { id: 'b_ocean', cat: 'blocks', name: 'Oceaan', wins: 1, price: 300 },
-  { id: 'b_candy', cat: 'blocks', name: 'Snoep', wins: 3, price: 450 },
-  { id: 'b_wood', cat: 'blocks', name: 'Hout', wins: 5, price: 500 },
-  { id: 'b_neon', cat: 'blocks', name: 'Neon', wins: 10, price: 700 },
+/* winkel-tabbladen; 'player' bundelt avatar, rand en naamkleur op één pagina */
+const CATS = [['blocks', 'Blokken'], ['world', 'Lucht'], ['fx', 'Effecten'], ['player', 'Speler']];
+const PLAYER_CATS = [['avatar', 'Avatar'], ['frame', 'Rand'], ['namecol', 'Naamkleur']];
+/* alle skins. wins = aantal party-wins om de skin vrij te spelen, price = daarna kopen met munten; beide leeg = standaard.
+   Moet gelijk blijven met de tabel items in supabase/schema.sql. */
+const ITEMS = [
+  { id: 'b_rock', cat: 'blocks', name: 'Rotssteen' },
+  { id: 'b_moss', cat: 'blocks', name: 'Mossteen', wins: 0, price: 200 },
+  { id: 'b_sand', cat: 'blocks', name: 'Zandsteen', wins: 1, price: 300 },
+  { id: 'b_marble', cat: 'blocks', name: 'Marmer', wins: 3, price: 450 },
+  { id: 'b_ice', cat: 'blocks', name: 'IJs', wins: 5, price: 550 },
+  { id: 'b_crystal', cat: 'blocks', name: 'Kristal', wins: 10, price: 750 },
+  { id: 'b_lava', cat: 'blocks', name: 'Lava', wins: 15, price: 1000 },
   { id: 'b_gold', cat: 'blocks', name: 'Goud', wins: 25, price: 1200 },
-  { id: 'w_sunny', cat: 'world', name: 'Zonnig' },
-  { id: 'w_sunset', cat: 'world', name: 'Zonsondergang', wins: 0, price: 300 },
-  { id: 'w_desert', cat: 'world', name: 'Woestijn', wins: 2, price: 500 },
-  { id: 'w_night', cat: 'world', name: 'Sterrennacht', wins: 5, price: 750 },
-  { id: 'w_snow', cat: 'world', name: 'Sneeuw', wins: 10, price: 900 },
-  { id: 'f_puff', cat: 'fx', name: 'Wolkjes' },
-  { id: 'f_stars', cat: 'fx', name: 'Sterren', wins: 0, price: 200 },
-  { id: 'f_hearts', cat: 'fx', name: 'Hartjes', wins: 1, price: 300 },
-  { id: 'f_sparks', cat: 'fx', name: 'Vonken', wins: 3, price: 450 },
+  { id: 'w_golden', cat: 'world', name: 'Gouden uur' },
+  { id: 'w_dawn', cat: 'world', name: 'Dageraad', wins: 0, price: 300 },
+  { id: 'w_autumn', cat: 'world', name: 'Herfst', wins: 2, price: 500 },
+  { id: 'w_storm', cat: 'world', name: 'Onweer', wins: 5, price: 750 },
+  { id: 'w_night', cat: 'world', name: 'Nacht', wins: 10, price: 900 },
+  { id: 'f_dust', cat: 'fx', name: 'Stofwolkjes' },
+  { id: 'f_gravel', cat: 'fx', name: 'Steengruis', wins: 0, price: 200 },
+  { id: 'f_leaves', cat: 'fx', name: 'Blaadjes', wins: 1, price: 300 },
+  { id: 'f_flies', cat: 'fx', name: 'Vuurvliegjes', wins: 3, price: 450 },
+  { id: 'f_stars', cat: 'fx', name: 'Sterren', wins: 5, price: 500 },
   { id: 'f_confetti', cat: 'fx', name: 'Confetti', wins: 8, price: 600 },
   { id: 'a_happy', cat: 'avatar', name: 'Blij' },
   { id: 'a_wink', cat: 'avatar', name: 'Knipoog' },
@@ -4104,29 +4312,32 @@ const ITEMS = [   // wins = aantal party-wins om de skin vrij te spelen, price =
   { id: 'r_rainbow', cat: 'frame', name: 'Regenboog', wins: 25, price: 1500 },
 ];
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const DEFAULT_EQ = { blocks: 'b_classic', world: 'w_sunny', fx: 'f_puff', avatar: 'a_happy', namecol: 'n_white', frame: 'r_none' };
+const DEFAULT_EQ = { blocks: 'b_rock', world: 'w_golden', fx: 'f_dust', avatar: 'a_happy', namecol: 'n_white', frame: 'r_none' };
+/* oude skins (van vóór de schilderij-winkel) → de nieuwe skin op dezelfde plek. Zelfde lijst staat in supabase/schema.sql. */
+const MIGRATE = { b_classic: 'b_rock', b_pastel: 'b_moss', b_ocean: 'b_sand', b_candy: 'b_marble', b_wood: 'b_ice', b_neon: 'b_crystal',
+  w_sunny: 'w_golden', w_sunset: 'w_dawn', w_desert: 'w_autumn', w_snow: 'w_storm', f_puff: 'f_dust', f_hearts: 'f_leaves', f_sparks: 'f_flies' };
+const migrateId = id => MIGRATE[id] || id;
+function migrateSkins(p) { p.owned = [...new Set(p.owned.map(migrateId))]; for (const k of Object.keys(p.eq)) p.eq[k] = migrateId(p.eq[k]); }
 
-/* blok-skins: kleuren per stuk + een stijl die drawPieceRaw extra tekent */
-const BASE_COLORS = { ...COLORS };
-const BLOCK_SKINS = {
-  b_classic: { colors: BASE_COLORS },
-  b_pastel: { colors: { I: '#9ee3f7', O: '#ffe9a3', T: '#d9b8ff', L: '#ffc49e', J: '#a9bfff', S: '#a8e8b0', Z: '#ffb0c7' } },
-  b_ocean: { colors: { I: '#3fd0e0', O: '#8fe8d4', T: '#4d9bff', L: '#2fb8b0', J: '#3a6fe0', S: '#5fe0a8', Z: '#7aa8ff' }, style: 'waves' },
-  b_candy: { colors: BASE_COLORS, style: 'stripes' },
-  b_wood: { colors: { I: '#c98a55', O: '#dba468', T: '#b07040', L: '#c88452', J: '#a8693c', S: '#d29a5c', Z: '#b9784a' }, style: 'wood' },
-  b_neon: { colors: { I: '#3ff5ff', O: '#fff23f', T: '#d46cff', L: '#ff9b3f', J: '#5d95ff', S: '#4dff7a', Z: '#ff3f9b' }, style: 'neon' },
-  b_gold: { colors: { I: '#ffd23f', O: '#ffc93a', T: '#f7bd2e', L: '#ffcf45', J: '#f2b62a', S: '#ffd84f', Z: '#f9c437' }, style: 'gold' },
-};
-let BLOCK_STYLE = null;
-/* wereld-thema's: lucht, zon/maan, wolken, heuvels, zee */
+/* lucht-thema's: het schilderij in een andere sfeer. art = kleurbewerking (in volgorde, net als CSS-filters) + kleurlaag,
+   rain/leaves/night = bewegende extra's. De overige velden zijn de oude cartoonwereld, als terugval zonder schilderij. */
 const WORLDS = {
-  w_sunny: { sky: ['#4fb8ff', '#8fd6ff', '#d4f3ff'], sun: '#ffe36b', glow: '255,240,170', cloud: ['#cfe9ff', '#ffffff'], hill: '#8fd9a0', sea: ['#3cc3f2', '#1f86d6'], seaBack: '#7fd6f5', stars: 0, ui: '79,184,255' },
-  w_sunset: { sky: ['#ff8a6b', '#ffb87a', '#ffe6b0'], sun: '#ffb347', glow: '255,200,140', cloud: ['#f7b6c2', '#ffe8e0'], hill: '#d08fb0', sea: ['#f394a6', '#8e5cab'], seaBack: '#f8b8a8', stars: 0, ui: '255,150,120' },
-  w_desert: { sky: ['#f2b56f', '#f8d7a2', '#fdf0d8'], sun: '#fff1b0', glow: '255,240,190', cloud: ['#f0d2ae', '#fff6ea'], hill: '#e3ad6c', sea: ['#55d0c4', '#2a9693'], seaBack: '#8fe0d6', stars: 0, ui: '240,170,100' },
-  w_night: { sky: ['#121845', '#262c78', '#474c9c'], sun: '#f4f1d0', moon: true, glow: '220,225,255', cloud: ['#353d7a', '#555ea6'], hill: '#35577a', sea: ['#2b4b8f', '#131d4d'], seaBack: '#3a5a9a', stars: 1, ui: '40,46,120' },
-  w_snow: { sky: ['#9fc7e8', '#cfe3f3', '#f2f8fd'], sun: '#fff8d6', glow: '255,255,240', cloud: ['#dbe7f2', '#ffffff'], hill: '#eef5fb', sea: ['#7fc3e8', '#3f86c0'], seaBack: '#bfe3f5', stars: 0, snow: true, ui: '140,190,230' },
+  w_golden: { sky: ['#ff9a6b', '#ffc27a', '#ffe6b0'], sun: '#ffd36b', glow: '255,220,160', cloud: ['#f7c6b2', '#fff0e0'], hill: '#c99ab0', sea: ['#f0a0b0', '#8e6cab'], seaBack: '#f8c0b0', stars: 0, ui: '240,150,110' },
+  w_dawn: { sky: ['#a8b8f0', '#e8b8d8', '#fff0f0'], sun: '#fff1d0', glow: '255,240,230', cloud: ['#f0d0e8', '#ffffff'], hill: '#b8a8d8', sea: ['#b0c8f0', '#7f8fd0'], seaBack: '#d8d8f8', stars: 0, ui: '190,160,230',
+    art: { ops: [['hue', -38], ['sat', 0.75], ['bri', 1.12]], tint: 'rgba(170,200,255,.18)' } },
+  w_autumn: { sky: ['#e8804a', '#f2a860', '#fbd8a0'], sun: '#ffd080', glow: '255,200,140', cloud: ['#f0b890', '#fff0e0'], hill: '#c87850', sea: ['#d89070', '#8a5040'], seaBack: '#f0b090', stars: 0, ui: '220,120,70',
+    art: { ops: [['sepia', 0.6], ['sat', 1.6], ['hue', -20], ['bri', 0.92]], tint: 'rgba(160,60,20,.12)' }, leaves: true },
+  w_storm: { sky: ['#3a4060', '#5a6080', '#8088a0'], sun: '#d8dce8', glow: '200,210,230', cloud: ['#4a5070', '#6a7090'], hill: '#4a5a6a', sea: ['#4a6080', '#24304a'], seaBack: '#5a6a88', stars: 0, ui: '70,80,120', dark: true,
+    art: { ops: [['gray', 0.55], ['bri', 0.62], ['con', 1.15]], tint: 'rgba(50,70,130,.3)' }, rain: true },
+  w_night: { sky: ['#121845', '#262c78', '#474c9c'], sun: '#f4f1d0', moon: true, glow: '220,225,255', cloud: ['#353d7a', '#555ea6'], hill: '#35577a', sea: ['#2b4b8f', '#131d4d'], seaBack: '#3a5a9a', stars: 1, ui: '40,46,120', dark: true,
+    art: { ops: [['hue', 185], ['sat', 0.8], ['bri', 0.42]], tint: 'rgba(20,25,80,.25)' }, night: true },
 };
-let THEME = WORLDS.w_sunny, FX = 'f_puff';
+const CLOUDS_GOLDEN = ['#ffe6d4', '#f2bccb', '#9d7dbb', 'rgba(214,160,196,.92)', 'rgba(255,246,232,.55)'];   // wolkenzee: boven, midden, onder, achterste laag, licht
+Object.assign(WORLDS.w_dawn, { clouds: ['#f6f0ff', '#dccdf2', '#8f86c8', 'rgba(196,180,232,.92)', 'rgba(255,255,255,.55)'] });
+Object.assign(WORLDS.w_autumn, { clouds: ['#ffe0c0', '#f2b08e', '#a0607a', 'rgba(222,150,130,.92)', 'rgba(255,236,210,.55)'] });
+Object.assign(WORLDS.w_storm, { clouds: ['#a8b0c8', '#7a84a0', '#3e4462', 'rgba(108,116,150,.92)', 'rgba(220,230,255,.3)'], shade: ['#2a3050', 0.38] });
+Object.assign(WORLDS.w_night, { clouds: ['#8a90c8', '#5a62a0', '#262c5a', 'rgba(70,80,140,.92)', 'rgba(220,225,255,.28)'], shade: ['#141a48', 0.45] });
+let THEME = WORLDS.w_golden, FX = 'f_dust';
 const NAME_COLORS = { n_white: '#ffffff', n_sky: '#8fd8ff', n_mint: '#7ef0c0', n_pink: '#ff9cc2', n_gold: '#ffcf3a', n_rainbow: 'rainbow' };
 const FRAME_COLORS = { r_none: null, r_bronze: '#d08a4a', r_silver: '#c9d3e0', r_gold: '#ffcf3a', r_rainbow: 'rainbow' };
 const RAINBOW_CSS = 'linear-gradient(90deg,#ff5c8a,#ffb347,#ffe36b,#56d364,#3fc4f5,#b46cff)';
@@ -4146,6 +4357,7 @@ function loadLocalProfile() {   // het gastprofiel op dit apparaat
   // nieuwe velden aanvullen, zodat oude profielen blijven werken
   p.stats = { ...f.stats, ...(p.stats || {}) }; p.eq = { ...f.eq, ...(p.eq || {}) };
   p.owned = Array.isArray(p.owned) ? [...new Set([...f.owned, ...p.owned])] : f.owned;
+  migrateSkins(p);
   for (const k of ['ach', 'daily', 'quests']) if (!p[k] || typeof p[k] !== 'object') p[k] = f[k];
   for (const k of ['xp', 'level', 'coins']) p[k] = Math.max(k === 'level' ? 1 : 0, Math.floor(+p[k] || 0));
   if (typeof p.name !== 'string' || !p.name.trim()) p.name = f.name;
@@ -4173,67 +4385,24 @@ function addXP(n) {
 
 /* ---- skins toepassen ---- */
 function applySkins(rebuild) {
-  const bs = BLOCK_SKINS[profile.eq.blocks] || BLOCK_SKINS.b_classic;
-  Object.assign(COLORS, bs.colors); BLOCK_STYLE = bs.style || null;
-  THEME = WORLDS[profile.eq.world] || WORLDS.w_sunny; FX = profile.eq.fx;
+  MAT = MATS[profile.eq.blocks] || MATS.b_rock; Object.assign(COLORS, MAT.col);
+  THEME = WORLDS[profile.eq.world] || WORLDS.w_golden; FX = profile.eq.fx;
   document.documentElement.style.setProperty('--ov-tint', THEME.ui);
-  document.documentElement.classList.toggle('dark-world', !!THEME.moon);
+  document.documentElement.classList.toggle('dark-world', !!THEME.dark);
   if (rebuild) { resize(); drawNext(); }
-}
-/* extra tekenwerk per blok-skin (na de gewone tegel), in de sprite */
-function drawBlockStyle(c, cells, has, s, ox, oy, color) {
-  if (!BLOCK_STYLE) return;
-  c.save();
-  c.beginPath(); for (const [x, y] of cells) c.rect(ox + x * s + s * 0.09, oy + y * s + s * 0.09, s * 0.82, s * 0.82); c.clip();
-  if (BLOCK_STYLE === 'stripes') {
-    c.strokeStyle = 'rgba(255,255,255,.42)'; c.lineWidth = s * 0.13;
-    const W2 = 6 * s;
-    for (let d = -W2; d < W2; d += s * 0.42) { c.beginPath(); c.moveTo(ox + d, oy + 5 * s); c.lineTo(ox + d + 5 * s, oy); c.stroke(); }
-  } else if (BLOCK_STYLE === 'wood') {
-    c.strokeStyle = shade(color, -0.28); c.lineWidth = Math.max(1, s * 0.05); c.lineCap = 'round';
-    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
-      for (const f of [0.38, 0.66]) { c.beginPath(); c.moveTo(X + s * 0.15, Y + s * f); c.quadraticCurveTo(X + s * 0.5, Y + s * (f - 0.1), X + s * 0.85, Y + s * (f + 0.03)); c.stroke(); }
-      c.fillStyle = shade(color, -0.3); c.beginPath(); c.ellipse(X + s * 0.7, Y + s * 0.5, s * 0.06, s * 0.04, 0, 0, 7); c.fill(); }
-  } else if (BLOCK_STYLE === 'waves') {
-    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = Math.max(1, s * 0.06); c.lineCap = 'round';
-    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s + s * 0.62;
-      c.beginPath(); c.moveTo(X + s * 0.15, Y); c.quadraticCurveTo(X + s * 0.32, Y - s * 0.1, X + s * 0.5, Y); c.quadraticCurveTo(X + s * 0.68, Y + s * 0.1, X + s * 0.85, Y); c.stroke(); }
-  } else if (BLOCK_STYLE === 'gold') {
-    c.fillStyle = 'rgba(255,255,255,.38)';
-    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
-      c.beginPath(); c.moveTo(X + s * 0.55, Y); c.lineTo(X + s * 0.78, Y); c.lineTo(X + s * 0.3, Y + s); c.lineTo(X + s * 0.07, Y + s); c.closePath(); c.fill(); }
-  } else if (BLOCK_STYLE === 'neon') {
-    c.restore(); c.save();
-    c.fillStyle = '#211a45';
-    for (const [x, y] of cells) c.fillRect(ox + x * s + s * 0.09, oy + y * s + s * 0.09, s * 0.82, s * 0.82);
-    for (const [x, y] of cells) {   // naden dichten tussen buurvakjes
-      if (has(x + 1, y)) c.fillRect(ox + x * s + s * 0.85, oy + y * s + s * 0.09, s * 0.3, s * 0.82);
-      if (has(x, y + 1)) c.fillRect(ox + x * s + s * 0.09, oy + y * s + s * 0.85, s * 0.82, s * 0.3);
-    }
-    c.strokeStyle = color; c.lineWidth = s * 0.1; c.lineCap = 'round'; c.shadowColor = color; c.shadowBlur = s * 0.35;
-    const i = s * 0.2;
-    c.beginPath();
-    for (const [x, y] of cells) { const X = ox + x * s, Y = oy + y * s;
-      if (!has(x, y - 1)) { c.moveTo(X + (has(x - 1, y) ? 0 : i), Y + i); c.lineTo(X + s - (has(x + 1, y) ? 0 : i), Y + i); }
-      if (!has(x, y + 1)) { c.moveTo(X + (has(x - 1, y) ? 0 : i), Y + s - i); c.lineTo(X + s - (has(x + 1, y) ? 0 : i), Y + s - i); }
-      if (!has(x - 1, y)) { c.moveTo(X + i, Y + (has(x, y - 1) ? 0 : i)); c.lineTo(X + i, Y + s - (has(x, y + 1) ? 0 : i)); }
-      if (!has(x + 1, y)) { c.moveTo(X + s - i, Y + (has(x, y - 1) ? 0 : i)); c.lineTo(X + s - i, Y + s - (has(x, y + 1) ? 0 : i)); }
-    }
-    c.stroke(); c.stroke();
-  }
-  c.restore();
 }
 /* landingseffect volgens de gekozen effect-skin (alleen voor je eigen blokken) */
 function themedBurst(x, y, k) {
   const FXn = fxOut === particles ? FX : oppFX, out = fxOut;
-  if (FXn === 'f_puff' || !FXn) return false;
+  if (FXn === 'f_dust' || !FXn) return false;
   const n = 4 + Math.round(8 * k);
   for (let i = 0; i < n; i++) {
     const a = rand(-Math.PI * 0.95, -Math.PI * 0.05), sp = rand(60, 170) * (0.6 + k);
     const base = { x: x + rand(-8, 8), y: y + rand(-4, 2), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0, rot: rand(0, 6), vr: rand(-6, 6) };
-    if (FXn === 'f_hearts') out.push({ ...base, t: 'heart', vy: base.vy * 0.6, max: rand(0.6, 1), size: rand(4, 6.5), color: ['#ff5c8a', '#ff8fb8', '#ff3f6e'][i % 3] });
+    if (FXn === 'f_gravel') out.push({ ...base, t: 'gravel', vy: base.vy * 1.1, vr: rand(-10, 10), max: rand(0.5, 0.85), size: rand(3, 5.5), color: ['#9c7488', '#b39cac', '#74536f'][i % 3] });
+    else if (FXn === 'f_leaves') out.push({ ...base, t: 'leaf', vy: base.vy * 0.7, ph: rand(0, 6), max: rand(0.9, 1.4), size: rand(4.5, 6.5), color: ['#7fa04c', '#a6d65a', '#c4cf72'][i % 3] });
+    else if (FXn === 'f_flies') out.push({ ...base, t: 'fly', vx: base.vx * 0.5, vy: base.vy * 0.45, ph: rand(0, 6), max: rand(1.1, 1.8), size: rand(2, 3) });
     else if (FXn === 'f_stars') out.push({ ...base, t: 'star', max: rand(0.45, 0.75), size: rand(2.5, 4.2), color: ['#ffd166', '#fff3b0', '#ffffff'][i % 3] });
-    else if (FXn === 'f_sparks') out.push({ ...base, t: 'spark', vy: base.vy * 1.2, max: rand(0.35, 0.6), size: rand(1.6, 2.6), color: ['#ffb347', '#ff6b3f', '#ffe36b'][i % 3] });
     else if (FXn === 'f_confetti') out.push({ ...base, t: 'conf', vy: base.vy * 1.3, max: rand(0.8, 1.3), size: rand(3.5, 5.5), color: COLORS[TYPES[i % 7]] });
   }
   return true;
@@ -4433,61 +4602,127 @@ $('pbCoins').onclick = () => showTab('shop');
 
 /* winkel */
 let shopCat = 'blocks';
+const esc = t => String(t).replace(/[<>&"]/g, '');
+/* uitgelicht: elke dag (Nederlandse tijd) één blok-, lucht- of effect-skin met 30% korting, ook zonder genoeg wins.
+   Zelfde keuze als featured_item() in supabase/schema.sql: alfabetisch op id, dag-nummer sinds 1 jan 2026, modulo het aantal. */
+const FEAT_OFF = 0.3;
+const nlDay = () => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Amsterdam' }).format(new Date()); } catch (e) { return todayStr(); } };
+function featuredItem() {
+  const pool = ITEMS.filter(i => i.price && ['blocks', 'world', 'fx'].includes(i.cat)).map(i => i.id).sort();
+  const d = Math.round((Date.parse(nlDay()) - Date.parse('2026-01-01')) / 864e5);
+  return ITEM[pool[((d % pool.length) + pool.length) % pool.length]];
+}
+const isFeatured = i => featuredItem() === i;
+const priceOf = i => isFeatured(i) ? Math.round(i.price * (1 - FEAT_OFF) / 5) * 5 : i.price;
+const isLocked = i => !profile.owned.includes(i.id) && (i.wins || 0) > myWins() && !isFeatured(i);
+function featHoursLeft() {   // uren tot middernacht in Nederland
+  try {
+    const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).split(':').map(Number);
+    const left = 24 * 60 - (h * 60 + m);
+    return left >= 60 ? `nog ${Math.floor(left / 60)} uur` : `nog ${left} min`;
+  } catch (e) { return 'alleen vandaag'; }
+}
+
+/* voorbeeldplaatjes: canvasjes die na het opbouwen van de winkel getekend worden */
 function itemPreview(i) {
   if (i.cat === 'avatar') return avatarHTML(i.id, profile.eq.frame);
   if (i.cat === 'frame') return avatarHTML(profile.eq.avatar, i.id);
-  if (i.cat === 'namecol') return `<span class="pv-name" style="${nameStyle(i.id)}">${profile.name.replace(/[<>&"]/g, '')}</span>`;
-  if (i.cat === 'world') { const w = WORLDS[i.id];
-    return `<span class="pv-world" style="background:linear-gradient(${w.sky[0]},${w.sky[1]} 55%,${w.sea[0]} 56%,${w.sea[1]})"><i style="background:${w.sun};box-shadow:0 0 0 4px rgba(${w.glow},.45)"></i>${w.moon ? '<b></b>' : ''}<em style="background:${w.hill}"></em></span>`; }
-  if (i.cat === 'fx') return `<span class="pv-fx">${{ f_puff: '☁️', f_stars: '⭐', f_hearts: '💖', f_sparks: '🔥', f_confetti: '🎉' }[i.id]}</span>`;
-  return `<canvas class="pv-blocks" data-skin="${i.id}" width="120" height="84"></canvas>`;
+  if (i.cat === 'namecol') return `<span class="pv-name" style="${nameStyle(i.id)}">${esc(profile.name)}</span>`;
+  if (i.cat === 'world' || i.cat === 'fx') return `<canvas class="pv-scene" data-cat="${i.cat}" data-id="${i.id}" width="184" height="116"></canvas>`;
+  return `<canvas class="pv-blocks" data-id="${i.id}" width="180" height="126"></canvas>`;
 }
-function drawBlockPreviews(root) {
-  for (const cv2 of root.querySelectorAll('canvas.pv-blocks')) {
-    const g = cv2.getContext('2d'), keep = { ...COLORS }, keepStyle = BLOCK_STYLE, sk = BLOCK_SKINS[cv2.dataset.skin];
-    Object.assign(COLORS, sk.colors); BLOCK_STYLE = sk.style || null;
-    g.clearRect(0, 0, 120, 84);
-    const m = useArtBg() ? 'paint' : 'color';   // winkel toont de blokjes zoals je ze in het spel ziet
-    drawPieceRaw(g, 'T', 26, 8, 6, m); drawPieceRaw(g, 'J', 26, 72, 6, m); drawPieceRaw(g, 'O', 26, 20, 32, m);
-    Object.assign(COLORS, keep); BLOCK_STYLE = keepStyle;
+function coverDraw(g, img, w, h, fy = 1) {   // afbeelding schermvullend, fy = welk deel van de hoogte (1 = onderkant)
+  const k = Math.max(w / img.width, h / img.height), iw = img.width * k, ih = img.height * k;
+  g.drawImage(img, (w - iw) / 2, (h - ih) * fy, iw, ih);
+}
+function fxSnapshot(g, w, h, id) {   // stilstaand moment van een landingseffect, naast een stenen blok
+  const s = h * 0.2, bx = w / 2 - s, by = h * 0.5, gy = by + s;
+  drawPiecePaint(g, 'O', s, bx, by, MATS.b_rock);
+  let seed = 7; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 10; i++) {
+    const side = i % 2 ? 1 : -1, x = w / 2 + side * (s * 1.4 + R() * s * 1.6), y = gy - R() * s * 1.6;
+    g.save(); g.translate(x, y);
+    if (id === 'f_dust') { const r = s * (0.3 + R() * 0.3); g.fillStyle = '#fff1e4'; g.strokeStyle = 'rgba(150,100,140,.45)'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.stroke(); }
+    else if (id === 'f_gravel') { const z = s * (0.18 + R() * 0.14); g.rotate(R() * 6); g.fillStyle = ['#9c7488', '#b39cac', '#74536f'][i % 3]; g.strokeStyle = P_INK; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(-z, -z * 0.4); g.lineTo(z * 0.3, -z); g.lineTo(z, z * 0.2); g.lineTo(-z * 0.2, z); g.closePath(); g.fill(); g.stroke(); }
+    else if (id === 'f_leaves') { g.rotate(R() * 6); g.fillStyle = ['#7fa04c', '#a6d65a', '#c4cf72'][i % 3]; g.strokeStyle = '#3d5228'; g.lineWidth = 1;
+      g.beginPath(); g.ellipse(0, 0, s * 0.38, s * 0.19, 0, 0, 7); g.fill(); g.stroke(); }
+    else if (id === 'f_flies') { const r = s * 0.75, gr = g.createRadialGradient(0, -s * 0.5, 0, 0, -s * 0.5, r);
+      gr.addColorStop(0, 'rgba(255,250,170,1)'); gr.addColorStop(0.35, 'rgba(255,225,90,.6)'); gr.addColorStop(1, 'rgba(255,200,60,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, -s * 0.5, r, 0, 7); g.fill(); }
+    else if (id === 'f_stars') { const z = s * (0.24 + R() * 0.14); g.fillStyle = ['#ffd23f', '#fff3b0', '#ffb347'][i % 3]; g.strokeStyle = INK; g.lineWidth = 1; g.beginPath();
+      for (let q = 0; q < 10; q++) { const a = -Math.PI / 2 + q * Math.PI / 5, rr2 = q % 2 ? z * 0.45 : z; g.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); } g.closePath(); g.fill(); g.stroke(); }
+    else if (id === 'f_confetti') { g.rotate(R() * 6); g.fillStyle = STONE_COLORS[TYPES[i % 7]]; g.fillRect(-s * 0.22, -s * 0.1, s * 0.44, s * 0.2); }
+    g.restore();
+  }
+}
+function drawShopPreviews(root) {
+  for (const c of root.querySelectorAll('canvas.pv-blocks')) {   // I bovenaan, T en O eronder
+    const g = c.getContext('2d'), m = MATS[c.dataset.id] || MATS.b_rock, s = 22, ox = (c.width - s * 5.6) / 2, oy = (c.height - s * 3.4) / 2;
+    g.clearRect(0, 0, c.width, c.height);
+    drawPiecePaint(g, 'I', s, ox + s * 0.8, oy, m); drawPiecePaint(g, 'T', s, ox, oy + s * 1.4, m); drawPiecePaint(g, 'O', s, ox + s * 3.6, oy + s * 1.4, m);
+  }
+  for (const c of root.querySelectorAll('canvas.pv-scene')) {
+    const g = c.getContext('2d'), w = c.width, h = c.height, isSky = c.dataset.cat === 'world', th = isSky ? WORLDS[c.dataset.id] : WORLDS.w_golden;   // effecten altijd op de standaardlucht, goed zichtbaar
+    if (useArtBg()) coverDraw(g, skyArt(th), w, h, isSky ? 0.82 : 0.6);
+    else { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, th.sky[0]); gr.addColorStop(1, th.sky[2]); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+    if (isSky) drawSkyFx(g, th, 100, w, h, Math.min(w, h) / 130); else fxSnapshot(g, w, h, c.dataset.id);
   }
 }
 const myWins = () => profile.stats.partyWins || 0;
-function renderShop() {
-  const tabs = $('shopCats'); tabs.textContent = '';
-  for (const [k, l] of CATS) { const b = document.createElement('button'); b.textContent = l; b.className = k === shopCat ? 'on' : ''; b.onclick = () => { shopCat = k; renderShop(); }; tabs.append(b); }
-  const grid = $('shopGrid'); grid.innerHTML = '';
-  for (const i of ITEMS.filter(x => x.cat === shopCat)) {
-    const own = profile.owned.includes(i.id), on = profile.eq[i.cat] === i.id;
-    const locked = !own && (i.wins || 0) > myWins();
-    const card = document.createElement('button'); card.className = 'sh-item' + (on ? ' on' : '') + (locked ? ' locked' : '');
-    let act;
-    if (on) act = '<span class="sh-act on">Gekozen</span>';
-    else if (own) act = '<span class="sh-act">Kies</span>';
-    else if (locked) act = `<span class="sh-act lock">🔒 ${myWins()}/${i.wins} wins</span>`;
-    else act = `<span class="sh-act buy ${profile.coins < i.price ? 'poor' : ''}">${COIN_SVG}${i.price}</span>`;
-    card.innerHTML = `<span class="sh-pv">${itemPreview(i)}</span><b>${i.name}</b>${act}`;
-    card.onclick = () => shopClick(i, card);
-    grid.append(card);
+function itemCard(i, featured) {   // één winkelkaartje (of de grote uitgelicht-kaart)
+  const own = profile.owned.includes(i.id), on = profile.eq[i.cat] === i.id, locked = isLocked(i), price = priceOf(i);
+  const card = document.createElement('button');
+  card.className = (featured ? 'sh-feat' : 'sh-item') + (on ? ' on' : '') + (locked ? ' locked' : '');
+  let act;
+  if (on) act = '<span class="sh-act on">Gekozen</span>';
+  else if (own) act = '<span class="sh-act">Kies</span>';
+  else if (locked) act = `<span class="sh-act lock">🔒 ${myWins()}/${i.wins} wins</span>`;
+  else act = `<span class="sh-act buy ${profile.coins < price ? 'poor' : ''}">${COIN_SVG}${price}</span>`;
+  if (featured) {
+    const cat = CATS.find(c => c[0] === i.cat)[1];
+    card.innerHTML = `<span class="ft-tag">Uitgelicht · -${Math.round(FEAT_OFF * 100)}%</span><span class="sh-pv">${itemPreview(i)}</span>`
+      + `<span class="ft-txt"><b>${i.name}</b><small>${cat} · ${featHoursLeft()}${i.wins > myWins() && !own ? ' · zonder wins' : ''}</small>`
+      + `<span class="ft-pr">${own ? '' : `<s>${COIN_SVG}${i.price}</s>`}${act}</span></span>`;
+  } else {
+    card.innerHTML = `${isFeatured(i) && !own ? '<span class="sh-badge">-30%</span>' : ''}<span class="sh-pv">${itemPreview(i)}</span><b>${i.name}</b>${act}`;
   }
-  drawBlockPreviews(grid);
+  card.onclick = () => shopClick(i, card);
+  return card;
 }
+function renderShop() {
+  const feat = $('shopFeat'), fi = featuredItem(); feat.textContent = '';
+  if (fi) feat.append(itemCard(fi, true));
+  const tabs = $('shopCats'); tabs.textContent = '';
+  for (const [k, l] of CATS) { const b = document.createElement('button'); b.textContent = l; b.className = k === shopCat ? 'on' : ''; b.onclick = () => { shopCat = k; tone(520, 0.05, 'triangle', 0.04); renderShop(); }; tabs.append(b); }
+  const body = $('shopBody'); body.textContent = '';
+  const grid = list => { const g = document.createElement('div'); g.className = 'shop-grid'; for (const i of list) g.append(itemCard(i)); return g; };
+  if (shopCat === 'player') {   // avatar, rand en naamkleur samen, met bovenaan hoe je eruitziet
+    const me = document.createElement('div'); me.className = 'sh-me';
+    me.innerHTML = `${avatarHTML(profile.eq.avatar, profile.eq.frame)}<span><small>Zo zien anderen je</small><span class="pv-name" style="${nameStyle(profile.eq.namecol)}">${esc(profile.name)}</span></span>`;
+    body.append(me);
+    for (const [k, l] of PLAYER_CATS) { const h = document.createElement('div'); h.className = 'sh-sub'; h.textContent = l; body.append(h, grid(ITEMS.filter(x => x.cat === k))); }
+  } else body.append(grid(ITEMS.filter(x => x.cat === shopCat)));
+  drawShopPreviews(feat); drawShopPreviews(body);
+}
+artBgImg.addEventListener('load', () => { if (!$('homeOv').hidden && homeTab === 'shop') renderShop(); });
 function shopClick(i, card) {
-  const own = profile.owned.includes(i.id);
-  if (!own && (i.wins || 0) > myWins()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast(`Nog ${i.wins - myWins()} ${i.wins - myWins() === 1 ? 'win' : 'wins'} nodig`, 'Wins verdien je door party-potjes te winnen'); return; }
+  const own = profile.owned.includes(i.id), price = priceOf(i);
+  const nope = (t, sub) => { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast(t, sub); };
+  if (isLocked(i)) return nope(`Nog ${i.wins - myWins()} ${i.wins - myWins() === 1 ? 'win' : 'wins'} nodig`, 'Wins verdien je door party-potjes te winnen');
   if (!own) {
-    if (profile.coins < i.price) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); haptic('error'); toast('Te weinig munten', `Nog ${i.price - profile.coins} nodig`); return; }
-    if (card.dataset.arm !== '1') { card.dataset.arm = '1'; card.querySelector('.sh-act').innerHTML = `Kopen? ${COIN_SVG}${i.price}`; card.classList.add('arm'); setTimeout(() => { if (card.isConnected) { card.dataset.arm = ''; renderShop(); } }, 2500); return; }
-    if (profile.cloud) {   // met een account koopt de server (die controleert wins en munten)
+    if (profile.coins < price) return nope('Te weinig munten', `Nog ${price - profile.coins} nodig`);
+    if (card.dataset.arm !== '1') { card.dataset.arm = '1'; card.querySelector('.sh-act').innerHTML = `Kopen? ${COIN_SVG}${price}`; card.classList.add('arm'); setTimeout(() => { if (card.isConnected) { card.dataset.arm = ''; renderShop(); } }, 2500); return; }
+    if (profile.cloud) {   // met een account koopt de server (die controleert wins, munten en de uitgelicht-korting)
       card.querySelector('.sh-act').textContent = 'Kopen…';
       rpc('buy_item', { p_id: i.id }).then(res => { useCloudProfile(res.profile); toastAchs(res.achs); sfx.milestone(); haptic('success'); })
         .catch(e => { toast('Kopen lukt niet', niceErr(e)); renderShop(); });
       return;
     }
-    profile.coins -= i.price; profile.owned.push(i.id);
+    profile.coins -= price; profile.owned.push(i.id);
     sfx.milestone(); haptic('success');
     const got = checkAchievements(); for (const a of got) toast('Prestatie: ' + a.name, `+${a.coins} munten`, 'ach');
   } else {
+    if (profile.eq[i.cat] === i.id) return;
     tone(660, 0.08, 'triangle', 0.08); haptic('light');
     if (profile.cloud) { rpc('equip_item', { p_id: i.id }).then(res => useCloudProfile(res.profile)).catch(e => toast('Kiezen lukt niet', niceErr(e))); return; }
   }
@@ -4636,6 +4871,7 @@ function useCloudProfile(p) {
   const f = freshProfile(), oldEq = profile.eq || {};
   profile = { ...f, ...p, cloud: true, stats: { ...f.stats, ...(p.stats || {}) }, eq: { ...f.eq, ...(p.eq || {}) },
     owned: Array.isArray(p.owned) ? p.owned : f.owned, ach: p.ach || {}, daily: p.daily || f.daily, quests: p.quests || f.quests };
+  migrateSkins(profile);   // vangnet als de server nog oude skin-namen teruggeeft
   if (['blocks', 'world', 'fx'].some(k => oldEq[k] !== profile.eq[k])) applySkins(true);
   $('pName').value = profile.name;
   renderProfileBar();

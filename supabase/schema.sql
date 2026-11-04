@@ -15,18 +15,36 @@ create table if not exists public.items (
   price int not null default 0,
   is_default boolean not null default false
 );
+-- blokken = steensoorten, wereld = lucht-sfeer van het schilderij, fx = landingseffect (zelfde lijst als ITEMS in index.html)
 insert into public.items (id, cat, wins, price, is_default) values
-  ('b_classic', 'blocks', 0, 0, true), ('b_pastel', 'blocks', 0, 200, false), ('b_ocean', 'blocks', 1, 300, false),
-  ('b_candy', 'blocks', 3, 450, false), ('b_wood', 'blocks', 5, 500, false), ('b_neon', 'blocks', 10, 700, false), ('b_gold', 'blocks', 25, 1200, false),
-  ('w_sunny', 'world', 0, 0, true), ('w_sunset', 'world', 0, 300, false), ('w_desert', 'world', 2, 500, false),
-  ('w_night', 'world', 5, 750, false), ('w_snow', 'world', 10, 900, false),
-  ('f_puff', 'fx', 0, 0, true), ('f_stars', 'fx', 0, 200, false), ('f_hearts', 'fx', 1, 300, false), ('f_sparks', 'fx', 3, 450, false), ('f_confetti', 'fx', 8, 600, false),
+  ('b_rock', 'blocks', 0, 0, true), ('b_moss', 'blocks', 0, 200, false), ('b_sand', 'blocks', 1, 300, false), ('b_marble', 'blocks', 3, 450, false),
+  ('b_ice', 'blocks', 5, 550, false), ('b_crystal', 'blocks', 10, 750, false), ('b_lava', 'blocks', 15, 1000, false), ('b_gold', 'blocks', 25, 1200, false),
+  ('w_golden', 'world', 0, 0, true), ('w_dawn', 'world', 0, 300, false), ('w_autumn', 'world', 2, 500, false),
+  ('w_storm', 'world', 5, 750, false), ('w_night', 'world', 10, 900, false),
+  ('f_dust', 'fx', 0, 0, true), ('f_gravel', 'fx', 0, 200, false), ('f_leaves', 'fx', 1, 300, false), ('f_flies', 'fx', 3, 450, false),
+  ('f_stars', 'fx', 5, 500, false), ('f_confetti', 'fx', 8, 600, false),
   ('a_happy', 'avatar', 0, 0, true), ('a_wink', 'avatar', 0, 0, true), ('a_cool', 'avatar', 0, 100, false), ('a_wow', 'avatar', 0, 150, false),
   ('a_grr', 'avatar', 1, 200, false), ('a_sleepy', 'avatar', 2, 200, false), ('a_star', 'avatar', 4, 350, false), ('a_king', 'avatar', 15, 1000, false),
   ('n_white', 'namecol', 0, 0, true), ('n_sky', 'namecol', 0, 100, false), ('n_mint', 'namecol', 0, 100, false), ('n_pink', 'namecol', 0, 100, false),
   ('n_gold', 'namecol', 10, 600, false), ('n_rainbow', 'namecol', 20, 1200, false),
   ('r_none', 'frame', 0, 0, true), ('r_bronze', 'frame', 1, 250, false), ('r_silver', 'frame', 5, 500, false), ('r_gold', 'frame', 12, 900, false), ('r_rainbow', 'frame', 25, 1500, false)
 on conflict (id) do update set cat = excluded.cat, wins = excluded.wins, price = excluded.price, is_default = excluded.is_default;
+
+-- oude skins (van vóór de schilderij-winkel) omzetten naar de nieuwe skin op dezelfde plek; daarna de oude uit de catalogus.
+-- Veilig om opnieuw te draaien: staat er niets ouds meer, dan verandert er niets.
+do $$
+declare m jsonb := '{"b_classic":"b_rock","b_pastel":"b_moss","b_ocean":"b_sand","b_candy":"b_marble","b_wood":"b_ice","b_neon":"b_crystal",
+  "w_sunny":"w_golden","w_sunset":"w_dawn","w_desert":"w_autumn","w_snow":"w_storm","f_puff":"f_dust","f_hearts":"f_leaves","f_sparks":"f_flies"}';
+begin
+  if to_regclass('public.profiles') is not null then
+    update public.profiles p set
+      owned = (select coalesce(array_agg(distinct coalesce(m ->> o, o)), '{}') from unnest(p.owned) as o),
+      eq = (select jsonb_object_agg(e.key, coalesce(to_jsonb(m ->> (e.value #>> '{}')), e.value)) from jsonb_each(p.eq) as e)
+    where p.owned && (select array_agg(k) from jsonb_object_keys(m) as k)
+       or exists (select 1 from jsonb_each_text(p.eq) as e where m ? e.value);
+  end if;
+  delete from public.items where id in (select jsonb_object_keys(m));
+end $$;
 alter table public.items enable row level security;
 drop policy if exists "skins zijn openbaar" on public.items;
 create policy "skins zijn openbaar" on public.items for select using (true);
@@ -41,7 +59,7 @@ create table if not exists public.profiles (
   level int not null default 1,
   wins int not null default 0,
   owned text[] not null default '{}',
-  eq jsonb not null default '{"blocks":"b_classic","world":"w_sunny","fx":"f_puff","avatar":"a_happy","namecol":"n_white","frame":"r_none"}',
+  eq jsonb not null default '{"blocks":"b_rock","world":"w_golden","fx":"f_dust","avatar":"a_happy","namecol":"n_white","frame":"r_none"}',
   stats jsonb not null default '{}',     -- games, puzzle, race, survival, party, blocks, perfects, bestStreak, bestPuzzle, bestSurvival, bestRace, raceGold
   ach jsonb not null default '{}',       -- prestatie-id → tijdstip
   daily jsonb not null default '{"last":"","streak":0}',
@@ -182,7 +200,7 @@ begin
   -- gratis skins (0 wins) uit het gastprofiel, plus de standaard-skins
   select array_agg(id) into own from items where is_default
     or (wins = 0 and id in (select jsonb_array_elements_text(coalesce(p_import -> 'owned', '[]'))));
-  e := '{"blocks":"b_classic","world":"w_sunny","fx":"f_puff","avatar":"a_happy","namecol":"n_white","frame":"r_none"}';
+  e := '{"blocks":"b_rock","world":"w_golden","fx":"f_dust","avatar":"a_happy","namecol":"n_white","frame":"r_none"}';
   for k in select jsonb_object_keys(e) loop
     if (p_import -> 'eq' ->> k) = any (own) and exists (select 1 from items where id = p_import -> 'eq' ->> k and cat = k) then
       e := jsonb_set(e, array[k], to_jsonb(p_import -> 'eq' ->> k));
@@ -329,17 +347,27 @@ begin
 end $$;
 
 -- skin kopen: genoeg wins én genoeg munten
+-- uitgelicht: elke dag (Nederlandse tijd) één blok-, lucht- of effect-skin, 30% korting en zonder wins.
+-- Zelfde keuze als featuredItem() in index.html: alfabetisch op id, dag-nummer sinds 1 jan 2026, modulo het aantal.
+create or replace function public.featured_item() returns text language sql stable set search_path = public as $$
+  with pool as (select id, row_number() over (order by id collate "C") - 1 as n, count(*) over () as c
+                from items where price > 0 and cat in ('blocks', 'world', 'fx'))
+  select id from pool where n = (((_today()::date - date '2026-01-01') % c) + c) % c
+$$;
+
 create or replace function public.buy_item(p_id text) returns jsonb language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid(); it items; r profiles; achs jsonb;
+declare uid uuid := auth.uid(); it items; r profiles; achs jsonb; feat boolean; cost int;
 begin
   if uid is null then raise exception 'niet ingelogd'; end if;
   select * into it from items where id = p_id;
   if not found then raise exception 'onbekende skin'; end if;
   select * into r from profiles where id = uid for update;
   if p_id = any (r.owned) then raise exception 'al gekocht'; end if;
-  if r.wins < it.wins then raise exception 'te weinig wins'; end if;
-  if r.coins < it.price then raise exception 'te weinig munten'; end if;
-  update profiles set coins = coins - it.price, owned = array_append(owned, p_id), eq = jsonb_set(eq, array[it.cat], to_jsonb(p_id)) where id = uid;
+  feat := p_id = featured_item();
+  cost := case when feat then (round(it.price * 0.7 / 5) * 5)::int else it.price end;
+  if r.wins < it.wins and not feat then raise exception 'te weinig wins'; end if;
+  if r.coins < cost then raise exception 'te weinig munten'; end if;
+  update profiles set coins = coins - cost, owned = array_append(owned, p_id), eq = jsonb_set(eq, array[it.cat], to_jsonb(p_id)) where id = uid;
   achs := _check_ach(uid);
   select * into r from profiles where id = uid;
   return jsonb_build_object('profile', _profile_json(r), 'achs', achs);
