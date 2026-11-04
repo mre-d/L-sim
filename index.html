@@ -3994,12 +3994,62 @@ function drawSkyFx(g, th, t, cw, ch, unit) {   // bewegende extra's in schermpix
     }
   }
 }
+/* het schilderij komt tot leven: stromende watervallen met nevel, flakkerende ramen, een gloeiende zon en drijvende mist.
+   Coördinaten in pixels van assets/puzzel_bg.webp (1672×941); bij een ander schilderij deze lijstjes aanpassen. */
+const ART_FALLS = [{ x0: 1342, x1: 1378, y0: 458, y1: 642 }, { x0: 1440, x1: 1500, y0: 742, y1: 905 }];
+const ART_WINDOWS = [[1393, 313], [1342, 395], [1398, 393], [1433, 598], [1497, 638], [619, 745], [625, 588]];
+const ART_SUN = [341, 144];
+function drawArtLife(g, t, ox, oy, s, th) {
+  if (reduceMotion) return;
+  const dim = th.dark ? 0.55 : 1;
+  g.save(); g.setTransform(s, 0, 0, s, ox, oy);
+  if (!th.night) {   // zon gloeit zacht op en neer
+    const p = 0.5 + 0.5 * Math.sin(t * 0.0015), [sx, sy] = ART_SUN, R = 95 + 10 * p, gr = g.createRadialGradient(sx, sy, 40, sx, sy, R);
+    gr.addColorStop(0, `rgba(255,240,170,${((0.22 + 0.12 * p) * dim).toFixed(3)})`); gr.addColorStop(1, 'rgba(255,220,140,0)');
+    g.fillStyle = gr; g.fillRect(sx - R, sy - R, 2 * R, 2 * R);
+  }
+  g.lineCap = 'round';
+  for (const f of ART_FALLS) {   // stromend water: lichte streepjes die naar beneden glijden
+    const w = f.x1 - f.x0, H = f.y1 - f.y0;
+    g.save(); g.beginPath(); g.rect(f.x0, f.y0, w, H); g.clip();
+    for (let i = 0; i < 9; i++) {
+      const x = f.x0 + w * (i + 0.5) / 9, sp = 0.09 + 0.04 * hash01(i), L = 14 + 10 * hash01(i + 3);
+      for (let k = 0; k < 3; k++) {
+        const y = f.y0 + ((t * sp + hash01(i * 5 + k) * H + k * H / 3) % (H + L)) - L;
+        g.strokeStyle = `rgba(255,255,255,${((0.3 + 0.2 * hash01(i + k)) * dim).toFixed(3)})`; g.lineWidth = 1.6 + hash01(i + 9);
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + L); g.stroke();
+      }
+    }
+    g.restore();
+    for (let i = 0; i < 6; i++) {   // nevel waar het water neerkomt
+      const ph = t * 0.001 + i * 1.3, x = f.x0 + w * i / 5 + Math.sin(ph) * 4, y = f.y1 - 4 + Math.cos(ph * 0.8) * 3, R = 10 + 6 * (0.5 + 0.5 * Math.sin(ph * 1.4));
+      const gr = g.createRadialGradient(x, y, 0, x, y, R);
+      gr.addColorStop(0, `rgba(255,255,255,${(0.45 * dim).toFixed(3)})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(x - R, y - R, 2 * R, 2 * R);
+    }
+  }
+  g.lineCap = 'butt';
+  for (const [x, y] of ART_WINDOWS) {   // kaarslicht achter de ramen
+    const a = clamp((0.35 + 0.25 * Math.sin(t * 0.004 + x) + 0.15 * Math.sin(t * 0.011 + y)) * (th.dark ? 1.3 : 1), 0, 1), gr = g.createRadialGradient(x, y, 0, x, y, 9);
+    gr.addColorStop(0, `rgba(255,210,110,${a.toFixed(3)})`); gr.addColorStop(1, 'rgba(255,180,80,0)');
+    g.fillStyle = gr; g.fillRect(x - 9, y - 9, 18, 18);
+  }
+  for (let i = 0; i < 5; i++) {   // mistbanken die langzaam door de vallei drijven
+    const W = 1672 + 600, x = ((i * 520 + t * 0.012 * (0.6 + 0.4 * hash01(i))) % W) - 300, y = 760 + 50 * hash01(i + 11), rx = 260;
+    g.save(); g.translate(x, y); g.scale(1, 0.16);
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+    gr.addColorStop(0, `rgba(255,230,240,${(0.18 * dim).toFixed(3)})`); gr.addColorStop(1, 'rgba(255,230,240,0)');
+    g.fillStyle = gr; g.fillRect(-rx, -rx, 2 * rx, 2 * rx); g.restore();
+  }
+  g.restore();
+}
 function drawArtBg(g) {   // schermvullend (cover), iets groter getekend zodat hij licht mee kan schuiven met de camera
   const cw = cv.width, ch = cv.height, img = skyArt(THEME), iw = img.width, ih = img.height;
   const s = Math.max(cw / iw, ch / ih) * 1.08, w = iw * s, h = ih * s;
   const py = clamp(-camY * 0.04 * K, 0, h - ch);   // hoger bouwen = achtergrond zakt een klein beetje
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.drawImage(img, (cw - w) / 2, ch - h + py, w, h);
+  drawArtLife(g, performance.now(), (cw - w) / 2, ch - h + py, s, THEME);
 }
 function render(t) {
   const cw = cv.width, ch = cv.height;
