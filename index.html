@@ -1351,9 +1351,14 @@ function pieceBox(type) {
 }
 /* cartoon-blok: dikke inktrand om het hele stuk, felle vlakke kleur, lichte bovenrand, donkere onderrand en een glansje per vakje */
 const INK = '#2b2140';
-/* ---------- schilderij-stijl: alleen tijdens Puzzel met de schilderij-achtergrond ----------
+/* ---------- schilderij-stijl: in alle modi, zodra de schilderij-achtergrond geladen is ----------
    zachte pruimkleurige randen i.p.v. zwarte inkt, zonlicht van linksboven, paarse schaduw, steentextuur */
 let PAINT = false;
+/* schilderij-thema: eigen achtergrond + stenen blokjes + wolkenzee, globaal in alle modi (solo, race, puzzel, party).
+   Zet ART_BG_ON op false om terug te gaan naar de oude wereld-thema's. */
+const ART_BG_ON = true, artBgImg = new Image();
+artBgImg.src = 'assets/puzzel_bg.webp';
+const useArtBg = () => ART_BG_ON && artBgImg.complete && artBgImg.naturalWidth > 0;
 const P_INK = '#3a2546';
 const rgbOf = c => c[0] === '#' ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).slice(0, 3).map(Number);
 function mix(a, b, t) { const A = rgbOf(a), B = rgbOf(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; }
@@ -2071,7 +2076,7 @@ function drawNext() {
   const cells = SHAPES[t]; const s = 20;
   const maxX = Math.max(...cells.map(c => c[0])) + 1, maxY = Math.max(...cells.map(c => c[1])) + 1;
   const ox = (d.width - maxX * s) / 2, oy = (d.height - maxY * s) / 2;
-  drawPieceRaw(nctx, t, s, Math.round(ox), Math.round(oy), 'color');
+  drawPieceRaw(nctx, t, s, Math.round(ox), Math.round(oy), useArtBg() ? 'paint' : 'color');
 }
 
 /* ---------- input ---------- */
@@ -3440,9 +3445,9 @@ function drawSharedScene(t, opps) {
   const left = -ox / k - 20, right = (cw - ox) / k + 20, bottom = (ch - oy) / k + 20;
   const full = { x: 0, y: 0, w: W, h: H, k };
   list.forEach((o, i) => { o.offX = (i - (n - 1) / 2) * TOWER_GAP; o.skx = o.self ? mySk() : o.sk || mySk(); });
-  if (!usePuzzleBg()) drawWorldBands(t, list, ox, k);
+  if (!useArtBg()) drawWorldBands(t, list, ox, k);
   ctx.setTransform(k, 0, 0, k, ox, oy);
-  if (!usePuzzleBg()) drawHills(t, left, right, bottom);
+  if (!useArtBg()) drawHills(t, left, right, bottom);
   drawSea(t, left, right, bottom, 0);
   // namen eerst (achter de blokken), zodat een vallend blok er gewoon voorlangs gaat
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -3554,7 +3559,7 @@ function drawOwnWorld(t, vp, opt = {}) {   // opt.shared: deel van één gedeeld
   const ox = vx + vw / 2 + (opt.offX || 0) * K + sx, oy = vy + vh * 0.5 + vdy - (opt.cam !== undefined ? opt.cam : camY) * K + sy;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20, top = (vy - oy) / K - 20;
-  if (!opt.shared && !usePuzzleBg()) drawHills(t, left, right, bottom);
+  if (!opt.shared && !useArtBg()) drawHills(t, left, right, bottom);
   // subtiel raster boven het platform
   {
     const gTop = Math.max(top, Math.min(landedTop(), 0) - 16 * CELL);
@@ -3648,7 +3653,7 @@ function drawOppWorld(t, vp, o, opt = {}) {
   const ox = vx + vw / 2 + (opt.offX || 0) * K, oy = vy + vh * 0.5 - cam * K;
   ctx.setTransform(K, 0, 0, K, ox, oy);
   const left = (vx - ox) / K - 20, right = (vx + vw - ox) / K + 20, bottom = (vy + vh - oy) / K + 20;
-  if (!opt.shared) drawHills(t, left, right, bottom);
+  if (!opt.shared && !PAINT) drawHills(t, left, right, bottom);
   if (!opt.shared) drawSea(t, left, right, bottom, 0);
   drawOff = o.c.off; drawIslands(); drawStatic(); drawOff = null;
   // laser (in de gedeelde scène tekenen we één laser voor iedereen)
@@ -3703,6 +3708,12 @@ function drawColumnFrame(vp, o, i) {
 /* mini-toren rechtsboven (A): eerst achtergrond, daarna rand en naam */
 function drawMiniFrame(vp, o, before) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (before && PAINT) {   // schilderij-thema: zelfde schilderij, 'cover' in het kader
+    const iw = artBgImg.naturalWidth, ih = artBgImg.naturalHeight, s = Math.max(vp.w / iw, vp.h / ih);
+    ctx.save(); rr(ctx, vp.x, vp.y, vp.w, vp.h, 12); ctx.clip();
+    ctx.drawImage(artBgImg, vp.x + (vp.w - iw * s) / 2, vp.y + vp.h - ih * s, iw * s, ih * s);
+    ctx.restore(); return;
+  }
   if (before) {
     const th = WORLDS[o.sk ? o.sk.w : 'w_sunny'] || WORLDS.w_sunny, g = ctx.createLinearGradient(0, vp.y, 0, vp.y + vp.h);
     g.addColorStop(0, th.sky[0]); g.addColorStop(0.6, th.sky[1]); g.addColorStop(1, th.sky[2]);
@@ -3789,22 +3800,18 @@ function drawBackdrop(g, t, th, sunCX) {
   }
 
 }
-/* TEST: eigen schilderij als achtergrond tijdens Puzzel (solo en party). Zet PUZZLE_BG_ON op false om terug te gaan. */
-const PUZZLE_BG_ON = true, puzzleBgImg = new Image();
-puzzleBgImg.src = 'assets/puzzel_bg.webp';
-const usePuzzleBg = () => PUZZLE_BG_ON && mode === 'puzzle' && state !== 'menu' && puzzleBgImg.complete && puzzleBgImg.naturalWidth > 0;
-function drawPuzzleBg(g) {   // schermvullend (cover), iets groter getekend zodat hij licht mee kan schuiven met de camera
-  const cw = cv.width, ch = cv.height, iw = puzzleBgImg.naturalWidth, ih = puzzleBgImg.naturalHeight;
+function drawArtBg(g) {   // schermvullend (cover), iets groter getekend zodat hij licht mee kan schuiven met de camera
+  const cw = cv.width, ch = cv.height, iw = artBgImg.naturalWidth, ih = artBgImg.naturalHeight;
   const s = Math.max(cw / iw, ch / ih) * 1.08, w = iw * s, h = ih * s;
   const py = clamp(-camY * 0.04 * K, 0, h - ch);   // hoger bouwen = achtergrond zakt een klein beetje
   g.setTransform(1, 0, 0, 1, 0, 0);
-  g.drawImage(puzzleBgImg, (cw - w) / 2, ch - h + py, w, h);
+  g.drawImage(artBgImg, (cw - w) / 2, ch - h + py, w, h);
 }
 function render(t) {
   const cw = cv.width, ch = cv.height;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  PAINT = usePuzzleBg();
-  if (PAINT) drawPuzzleBg(ctx); else drawBackdrop(ctx, t, THEME, cw * 0.18);
+  PAINT = useArtBg();
+  if (PAINT) drawArtBg(ctx); else drawBackdrop(ctx, t, THEME, cw * 0.18);
 
   drawViews(t);
 
@@ -4440,7 +4447,8 @@ function drawBlockPreviews(root) {
     const g = cv2.getContext('2d'), keep = { ...COLORS }, keepStyle = BLOCK_STYLE, sk = BLOCK_SKINS[cv2.dataset.skin];
     Object.assign(COLORS, sk.colors); BLOCK_STYLE = sk.style || null;
     g.clearRect(0, 0, 120, 84);
-    drawPieceRaw(g, 'T', 26, 8, 6, 'color'); drawPieceRaw(g, 'J', 26, 72, 6, 'color'); drawPieceRaw(g, 'O', 26, 20, 32, 'color');
+    const m = useArtBg() ? 'paint' : 'color';   // winkel toont de blokjes zoals je ze in het spel ziet
+    drawPieceRaw(g, 'T', 26, 8, 6, m); drawPieceRaw(g, 'J', 26, 72, 6, m); drawPieceRaw(g, 'O', 26, 20, 32, m);
     Object.assign(COLORS, keep); BLOCK_STYLE = keepStyle;
   }
 }
